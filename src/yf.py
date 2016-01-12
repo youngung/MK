@@ -7,21 +7,21 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import os
 
-
 ##
 import lib;reload(lib)
 from lib import *
+import func_hard;reload(func_hard)
+from func_hard import *
 ##
 from MP.mat import voigt
 ijv=voigt.ijv
 vij=voigt.vij
 
-
 ## load lib_dat for template
 p_home = os.getcwd()
 p_load = '/Users/yj/repo/vpsc/vpsc-dev-yld/src/py_pack/yld_hah/'
 os.chdir(p_load)
-import lib_dat
+import lib_dat;reload(lib_dat)
 os.chdir(p_home)
 ##----------------------------------------
 
@@ -48,9 +48,9 @@ def VonMises(cauchy6):
     ---------
     Cauchy6: 6D Cauchy stress
 
-    Returns phi^VM
-    ----------
-    cauchy6 <6 dimensional>
+    Returns
+    -------
+    phi^VM
     """
     s11,s22,s33,s31,s23,s12\
         =cauchy6[0],cauchy6[1],cauchy6[2],\
@@ -58,6 +58,21 @@ def VonMises(cauchy6):
     y = (s11-s22)**2.+(s22-s33)**2.+(s33-s11)**2.
     y = y + 6.*(s12**2+s23**2+s31**2)
     return np.sqrt(0.5*y)
+
+def VonMisesE(eps):
+    """
+    Von Mises equivalent strain
+
+    Arguments
+    ---------
+    eps
+
+    Returns
+    -------
+    eps_eq
+    """
+    #print 'Warning'
+    return  np.sqrt((eps**2).sum())
 
 def Hosford(cauchy6,a):
     """
@@ -83,7 +98,6 @@ def illu():
     ax1=fig.add_subplot(121)
     ax2=fig.add_subplot(122)
 
-
     yfunc = VonMises
     loc1, loc2 = y_locus(nths,yfunc)
     ax1.plot(loc1[0],loc1[1],label='Von Mises')
@@ -103,3 +117,6 @@ def illu():
     ys_temp(ax1)
     lib_dat.pi_rad(ax2,rot=150,rel=1.5)
     fig.savefig('ys_illu.pdf')
+
+if __name__=='__main__':
+    illu()

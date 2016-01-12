@@ -10,9 +10,6 @@ def func_swift(eps,k,eps_0,n):
     """
     return k * (eps+eps_0) **n
 
-#from MP.cal import func_hard
-
-
 def func_swift_sr(eps_dot,eps,k,eps_0,n,m):
     """
     sigma = k * (eps + eps_0)**n * (eps_dot)**m

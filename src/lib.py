@@ -61,6 +61,15 @@ def convert_6sig_princ(s6):
 
 c6p = convert_6sig_princ ## alias
 
+def convert_sig33_sig6(sig33):
+    s6=np.zeros(6)
+    for k in xrange(6):
+        i,j = ijv[:,k]
+        s6[k] = sig33[i,j]
+    return s6
+
+c2s6 = convert_sig33_sig6
+
 def ys_temp(ax):
     """
     Plane stress space (11,22)
@@ -69,6 +78,42 @@ def ys_temp(ax):
     ax.set_aspect('equal')
     ax.set_xlabel(r'$\Sigma_\mathrm{11}$',fontsize=17)
     ax.set_ylabel(r'$\Sigma_\mathrm{22}$',fontsize=17)
+
+def ys_tempr(ax):
+    """
+    Plane stress space (11,22)
+    """
+    ax.grid()
+    ax.set_aspect('equal')
+    ax.set_ylabel(r'$\Sigma_\mathrm{11}$',fontsize=17)
+    ax.set_xlabel(r'$\Sigma_\mathrm{22}$',fontsize=17)
+
+
+def es_temp(ax):
+    """
+    2D strain space (e11, e22)
+    """
+    ax.grid()
+    ax.set_aspect('equal')
+    ax.set_xlabel(r'$\mathrm{E_{11}}$',fontsize=17)
+    ax.set_ylabel(r'$\mathrm{E_{22}}$',fontsize=17)
+
+def es_tempr(ax):
+    """
+    2D strain space (e11, e22)
+    """
+    ax.grid()
+    ax.set_aspect('equal')
+    ax.set_ylabel(r'$\mathrm{E_{11}}$',fontsize=17)
+    ax.set_xlabel(r'$\mathrm{E_{22}}$',fontsize=17)
+
+def ss_temp(ax):
+    """
+    Hardening curve
+    """
+    ax.grid()
+    ax.set_xlabel(r'$\bar{\epsilon}$',fontsize=17)
+    ax.set_ylabel(r'$\bar{\sigma}$',fontsize=17)
 
 def pi_proj(sd):
     """
@@ -114,6 +159,9 @@ def y_locus(nths,yfunc,**kwargs):
         locus_pi=np.array(xy).T
     return locus_ps, locus_pi
 
+def norm_vec(a):
+    return np.sqrt((a**2).sum())
+
 def assoc_flow(s6,lamb,yfunc,**kwargs):
     """
     Argument
@@ -129,7 +177,7 @@ def assoc_flow(s6,lamb,yfunc,**kwargs):
     edot in 6D (strain rate vector)
     """
     dlt = 1e-10
-    phi = yfunc(s6,**kwargs)
+    # phi = yfunc(s6,**kwargs)
     s1  = np.zeros(6); s2  = np.zeros(6)
     dki = np.identity(6)
     e_k = np.zeros(6)
@@ -139,8 +187,71 @@ def assoc_flow(s6,lamb,yfunc,**kwargs):
         s1=np.zeros(6);
         s2=np.zeros(6);
         for i in xrange(6):
-            s1[i] = s[i] + dki[k,i] * dlt
-            s2[i] = s[i] - dki[k,i] * dlt
+            s1[i] = s6[i] + dki[k,i] * dlt
+            s2[i] = s6[i] - dki[k,i] * dlt
         e_k[k] = lamb*(yfunc(s1,**kwargs)
                        - yfunc(s2,**kwargs))/(2*dlt)
     return e_k
+
+def alph2sig(alpha,beta):
+    if alpha<=1.:
+        return alph2sig1(alpha,beta)
+    if alpha>1.:
+        return alph2sig2(2-alpha,beta)
+
+def alph2sig1(alpha,beta):
+    """
+            |   1   beta   0 |
+    sigma = | beta  alpha  0 |
+            |   0     0    0 |
+    """
+    sigma = np.zeros((3,3))
+    sigma[0,0] = 1.
+    sigma[1,1] = alpha
+    sigma[0,1] = beta
+    sigma[1,0] = beta
+    return sigma
+
+def alph2sig2(alpha,beta):
+    """
+            |alpha  beta   0 |
+    sigma = | beta    1    0 |
+            |   0     0    0 |
+    """
+    sigma = np.zeros((3,3))
+    sigma[1,1] = 1.
+    sigma[0,0] = alpha
+    sigma[0,1] = beta
+    sigma[1,0] = beta
+    return sigma
+
+
+def alph2sig6(alpha,beta):
+    """
+    (alpha,beta) to sigma6
+    """
+    s33 = alph2sig(alpha,beta)
+    s6  = c2s6(s33)
+    return s6
+
+def alph2eps(alpha,beta,potential,**kwargs):
+    """
+    """
+    ## 6D stress
+    cs6 = alph2sig6(alpha,beta)
+    ## 6D strain rate
+    de6 = assoc_flow(cs6,1.,potential,**kwargs)
+    return de6
+
+# def alph2rho(alpha,beta,potential,**kwargs):
+#     """
+#     (alpha,beta) 2 rho
+
+#     Arguments
+#     ---------
+#     alpha, beta
+#     potential
+#     **kwargs
+#     """
+#     de6 = alph2rho(alpha,beta,potential,**kwargs)
+#     return norm_vec(de6)
