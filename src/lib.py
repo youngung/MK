@@ -1,11 +1,24 @@
 """
 Common libraries
 """
+import os
 import numpy as np
 pi = np.pi
 from MP.mat import voigt
 ijv=voigt.ijv
 vij=voigt.vij
+from MP.lib import mpl_lib
+ticks_bins = mpl_lib.ticks_bins
+
+
+p_load = '/Users/yj/repo/vpsc/vpsc-dev-fld'
+p_home = os.getcwd()
+os.chdir(p_load)
+import fld, fld_pp
+os.chdir(p_home)
+draw_guide=fld_pp.draw_guide
+
+
 def th_2_planestress(th):
     """
     Given theta, return the stress.
@@ -78,6 +91,8 @@ def ys_temp(ax):
     ax.set_aspect('equal')
     ax.set_xlabel(r'$\Sigma_\mathrm{11}$',fontsize=17)
     ax.set_ylabel(r'$\Sigma_\mathrm{22}$',fontsize=17)
+    ticks_bins(ax,axis='x',n=4)
+    ticks_bins(ax,axis='y',n=4)
 
 def ys_tempr(ax):
     """
@@ -87,7 +102,9 @@ def ys_tempr(ax):
     ax.set_aspect('equal')
     ax.set_ylabel(r'$\Sigma_\mathrm{11}$',fontsize=17)
     ax.set_xlabel(r'$\Sigma_\mathrm{22}$',fontsize=17)
-
+    ticks_bins(ax,axis='x',n=4)
+    ticks_bins(ax,axis='y',n=4)
+    draw_guide(ax,r_line=[0,1,2],max_r=500.)
 
 def es_temp(ax):
     """
@@ -97,6 +114,9 @@ def es_temp(ax):
     ax.set_aspect('equal')
     ax.set_xlabel(r'$\mathrm{E_{11}}$',fontsize=17)
     ax.set_ylabel(r'$\mathrm{E_{22}}$',fontsize=17)
+    ticks_bins(ax,axis='x',n=4)
+    ticks_bins(ax,axis='y',n=4)
+
 
 def es_tempr(ax):
     """
@@ -106,6 +126,9 @@ def es_tempr(ax):
     ax.set_aspect('equal')
     ax.set_ylabel(r'$\mathrm{E_{11}}$',fontsize=17)
     ax.set_xlabel(r'$\mathrm{E_{22}}$',fontsize=17)
+    draw_guide(ax,r_line=[-0.5,0,1,2,2.5])
+    ticks_bins(ax,axis='x',n=4)
+    ticks_bins(ax,axis='y',n=4)
 
 def ss_temp(ax):
     """
@@ -114,6 +137,8 @@ def ss_temp(ax):
     ax.grid()
     ax.set_xlabel(r'$\bar{\epsilon}$',fontsize=17)
     ax.set_ylabel(r'$\bar{\sigma}$',fontsize=17)
+    ticks_bins(ax,axis='x',n=4)
+    ticks_bins(ax,axis='y',n=4)
 
 def pi_proj(sd):
     """
@@ -139,9 +164,7 @@ def devit(x,p=0.):
     x=np.array(x,dtype='float')
     m=x[:3].sum()/3.
     x[:3]=x[:3]-m
-
-    if p!=0:
-        x[:3]=x[:3]+p/3.
+    if p!=0: x[:3]=x[:3]+p/3.
     return x
 
 def y_locus(nths,yfunc,**kwargs):
@@ -177,11 +200,12 @@ def assoc_flow(s6,lamb,yfunc,**kwargs):
     edot in 6D (strain rate vector)
     """
     dlt = 1e-10
-    # phi = yfunc(s6,**kwargs)
-    s1  = np.zeros(6); s2  = np.zeros(6)
+    s1  = np.zeros(6)
+    s2  = np.zeros(6)
     dki = np.identity(6)
     e_k = np.zeros(6)
 
+    ## S should be 'deviatoric'
     for k in xrange(6):
         dum=0.
         s1=np.zeros(6);
@@ -191,6 +215,10 @@ def assoc_flow(s6,lamb,yfunc,**kwargs):
             s2[i] = s6[i] - dki[k,i] * dlt
         e_k[k] = lamb*(yfunc(s1,**kwargs)
                        - yfunc(s2,**kwargs))/(2*dlt)
+
+    ## to by-pass the issue with Quad-Hill
+    ## only the direction matters here.
+    e_k[2] = - e_k[:2].sum()
     return e_k
 
 def alph2sig(alpha,beta):
@@ -241,6 +269,8 @@ def alph2eps(alpha,beta,potential,**kwargs):
     cs6 = alph2sig6(alpha,beta)
     ## 6D strain rate
     de6 = assoc_flow(cs6,1.,potential,**kwargs)
+    vol = de6[:3].sum()
+    de6[:3] = de6[:3] - vol/3.
     return de6
 
 # def alph2rho(alpha,beta,potential,**kwargs):
