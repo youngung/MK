@@ -71,9 +71,6 @@ def convert_6sig_princ(s6):
 
     w,v = np.linalg.eig(sig33)
     return w,v
-
-c6p = convert_6sig_princ ## alias
-
 def convert_sig33_sig6(sig33):
     s6=np.zeros(6)
     for k in xrange(6):
@@ -81,7 +78,30 @@ def convert_sig33_sig6(sig33):
         s6[k] = sig33[i,j]
     return s6
 
+def convert_sig6_sig33(sig6):
+    s33=np.zeros((3,3))
+    for k in xrange(6):
+        i,j = ijv[:,k]
+        s33[i,j] = sig6[k]
+        if i!=j: s33[j,i] = sig6[k]
+
+def proj_sig33_nt(sig33,n,t):
+    """
+    Arguments
+    ---------
+    sig33 [3,3]
+    n [3]
+    t [3]
+    """
+    snt = np.dot(t,np.dot(sig33,n))
+    snn = np.dot(n,np.dot(sig33,n))
+    return snn, snt
+
+
+## alias
+c6p  = convert_6sig_princ
 c2s6 = convert_sig33_sig6
+s62c = convert_sig6_sig33
 
 def ys_temp(ax):
     """
