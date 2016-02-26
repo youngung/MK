@@ -71,6 +71,7 @@ def convert_6sig_princ(s6):
 
     w,v = np.linalg.eig(sig33)
     return w,v
+
 def convert_sig33_sig6(sig33):
     s6=np.zeros(6)
     for k in xrange(6):
@@ -84,6 +85,7 @@ def convert_sig6_sig33(sig6):
         i,j = ijv[:,k]
         s33[i,j] = sig6[k]
         if i!=j: s33[j,i] = sig6[k]
+    return s33
 
 def proj_sig33_nt(sig33,n,t):
     """
