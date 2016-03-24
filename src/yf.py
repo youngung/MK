@@ -19,10 +19,13 @@ vij=voigt.vij
 
 ## load lib_dat for template
 p_home = os.getcwd()
-p_load = '/Users/yj/repo/vpsc/vpsc-dev-yld/src/py_pack/yld_hah/'
-os.chdir(p_load)
-import lib_dat;reload(lib_dat)
-os.chdir(p_home)
+
+try:
+    import vpscyld
+    from vpscyld import lib_dat
+    pass
+except:
+    raise IOError,'Could not find vpscyld'
 ##----------------------------------------
 
 def QuadHill(cauchy6,R0,R90):
