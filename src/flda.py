@@ -50,11 +50,10 @@ def test_FLDA_onepath():
         ax3.plot(time_stamps,strain_rate_6[:,2],'g-')
 
 def FLDA_onepath(
-        alpha,beta,
-        sr_eq,
-        func_yld,func_hd,func_sr,
-        ebar_mx,
-        debar):
+        alpha,beta,sr_eq,
+        debar,ebar_mx,
+        func_yld,func_hd,func_sr):
+
     """
     Arguments
     ---------

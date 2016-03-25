@@ -10,14 +10,23 @@ vij=voigt.vij
 from MP.lib import mpl_lib
 ticks_bins = mpl_lib.ticks_bins
 
+def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
+               ls='--',color='k',alpha=0.5):
+    """
+    Maximum should be a radius...
+    """
+    # guide lines for probed paths
+    xlim=ax.get_xlim(); ylim=ax.get_ylim()
+    for i in xrange(len(r_line)):
+        r = r_line[i]
+        mx=max_r
+        mx = mx/np.sqrt(1.+r**2)
+        ys = np.linspace(0.,mx)
+        xs = r * ys
 
-p_load = '/Users/yj/repo/vpsc/vpsc-dev-fld'
-p_home = os.getcwd()
-os.chdir(p_load)
-import fld, fld_pp
-os.chdir(p_home)
-draw_guide=fld_pp.draw_guide
-
+        ax.plot(xs,ys,ls=ls,color=color,alpha=alpha)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
 
 def th_2_planestress(th):
     """
@@ -343,15 +352,23 @@ def alph2eps_c(alpha,beta,potential):
     de6[:3] = de6[:3] - vol/3.
     return de6
 
-# def alph2rho(alpha,beta,potential,**kwargs):
-#     """
-#     (alpha,beta) 2 rho
+def get_stime():
+    """
+    date/time format for naming convention in VPSC-FLD
+    """
+    import time
+    t=time.asctime()
+    date = time.strftime('%Y%m%d')
+    dat,month,dum,time,year = t.split()
+    hr,mn,sec = time.split(':')
+    return date,hr+mn+sec
 
-#     Arguments
-#     ---------
-#     alpha, beta
-#     potential
-#     **kwargs
-#     """
-#     de6 = alph2rho(alpha,beta,potential,**kwargs)
-#     return norm_vec(de6)
+def gen_hash_code(nchar=6):
+    import hashlib, time
+    ## -------------------------------------------------------
+    ## Gen HASH code
+    m = hashlib.md5()
+    m.update(get_stime()[0]+get_stime()[1])
+    m.update(time.asctime())
+    m.update(str(time.time()))
+    return m.hexdigest()[:nchar]
