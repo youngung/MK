@@ -121,5 +121,34 @@ def illu():
     lib_dat.pi_rad(ax2,rot=150,rel=1.5)
     fig.savefig('ys_illu.pdf')
 
+def return_c_yld(iopt,**kwargs):
+    """
+    Return characterized yield functions.
+    The returned yld functions would be useful
+    when the repeated use of yld function is required.
+
+
+    Returned functions are already characterized by **kwargs.
+    Returned yield functions are now functions of only cauchy stress (6D).
+
+    Argumemtns
+    ==========
+    iopt
+    **kwargs
+    """
+    def yld_func(sigma,**kwargs):
+        if iopt==0:
+            ## Quadratic Hill
+            return QuadHill(sigma,**kargs)
+        elif iopt==1:
+            ## Von Mises
+            return VonMises(sigma)
+        elif iopt==2:
+            ## Hosford
+            return Hosford(sigma,**kwargs)
+        else:
+            raise IOError, 'unexpected error'
+    return yld_func
+
 if __name__=='__main__':
     illu()
