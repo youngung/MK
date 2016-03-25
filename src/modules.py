@@ -21,7 +21,7 @@ from func_hard import *
 
 def find_e11_dot(
         sig_b,func_yld,
-        deps_b,eps_b_old,dt,func_F,func_G):
+        deps_b_ref,eps_b_old,dt,func_F,func_G):
     """
     Main function of MK FLD
     Find e11_dot
@@ -39,16 +39,32 @@ def find_e11_dot(
     func_G     (characterized strain hardening function)
     """
     sigb_eq      = func_yld(sig_b)
-    e11dot_guess = 0. # guess
+    deps_b = deps_b_ref.copy()
 
     ## objective function to minimize
     def objf(e11dot):
-        deps_b[0] = e11dot_guess
+        deps_b[0] = e11dot
         deps_b[2] = -deps_b[0]-deps_b[1] ## incompressibility
-        wrate = np.tensordot(sig_b,deps_b) ## equivalent work rate
+        # wrate = np.dot(sig_b,deps_b) ## equivalent work rate
+        wrate = 0.
+        for i in xrange(3):
+            wrate = wrate+sig_b[i]*deps_b[i]
+            wrate = wrate+sig_b[i+3]*deps_b[i+3]*2.
 
         eps_b_dot_eq_tilde = wrate / sigb_eq
-        eps_b_tilde = eps_b_old + eps_b_dot_eq * dt
-        return sigb_eq - func_F(eps_b_dot_eq_tilde) * func_G(eps_b_tilde)
+        eps_b_tilde = eps_b_old + eps_b_dot_eq_tilde * dt
+        F = func_F(eps_b_dot_eq_tilde)
+        G = func_G(eps_b_tilde)
+        # print '-'*20
+        # print 'eps_b_dot_eq_tilde:', eps_b_dot_eq_tilde
+        # print 'eps_b_tilde:', eps_b_tilde
+        # print 'sigb_eq:', sigb_eq
+        # print 'e11dot:', e11dot
+        # print 'strain rate F:',F
+        # print 'strain hard G:',G
+        # print 'F*G:', F*G
+        # print '|sigb_eq - F*G|:',abs(F*G-sigb_eq)
+        # print '-'*20,'\n'
+        return abs(sigb_eq - F*G)
 
-    return optmize.minimize(objf,x0=0.)
+    return objf

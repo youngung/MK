@@ -17,7 +17,7 @@ import numpy as np
 ## Material characteristics
 func_hd   = c_G(0,k=6.00e2, eps_0 = 4.23e-4,n=2.55e-1)
 func_sr   = c_F(0,ed0=1e-3,m=1.2)
-func_yld  = return_c_yld(iopt=1) ## Von Mises
+func_yd  = return_c_yld(iopt=1) ## Von Mises
 
 ## maximum strain....
 eps  = np.linspace(0,1.2,100)
@@ -33,15 +33,15 @@ def test_FLDA_onepath():
     ## Material Characteristics
     func_hd   = c_G(0,k=6.00e2, eps_0 = 4.23e-4,n=2.55e-1)
     func_sr   = c_F(0,ed0=1e-3,m=1.2)
-    func_yld  = return_c_yld(iopt=0,R0=1.5,R90=0.7) ## QuadHill
-    # func_yld  = return_c_yld(iopt=1) ## Von Mises
+    func_yd  = return_c_yld(iopt=0,R0=1.5,R90=0.7) ## QuadHill
+    # func_yd  = return_c_yld(iopt=1) ## Von Mises
 
     alphs = np.linspace(0,1,5)
     for i in xrange(len(alphs)):
         strain_6, stress_6, strain_eq, \
             stress_eq, strain_rate_6, \
             time_stamps = FLDA_onepath(
-                alphs[i],0,1e-3,func_yld,
+                alphs[i],0,1e-3,func_yd,
                 func_hd,func_sr,
                 ebar_mx=0.1,debar=1e-4)
         
@@ -52,14 +52,14 @@ def test_FLDA_onepath():
 def FLDA_onepath(
         alpha,beta,sr_eq,
         debar,ebar_mx,
-        func_yld,func_hd,func_sr):
+        func_yd,func_hd,func_sr):
 
     """
     Arguments
     ---------
     alpha, beta (alpha, beta for stress/strain path boundary condition)
     sr_eq       (strain rate)
-    func_yld    (yield function)
+    func_yd    (yield function)
     func_hd     (strain hardening function)
     func_sr     (strain rate function)
 
@@ -70,12 +70,9 @@ def FLDA_onepath(
     ebar      = 0.
     time_flow = 0.
 
-    strain=[]
-    stress=[]
-    strain_eq=[]
-    stress_eq=[]
-    time_stamps=[]
-    strain_rate=[]
+    strain=[]; stress=[]
+    strain_eq=[]; stress_eq=[]
+    time_stamps=[]; strain_rate=[]
 
     i=0
     while (ebar<ebar_mx):
@@ -89,10 +86,10 @@ def FLDA_onepath(
             ## Cauchy stress vector direction
             sig_norm6 = alph2sig6(alpha,beta)
             ## equivalent stress state
-            sig_norm6 = sig_norm6 / func_yld(sig_norm6)
+            sig_norm6 = sig_norm6 / func_yd(sig_norm6)
             ## Strains vector direction (deviatoric strain).
-            #deps6 = alph2eps(alpha,beta,func_yld,**yld_kwargs)
-            deps6 = alph2eps_c(alpha,beta,func_yld)
+            #deps6 = alph2eps(alpha,beta,func_yd,**yld_kwargs)
+            deps6 = alph2eps_c(alpha,beta,func_yd)
             pass
 
         ## Cauchy stress

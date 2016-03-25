@@ -28,6 +28,32 @@ def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
 
+def rot(psi):
+    psi = psi * np.pi/180.
+    r = np.zeros((3,3)); c = np.cos(psi); s = np.sin(psi)
+    r[0,0]= c;  r[0,1]=-s
+    r[1,0]= s;  r[1,1]= c
+    r[2,2]= 1.
+    return r
+
+def rot_tensor(a,psi):
+    """
+    Arguments
+    ---------
+    a
+    psi (in degree)
+    """
+    a=np.array(a)
+    b=np.zeros((3,3))
+    r=rot(psi)
+    for i in xrange(3):
+        for j in xrange(3):
+            b[i,j] = 0.
+            for k in xrange(3):
+                for l in xrange(3):
+                    b[i,j] = b[i,j] + r[i,k] * a[k,l] * r[j,l]
+    return b
+
 def th_2_planestress(th):
     """
     Given theta, return the stress.
