@@ -79,13 +79,11 @@ def load_a(fn=None,hash_code=None):
     print '%s was restored'%fn
     return data_collection_FLDA
 
-
-
-
 def main():
-    import modules
-    from scipy import optimize
+    np.seterr(all='raise')
 
+    import modules; reload(modules)
+    from scipy import optimize
 
     t0 = time.time()
     ## Choice of material / loading condition
@@ -110,63 +108,164 @@ def main():
     dbar    = bnd.dbar
     ebar_mx = bnd.ebar_mx
 
-
     ## Marciniak-Kuczynski parameters
-    f  = 0.990
-    psi= 0.
-    n  = [1.,0.,0.]
-    t  = [0.,1.,0.]
+    n  = [1.,0.,0.];   t  = [0.,1.,0.]
 
+    f0  = 0.999;
+    f   = 0.999;
+
+    psi= 0.
+    rot_mat = rot(psi)
+    n = lib.rot_vec(rot_mat,n)
+    t = lib.rot_vec(rot_mat,t)
+
+
+    fmt='%7i %7.4f %7.4f %7.1e %7.4f %7.4f %7.1f %7.1f %7.4f %7.4f %7.2f'
+
+    print ('%7s '*11)%(
+        'stp','x0','f','df',
+        'Eeq_A','Eeq_B',
+        'Seq_A','Seq_B','EdeqA','EdeqB','ratio')
+    ## Data vis
+    fig=plt.figure(figsize=(6,7))
+    ax1=fig.add_subplot(221); ax2=fig.add_subplot(222)
+    ax3=fig.add_subplot(223); ax4=fig.add_subplot(224)
+
+    eps6_b=np.zeros((6,))
 
     for i in xrange(bnd.nprob):
-        if i==0:
-            eps_b_eq = 0.
-
+        if i==0: eps_b_eq = 0.
         TT0 = time.time()
         ## Load from pickles.
-        eps6,sig6,ebar,sbar,\
-            sr6,times = data_collection_FLDA[i]
+        eps6,sig6,ebar,sbar,sr6,times \
+            = data_collection_FLDA[i]
 
-        t = 0.
+        t  =  0.
+        x0 =  1e-4
+        # print 'nit, f1, f2, jac, x0, objf(x0)'
         for j in xrange(len(eps6)):
             ## Find response of region B.
             eps6_a = eps6[j,:]
             sig6_a = sig6[j,:]
-            ebar_a = ebar[j]
+            eps_a_eq = ebar[j]
             sbar_a = sbar[j]
             sr6_a = sr6[j,:]
-            dt=times[j]-t
+            dt    = times[j]-t
 
             sig33_a = s62c(sig6_a)
+            sr33_a  = s62c(sr6_a)
             sig33_a_grv = rot_tensor(sig33_a,psi)
-            sr33_a = s62c(sr6_a)
-            sr33_a_grv = rot_tensor(sr33_a,psi)
+            sr33_a_grv  = rot_tensor(sr33_a ,psi)
 
-            sig33_b_grv = np.zeros((3,3))
             sig33_b_grv = sig33_a_grv/f
             sig6_b_grv  = c2s6(sig33_b_grv)
 
             sr33_b_grv = np.zeros((3,3))
-            sr33_b_grv[0,0] = 0. ## unknown
+            sr33_b_grv[0,0] ## unknown
             sr33_b_grv[1,1] = sr33_a_grv[1,1]
-            sr33_b_grv[2,2] = 0. ## unknown
+            sr33_b_grv[2,2] ## unknown but linked with sr33_b_grv[0,0]
             sr33_b_grv[0,1] = sr33_a_grv[0,1]
             sr33_b_grv[1,0] = sr33_a_grv[1,0]
             sr6_b_grv = c2s6(sr33_b_grv)
+
+
+            # print 'sr12_b_grv:',sr33_b_grv[0,1],sr33_b_grv[1,0]
+            # print 'sr12_a_grv:',sr33_a_grv[0,1],sr33_a_grv[1,0]
+
+            # return
 
             ## Find e11_dot
             objf = modules.find_e11_dot(
                 sig6_b_grv,mat.func_yd,sr6_b_grv,
                 eps_b_eq,dt,mat.func_sr,mat.func_hd)
 
-            rst = optimize.minimize(objf,x0=1.e-3)
-
+            ## N/R
+            irepeat  =True; nit = 0; nit_mx = 20
+            err_tol = 1e-3
+            while (irepeat):
+                dx  = 1.e-7 ## debug?
+                f1  = objf(x0-dx)
+                f2  = objf(x0+dx)
+                jac = (f2-f1)/(dx*2)
+                x0 = x0 - objf(x0)/jac
+                # print '%4i  %.1f %.2f %9.1e  %.6f  %.6f'%(
+                #       nit, f1,   f2, jac,   x0, objf(x0))
+                if abs(objf(x0)) < err_tol:
+                    sr33_b_grv[0,0] = x0
+                    sr33_b_grv[2,2] = - sr33_b_grv[0,0] - sr33_b_grv[1,1]
+                    irepeat=False
+                elif nit>=nit_mx:
+                    raise IOError, 'could not find the solution..'
+                nit=nit+1
 
             ## updates (Increase by time incremental step)
-            print type(rst)
-            print 'e11_dot:', rst.x
-            print 'fun:    ', rst.fun
-            return 
+            ## Complete strain increment for region B:
+            sr6_b_grv = c2s6(sr33_b_grv)
+
+            ## rotate the strain rate back
+            sr33_b  = rot_tensor(sr33_b_grv, -psi)
+            sig33_b = rot_tensor(sig33_b_grv,-psi)
+            sr6_b   = c2s6(sr33_b)
+            sig6_b  = c2s6(sig33_b)
+
+            ## work rate for B:
+            sigb_eq = mat.func_yd(sig6_b)
+            siga_eq = mat.func_yd(sig6_a)
+            wrate_b = np.dot(sr6_b,sig6_b)
+            eps_b_eq_dot = wrate_b / sigb_eq
+            wrate_a = np.dot(sr6_a,sig6_a)
+            eps_a_eq_dot = wrate_a / sigb_eq
+
+            ## equivalent strain update for region B
+            eps_b_eq = eps_b_eq + eps_b_eq_dot * dt
+            eps6_b   = eps6_b + sr6_b*dt
+            t = t + dt
+
+            ## psi update
+            ## n update, t update
+            ## f update
+            # eps6_a = eps6[j,:]
+
+            # for i in xrange(3):
+            #     print '%10.7f '%eps6_b[i],
+            # print
+            # for i in xrange(3):
+            #     print '%10.7f '%eps6_a[i],
+            # print '\n'
+
+            # dee = eps6_b[2] - eps6_a[2]
+            # print 'old_f:', f
+            # print 'dee:', dee
+            # print 'exp(dee):',np.exp(dee)
+            # print 'new_f:', f0*np.exp(dee)
+
+            new_f     = f0 * np.exp(eps6_b[2] - eps6_a[2])
+            df = new_f - f
+            # print 'old f:',f
+            # print 'df:', df
+            f = f + df
+            # print 'new f:',f
+
+            ratio = sr6_b[2] / sr6_a[2]
+
+            ## check the thickness strain rate difference.
+            ## write values.
+            print fmt%(j+1,x0,f,df,
+                       eps_a_eq,
+                       eps_b_eq,
+                       siga_eq,
+                       sigb_eq,
+                       eps_a_eq_dot,
+                       eps_b_eq_dot,
+                       ratio)
+
+            if j==100:
+                print '\nnext \n'
+                #break
+                return
+
+
+            # print '-'*80,'\n'
 
 
         print 'Elapsed time for #%i loading: %s'%(

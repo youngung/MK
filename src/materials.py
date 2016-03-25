@@ -68,7 +68,7 @@ def prop_loading_short():
     """
     my_loading = Bnd_A(name='proportional_Loading1',
                        alpha0=0,alpha1=1,alphan=3,beta=0,
-                       sr_eq=1e-3,dbar=1e-6,ebar_mx=0.1)
+                       sr_eq=1e-3,dbar=1e-4,ebar_mx=0.1)
     return my_loading
 
 def prop_loading_long():

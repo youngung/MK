@@ -38,8 +38,8 @@ def find_e11_dot(
     func_F     (characterized strain rate function)
     func_G     (characterized strain hardening function)
     """
-    sigb_eq      = func_yld(sig_b)
-    deps_b = deps_b_ref.copy()
+    sigb_eq = func_yld(sig_b)
+    deps_b  = deps_b_ref.copy()
 
     ## objective function to minimize
     def objf(e11dot):
@@ -48,7 +48,7 @@ def find_e11_dot(
         # wrate = np.dot(sig_b,deps_b) ## equivalent work rate
         wrate = 0.
         for i in xrange(3):
-            wrate = wrate+sig_b[i]*deps_b[i]
+            wrate = wrate+sig_b[i]  *deps_b[i]
             wrate = wrate+sig_b[i+3]*deps_b[i+3]*2.
 
         eps_b_dot_eq_tilde = wrate / sigb_eq

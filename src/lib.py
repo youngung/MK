@@ -36,6 +36,16 @@ def rot(psi):
     r[2,2]= 1.
     return r
 
+def rot_vec(r,vect):
+    """
+    v[i] = r[i,j]*vect[j]
+    """
+    v=np.zeros(3)
+    for i in xrange(3):
+        for j in xrange(3):
+            v[i]=v[i]+r[i,j]*vect[j]
+    return v
+
 def rot_tensor(a,psi):
     """
     Arguments
