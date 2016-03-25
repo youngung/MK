@@ -17,7 +17,6 @@ def func_swift(eps,k,eps_0,n):
     """
     return k * (eps+eps_0) **n
 
-
 def func_hollomon(eps,k,n):
     """
     Hollomon 1945
@@ -39,7 +38,6 @@ def func_ludwik(eps,k,sig0,n):
     eps,k,sig0,n
     """
     return sig0 + k*eps**n
-
 
 def func_hs(eps,sig0,k,eps0,n):
     """
@@ -69,9 +67,31 @@ def func_baragar(eps,sig0,c,d,e):
     """
     return sig0 + c*eps**0.4+ d*eps**0.8+e*eps**1.2
 
+def c_G(iopt,**kwargs):
+    """
+    Return characterized hardening function
+    The returned hardening functions would be useful
+    when the repeated use of hardening function is required.
 
-# def func_swift_sr(eps_dot,eps,k,eps_0,n,m):
-#     """
-#     sigma = k * (eps + eps_0)**n * (eps_dot)**m
-#     """
-#     return k * (eps + eps_0)**n * (eps_dot)**m
+    Returned functions are already characterized by **kwargs.
+    Returned functions are now functions of only equivalent strain (eps_eq)
+
+    Argumemtns
+    ==========
+    iopt
+    **kwargs
+    """
+    def func(eps_eq):
+        if iopt==0:
+            return func_swift(eps_eq,**kwargs)
+        elif iopt==1:
+            return func_hollomon(eps_eq,**kwargs)
+        elif iopt==2:
+            return func_ludwik(eps_eq,**kwargs)
+        elif iopt==3:
+            return func_hs(eps_eq,**kwargs)
+        elif iopt==4:
+            return func_ludwigson(eps_eq,**kwargs)
+        elif iopt==5:
+            return func_baragar(eps_eq,**kwargs)
+    return func

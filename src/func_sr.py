@@ -37,7 +37,6 @@ def c_F(iopt,**kwargs):
     Argumemtns
     ==========
     iopt
-    edot_eq
     **kwargs
     """
     def func(edot_eq):
