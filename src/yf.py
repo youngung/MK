@@ -136,10 +136,10 @@ def return_c_yld(iopt,**kwargs):
     iopt
     **kwargs
     """
-    def yld_func(sigma,**kwargs):
+    def yld_func(sigma):
         if iopt==0:
             ## Quadratic Hill
-            return QuadHill(sigma,**kargs)
+            return QuadHill(sigma,**kwargs)
         elif iopt==1:
             ## Von Mises
             return VonMises(sigma)

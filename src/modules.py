@@ -21,7 +21,7 @@ from func_hard import *
 
 def find_e11_dot(
         sig_b,func_yld,
-        deps_b,eps_b_old,dt,func_F,func_G)
+        deps_b,eps_b_old,dt,func_F,func_G):
     """
     Main function of MK FLD
     Find e11_dot
@@ -43,8 +43,10 @@ def find_e11_dot(
 
     ## objective function to minimize
     def objf(e11dot):
-        deps_b[5] = e11dot_guess
-        wrate = np.tensordot(sig_b,deps_b)
+        deps_b[0] = e11dot_guess
+        deps_b[2] = -deps_b[0]-deps_b[1] ## incompressibility
+        wrate = np.tensordot(sig_b,deps_b) ## equivalent work rate
+
         eps_b_dot_eq_tilde = wrate / sigb_eq
         eps_b_tilde = eps_b_old + eps_b_dot_eq * dt
         return sigb_eq - func_F(eps_b_dot_eq_tilde) * func_G(eps_b_tilde)

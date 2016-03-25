@@ -243,6 +243,42 @@ def assoc_flow(s6,lamb,yfunc,**kwargs):
     e_k[2] = - e_k[:2].sum()
     return e_k
 
+def assoc_flow_c(s6,lamb,yfunc):
+    """
+    Argument
+    --------
+    s6  (6D cauchy stress)
+    lambda (proportional factor in
+            the associated flow rule equation)
+    yfunc  (yield function)
+
+    Returns
+    -------
+    edot in 6D (strain rate vector)
+    """
+    dlt = 1e-10
+    s1  = np.zeros(6)
+    s2  = np.zeros(6)
+    dki = np.identity(6)
+    e_k = np.zeros(6)
+
+    ## S should be 'deviatoric'
+    for k in xrange(6):
+        dum=0.
+        s1=np.zeros(6);
+        s2=np.zeros(6);
+        for i in xrange(6):
+            s1[i] = s6[i] + dki[k,i] * dlt
+            s2[i] = s6[i] - dki[k,i] * dlt
+        e_k[k] = lamb*(yfunc(s1)
+                       - yfunc(s2))/(2*dlt)
+
+    ## to by-pass the issue with Quad-Hill
+    ## only the direction matters here.
+    e_k[2] = - e_k[:2].sum()
+    return e_k
+
+
 def alph2sig(alpha,beta):
     if alpha<=1.:
         return alph2sig1(alpha,beta)
@@ -291,6 +327,18 @@ def alph2eps(alpha,beta,potential,**kwargs):
     cs6 = alph2sig6(alpha,beta)
     ## 6D strain rate
     de6 = assoc_flow(cs6,1.,potential,**kwargs)
+    vol = de6[:3].sum()
+    de6[:3] = de6[:3] - vol/3.
+    return de6
+
+def alph2eps_c(alpha,beta,potential):
+    """
+    based on ready characterizied potential
+    """
+    ## 6D stress
+    cs6 = alph2sig6(alpha,beta)
+    ## 6D strain rate
+    de6 = assoc_flow_c(cs6,1.,potential)
     vol = de6[:3].sum()
     de6[:3] = de6[:3] - vol/3.
     return de6
