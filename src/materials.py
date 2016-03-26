@@ -20,12 +20,31 @@ def iso_metal_vm():
     """
     Isotropic Von Mises metal
     """
-    my_iso_metal = Mat_A(name='iso_metal')
+    my_iso_metal = Mat_A(name='iso_vm')
     my_iso_metal.assign_hd(ihd_opt=0,k=6.00e2,eps_0=4.23e-4,n=2.55e-1)
     my_iso_metal.assign_sr(isr_opt=0,ed0=1e-3,m=0.02)
     my_iso_metal.assign_yd(iyd_opt=1) ## Von Mises yield surface
     return my_iso_metal
 
+def iso_metal_hf8():
+    """
+    Isotropic Hosford
+    """
+    my_iso_metal = Mat_A(name='iso_hf')
+    my_iso_metal.assign_hd(ihd_opt=0,k=6.00e2,eps_0=4.23e-4,n=2.55e-1)
+    my_iso_metal.assign_sr(isr_opt=0,ed0=1e-3,m=0.02)
+    my_iso_metal.assign_yd(iyd_opt=2,a=8) ## Hosford exponent of 8
+    return my_iso_metal
+
+def aniso_metal_hill():
+    """
+    Anisotropic Hill
+    """
+    my_aniso_metal = Mat_A(name='aniso_hill')
+    my_aniso_metal.assign_hd(ihd_opt=0,k=6.00e2,eps_0=4.23e-4,n=2.55e-1)
+    my_aniso_metal.assign_sr(isr_opt=0,ed0=1e-3,m=0.02)
+    my_aniso_metal.assign_yd(iyd_opt=0,a=8,R0=1.5,R90=0.8) ## Hosford exponent of 8
+    return my_aniso_metal
 
 def tension_test():
     eps_eq = np.linspace(0,0.2,100)
@@ -66,7 +85,7 @@ def prop_loading_short():
     """
     short proportional loading
     """
-    my_loading = Bnd_A(name='proportional_Loading1',
+    my_loading = Bnd_A(name='proportional_short',
                        alpha0=0,alpha1=1,alphan=3,beta=0,
                        sr_eq=1e-3,dbar=1e-4,ebar_mx=0.1)
     return my_loading
@@ -75,7 +94,16 @@ def prop_loading_long():
     """
     long proportional loading
     """
-    my_loading = Bnd_A(name='proportional_Loading1',
+    my_loading = Bnd_A(name='proportional_long',
                        alpha0=0,alpha1=1,alphan=3,beta=0,
-                       sr_eq=1e-3,dbar=1e-4,ebar_mx=1.5)
+                       sr_eq=1e-3,dbar=1e-3,ebar_mx=1.4)
+    return my_loading
+
+def prop_loading_refine():
+    """
+    long proportional loading
+    """
+    my_loading = Bnd_A(name='proportional_refine',
+                       alpha0=0,alpha1=1,alphan=7,beta=0,
+                       sr_eq=1e-3,dbar=1e-4,ebar_mx=1.4)
     return my_loading

@@ -2,7 +2,7 @@
 Marciniak Kuczynski model based on macro-mechanical descriptions
 """
 from flda import *
-import materials
+import materials;reload(materials)
 # try:
 #     import cPickle as pickle
 # except:
@@ -79,21 +79,30 @@ def load_a(fn=None,hash_code=None):
     print '%s was restored'%fn
     return data_collection_FLDA
 
-def main():
-    np.seterr(all='raise')
+
+def main(f0=0.999,psi0=0):
+    """
+    Arguments
+    ---------
+    f0
+    psi0
+    """
+    # np.seterr(all='raise')
 
     import modules; reload(modules)
     from scipy import optimize
 
     t0 = time.time()
     ## Choice of material / loading condition
-    mat = materials.iso_metal_vm()
+    # mat = materials.iso_metal_vm()
+    mat = materials.iso_metal_hf8()
     """
     mat.func_hd as a function of ebar
     mat.func_sr as a function of ebar dot
     mat.func_yd as a function of cauchy stress
     """
-    bnd = materials.prop_loading_long()
+    #bnd = materials.prop_loading_long()
+    bnd = materials.prop_loading_refine()
 
     ## Save FLDa
     FLDA_pck_name = save_a(mat, bnd)
@@ -110,68 +119,72 @@ def main():
 
     ## Marciniak-Kuczynski parameters
     n  = [1.,0.,0.];   t  = [0.,1.,0.]
+    f  = f0; psi = psi0
 
-    f0  = 0.999;
-    f   = 0.999;
-
-    psi= 0.
     rot_mat = rot(psi)
     n = lib.rot_vec(rot_mat,n)
     t = lib.rot_vec(rot_mat,t)
 
-
-    fmt='%7i %7.4f %7.4f %7.1e %7.4f %7.4f %7.1f %7.1f %7.4f %7.4f %7.2f'
-
+    fmt='%7i %7.4f %7.4f %7.1e %7.4f %7.4f %7.1f'+\
+        ' %7.1f %7.4f %7.4f %7.2f'
     print ('%7s '*11)%(
         'stp','x0','f','df',
-        'Eeq_A','Eeq_B',
-        'Seq_A','Seq_B','EdeqA','EdeqB','ratio')
-    ## Data vis
-    fig=plt.figure(figsize=(6,7))
-    ax1=fig.add_subplot(221); ax2=fig.add_subplot(222)
-    ax3=fig.add_subplot(223); ax4=fig.add_subplot(224)
+        'Eeq_A','Eeq_B','Seq_A','Seq_B',
+        'EdeqA','EdeqB','ratio')
 
-    eps6_b=np.zeros((6,))
+    mx_dp = 10000
+    sig_A = np.zeros((bnd.nprob,6,mx_dp))*np.nan
+    eps_A = np.zeros((bnd.nprob,6,mx_dp))*np.nan
+    edt_A = np.zeros((bnd.nprob,  mx_dp))*np.nan
+    Seq_A = np.zeros((bnd.nprob  ,mx_dp))*np.nan
+    Eeq_A = np.zeros((bnd.nprob  ,mx_dp))*np.nan
+    sig_B = np.zeros((bnd.nprob,6,mx_dp))*np.nan
+    eps_B = np.zeros((bnd.nprob,6,mx_dp))*np.nan
+    edt_B = np.zeros((bnd.nprob  ,mx_dp))*np.nan
+    Seq_B = np.zeros((bnd.nprob  ,mx_dp))*np.nan
+    Eeq_B = np.zeros((bnd.nprob  ,mx_dp))*np.nan
+
+    times = np.zeros((bnd.nprob))*np.nan
 
     for i in xrange(bnd.nprob):
-        if i==0: eps_b_eq = 0.
+        eps_b_eq = 0.
         TT0 = time.time()
         ## Load from pickles.
         eps6,sig6,ebar,sbar,sr6,times \
             = data_collection_FLDA[i]
 
         t  =  0.
-        x0 =  1e-4
+        x0 =  1e-5
+        eps6_b=np.zeros((6,))
         # print 'nit, f1, f2, jac, x0, objf(x0)'
+        plt.ioff()
         for j in xrange(len(eps6)):
             ## Find response of region B.
-            eps6_a = eps6[j,:]
-            sig6_a = sig6[j,:]
+            eps6_a   = eps6[j,:]
+            sig6_a   = sig6[j,:]
             eps_a_eq = ebar[j]
-            sbar_a = sbar[j]
-            sr6_a = sr6[j,:]
-            dt    = times[j]-t
+            sbar_a   = sbar[j]
+            sr6_a    = sr6[j,:]
+            dt       = times[j]-t
 
-            sig33_a = s62c(sig6_a)
-            sr33_a  = s62c(sr6_a)
+            sig33_a  = s62c(sig6_a)
+            sr33_a   = s62c(sr6_a)
             sig33_a_grv = rot_tensor(sig33_a,psi)
             sr33_a_grv  = rot_tensor(sr33_a ,psi)
 
             sig33_b_grv = sig33_a_grv/f
             sig6_b_grv  = c2s6(sig33_b_grv)
 
-            sr33_b_grv = np.zeros((3,3))
-            sr33_b_grv[0,0] ## unknown
+            sr33_b_grv      = np.zeros((3,3))
+            sr33_b_grv[0,0] =-1e-3 ## unknown
             sr33_b_grv[1,1] = sr33_a_grv[1,1]
-            sr33_b_grv[2,2] ## unknown but linked with sr33_b_grv[0,0]
+            sr33_b_grv[2,2] = 1e-3 ## unknown but linked with sr33_b_grv[0,0]
             sr33_b_grv[0,1] = sr33_a_grv[0,1]
             sr33_b_grv[1,0] = sr33_a_grv[1,0]
-            sr6_b_grv = c2s6(sr33_b_grv)
-
+            sr6_b_grv       = c2s6(sr33_b_grv)
 
             # print 'sr12_b_grv:',sr33_b_grv[0,1],sr33_b_grv[1,0]
             # print 'sr12_a_grv:',sr33_a_grv[0,1],sr33_a_grv[1,0]
-
             # return
 
             ## Find e11_dot
@@ -180,23 +193,42 @@ def main():
                 eps_b_eq,dt,mat.func_sr,mat.func_hd)
 
             ## N/R
-            irepeat  =True; nit = 0; nit_mx = 20
-            err_tol = 1e-3
+            irepeat = True; nit = 0; nit_mx = 100
+            err_tol = 1.5e-2
+            dx      = 1.e-6 ## debug?
+            verbose = True
+            if verbose and np.mod(j,20)==0:
+                print '%4s %4s %4s %8s %8s %8s %8s'%(
+                    'nit','f1','f2','jac','x0','objf','eb_eq')
+
             while (irepeat):
-                dx  = 1.e-7 ## debug?
-                f1  = objf(x0-dx)
-                f2  = objf(x0+dx)
-                jac = (f2-f1)/(dx*2)
-                x0 = x0 - objf(x0)/jac
-                # print '%4i  %.1f %.2f %9.1e  %.6f  %.6f'%(
-                #       nit, f1,   f2, jac,   x0, objf(x0))
-                if abs(objf(x0)) < err_tol:
+                f   = objf(x0)
+
+                try:
+                    ## Jacobian as middle value
+                    f1  = objf(x0-dx)
+                    f2  = objf(x0+dx)
+                    jac = (f2-f1)/(dx*2)
+
+                except:
+                    ## Jacobian from forward direction
+                    f1  = objf(x0+dx)
+                    jac = (f1-f)/dx
+
+                x0  = x0 - f/jac
+
+                if verbose:
+                    print '%4i %4.1f %4.1f %8.1e %8.5f %8.5f %8.5f'%(
+                        nit, f1, f2, jac, x0, f, eps_b_eq)
+
+                if abs(f) < err_tol:
                     sr33_b_grv[0,0] = x0
                     sr33_b_grv[2,2] = - sr33_b_grv[0,0] - sr33_b_grv[1,1]
-                    irepeat=False
-                elif nit>=nit_mx:
+                    irepeat         = False
+                if nit>=nit_mx:
                     raise IOError, 'could not find the solution..'
-                nit=nit+1
+                else:
+                    nit=nit+1
 
             ## updates (Increase by time incremental step)
             ## Complete strain increment for region B:
@@ -219,60 +251,84 @@ def main():
             ## equivalent strain update for region B
             eps_b_eq = eps_b_eq + eps_b_eq_dot * dt
             eps6_b   = eps6_b + sr6_b*dt
+
+            sig_A[i,:,j] = sig6_a[::]
+            eps_A[i,:,j] = eps6_a[::]
+            Seq_A[i,j]   = siga_eq
+            Eeq_A[i,j]   = eps_a_eq
+            edt_A[i,j]   = eps_a_eq_dot
+
+            sig_B[i,:,j] = sig6_b[::]
+            eps_B[i,:,j] = eps6_b[::]
+            Seq_B[i,j]   = sigb_eq
+            Eeq_B[i,j]   = eps_b_eq
+            edt_B[i,j]   = eps_b_eq_dot
+
+            times[i] = t
+
             t = t + dt
 
             ## psi update
             ## n update, t update
             ## f update
-            # eps6_a = eps6[j,:]
-
-            # for i in xrange(3):
-            #     print '%10.7f '%eps6_b[i],
-            # print
-            # for i in xrange(3):
-            #     print '%10.7f '%eps6_a[i],
-            # print '\n'
-
-            # dee = eps6_b[2] - eps6_a[2]
-            # print 'old_f:', f
-            # print 'dee:', dee
-            # print 'exp(dee):',np.exp(dee)
-            # print 'new_f:', f0*np.exp(dee)
-
-            new_f     = f0 * np.exp(eps6_b[2] - eps6_a[2])
-            df = new_f - f
-            # print 'old f:',f
-            # print 'df:', df
-            f = f + df
-            # print 'new f:',f
-
+            new_f = f0 * np.exp(eps6_b[2] - eps6_a[2])
+            df    = new_f - f
+            f     = f + df
             ratio = sr6_b[2] / sr6_a[2]
 
             ## check the thickness strain rate difference.
             ## write values.
-            print fmt%(j+1,x0,f,df,
-                       eps_a_eq,
-                       eps_b_eq,
-                       siga_eq,
-                       sigb_eq,
-                       eps_a_eq_dot,
-                       eps_b_eq_dot,
-                       ratio)
-
-            if j==100:
-                print '\nnext \n'
-                #break
-                return
-
-
-            # print '-'*80,'\n'
-
+            if ratio>10:
+                print fmt%(j+1,x0,f,df,eps_a_eq,eps_b_eq,
+                           siga_eq,sigb_eq,eps_a_eq_dot,eps_b_eq_dot,
+                           ratio)
+                print 'Congratulations, you just failed'
+                x0 = 1e-4
+                break
 
         print 'Elapsed time for #%i loading: %s'%(
             i+1,
             progress_bar.convert_sec_to_string(
                 time.time() - TT0))
 
+    # ## Data vis
+    fig=plt.figure(figsize=(6,7))
+    plt.ioff()
+    ax1=fig.add_subplot(221); ax2=fig.add_subplot(222)
+    ax3=fig.add_subplot(223); ax4=fig.add_subplot(224)
+
+    for i in xrange(bnd.nprob):
+        ax1.plot(eps_A[i,1,:],eps_A[i,0,:],'b-')
+        ax1.plot(eps_B[i,1,:],eps_B[i,0,:],'r-')
+        ax2.plot(sig_A[i,1,:],sig_A[i,0,:],'b-')
+        ax2.plot(sig_B[i,1,:],sig_B[i,0,:],'r-')
+        l, = ax3.plot(Eeq_A[i,:], Seq_A[i,:],ls='-')
+        ax3.plot(Eeq_B[i,:], Seq_B[i,:],color=l.get_color(),ls='--')
+
+    print '-'*90
+    print 'Congratulations, your sheet SUCCESSFULY failed'
+    print '-'*90
+
     print 'Total Elapsed time for main:',\
         progress_bar.convert_sec_to_string(
             time.time() - t0)
+
+    draw_guide(ax1)
+    draw_guide(ax2,r_line=[0,0.5,1],max_r=1000)
+
+    ax1.set_aspect('equal')
+    ax2.set_ylim(0.,);ax3.set_ylim(0.,)
+    ax2.set_aspect('equal')
+
+    ax3.set_xlabel(r'$\mathrm{\bar{E}^{eq}_{22}}$',dict(fontsize=20))
+    ax3.set_ylabel(r'$\mathrm{\bar{\Sigma}^{eq}_{22}}$',dict(fontsize=20))
+
+    ax1.set_xlabel(r'$\mathrm{\bar{E}_{22}}$',dict(fontsize=20))
+    ax1.set_ylabel(r'$\mathrm{\bar{E}_{11}}$',dict(fontsize=20))
+    ax2.set_xlabel(r'$\mathrm{\bar{\Sigma}_{22}}$',dict(fontsize=20))
+    ax2.set_ylabel(r'$\mathrm{\bar{\Sigma}_{11}}$',dict(fontsize=20))
+
+    plt.ion();
+    plt.draw()
+    plt.tight_layout()
+    fig.savefig('FLD_results.pdf',bbox_inches='tight')

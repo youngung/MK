@@ -9,7 +9,7 @@ from distutils.core import setup
 
 setup(name='MK',
       version='0.0',
-      description='Macromechanical model-based Marciniak-Kucynski FLD',
+      description='Macromechanical model-based Marciniak-Kuczynski FLD',
       author='Youngung Jeong',
       author_email='youngung.jeong@gmail.com',
       packages=['YF','MK','HD'])
