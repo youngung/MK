@@ -94,14 +94,14 @@ def main(f0=0.999,psi0=0):
 
     t0 = time.time()
     ## Choice of material / loading condition
-    # mat = materials.iso_metal_vm()
-    mat = materials.iso_metal_hf8()
+    mat = materials.iso_metal_vm()
+    #mat = materials.iso_metal_hf8()
     """
     mat.func_hd as a function of ebar
     mat.func_sr as a function of ebar dot
     mat.func_yd as a function of cauchy stress
     """
-    #bnd = materials.prop_loading_long()
+    # bnd = materials.prop_loading_long()
     bnd = materials.prop_loading_refine()
 
     ## Save FLDa
@@ -132,7 +132,7 @@ def main(f0=0.999,psi0=0):
         'Eeq_A','Eeq_B','Seq_A','Seq_B',
         'EdeqA','EdeqB','ratio')
 
-    mx_dp = 10000
+    mx_dp = 5000
     sig_A = np.zeros((bnd.nprob,6,mx_dp))*np.nan
     eps_A = np.zeros((bnd.nprob,6,mx_dp))*np.nan
     edt_A = np.zeros((bnd.nprob,  mx_dp))*np.nan
@@ -192,17 +192,29 @@ def main(f0=0.999,psi0=0):
                 sig6_b_grv,mat.func_yd,sr6_b_grv,
                 eps_b_eq,dt,mat.func_sr,mat.func_hd)
 
+            if np.mod(j,20)==0:
+                print 'Ea_eq :', '%6.4f'%eps_a_eq,
+                print 'Eb_eq :', '%6.4f'%eps_b_eq,
+                print 'sbar_a:', '%6.1f'%sbar_a
+
             ## N/R
             irepeat = True; nit = 0; nit_mx = 100
             err_tol = 1.5e-2
-            dx      = 1.e-6 ## debug?
-            verbose = True
+            dx      = 1.e-7 ## debug?
+            verbose = False#True
             if verbose and np.mod(j,20)==0:
                 print '%4s %4s %4s %8s %8s %8s %8s'%(
                     'nit','f1','f2','jac','x0','objf','eb_eq')
 
             while (irepeat):
                 f   = objf(x0)
+
+                if np.isnan(f):
+                    print 'x0:', x0
+                    raise IOError, 'objf(x0) led to nan'
+                if np.isnan(x0): raise IOError, 'x0 is nan'
+
+
 
                 try:
                     ## Jacobian as middle value

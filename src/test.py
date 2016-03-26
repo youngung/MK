@@ -12,7 +12,7 @@ def test2():
 
 def test3():
     import materials
-    materials.tension_test()
+    materials.tension_tests()
 
 if __name__=='__main__':
     import argparse

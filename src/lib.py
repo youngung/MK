@@ -94,6 +94,24 @@ def th_planestress(th,yfunc,**kwargs):
     y     = yfunc(Sigma,**kwargs)
     return Sigma / y
 
+def th_planestress_c(th,yfunc):
+    """
+    Return stress tensors that gives the same
+    size (value) of phi
+
+    Argument
+    --------
+    th
+    yfunc
+    **kwargs for the given yfunc
+
+    - yfunc is assumed to take stress and **kwargs
+    """
+    Sigma = th_2_planestress(th)
+    y     = yfunc(Sigma)
+    return Sigma / y
+
+
 def convert_6sig_princ(s6):
     """
     Convert 6D stress vectors to
@@ -240,6 +258,21 @@ def y_locus(nths,yfunc,**kwargs):
     xy=[]
     for i in xrange(len(ths)):
         ys = th_planestress(ths[i],yfunc,**kwargs)
+        locus_ps[:,i]=ys[0],ys[1]
+        sd = np.zeros(6)
+        sd[0],sd[1] = ys[0],ys[1]
+        sd = devit(sd)
+        x, y = pi_proj(sd)
+        xy.append([x,y])
+        locus_pi=np.array(xy).T
+    return locus_ps, locus_pi
+
+def y_locus_c(nths,yfunc):
+    ths = np.linspace(-pi,pi,nths)
+    locus_ps = np.zeros((2,nths))
+    xy=[]
+    for i in xrange(len(ths)):
+        ys = th_planestress_c(ths[i],yfunc)
         locus_ps[:,i]=ys[0],ys[1]
         sd = np.zeros(6)
         sd[0],sd[1] = ys[0],ys[1]
