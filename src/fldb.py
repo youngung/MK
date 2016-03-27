@@ -14,7 +14,8 @@ def test_save_a():
     t0 = time.time()
     mat = materials.iso_metal_vm()
     #bnd = materials.prop_loading_short()
-    bnd = materials.prop_loading_long()
+    #bnd = materials.prop_loading_long()
+    bnd = materials.prop_loading_refine()
     pickle_fn = save_a(mat, bnd)
     print 'Elapsed time:', progress_bar.convert_sec_to_string(
         time.time() - t0)
@@ -80,7 +81,7 @@ def load_a(fn=None,hash_code=None):
     return data_collection_FLDA
 
 
-def main(f0=0.999,psi0=0):
+def main(f0=0.990,psi0=0):
     """
     Arguments
     ---------
@@ -101,8 +102,8 @@ def main(f0=0.999,psi0=0):
     mat.func_sr as a function of ebar dot
     mat.func_yd as a function of cauchy stress
     """
-    # bnd = materials.prop_loading_long()
-    bnd = materials.prop_loading_refine()
+    bnd = materials.prop_loading_long()
+    #bnd = materials.prop_loading_refine()
 
     ## Save FLDa
     FLDA_pck_name = save_a(mat, bnd)
@@ -117,22 +118,15 @@ def main(f0=0.999,psi0=0):
     dbar    = bnd.dbar
     ebar_mx = bnd.ebar_mx
 
-    ## Marciniak-Kuczynski parameters
-    n  = [1.,0.,0.];   t  = [0.,1.,0.]
-    f  = f0; psi = psi0
-
-    rot_mat = rot(psi)
-    n = lib.rot_vec(rot_mat,n)
-    t = lib.rot_vec(rot_mat,t)
-
     fmt='%7i %7.4f %7.4f %7.1e %7.4f %7.4f %7.1f'+\
         ' %7.1f %7.4f %7.4f %7.2f'
-    print ('%7s '*11)%(
+    head= ('%7s '*11)%(
         'stp','x0','f','df',
         'Eeq_A','Eeq_B','Seq_A','Seq_B',
         'EdeqA','EdeqB','ratio')
 
-    mx_dp = 5000
+    mx_dp = len(data_collection_FLDA[0][0])*5
+
     sig_A = np.zeros((bnd.nprob,6,mx_dp))*np.nan
     eps_A = np.zeros((bnd.nprob,6,mx_dp))*np.nan
     edt_A = np.zeros((bnd.nprob,  mx_dp))*np.nan
@@ -143,10 +137,17 @@ def main(f0=0.999,psi0=0):
     edt_B = np.zeros((bnd.nprob  ,mx_dp))*np.nan
     Seq_B = np.zeros((bnd.nprob  ,mx_dp))*np.nan
     Eeq_B = np.zeros((bnd.nprob  ,mx_dp))*np.nan
-
     times = np.zeros((bnd.nprob))*np.nan
 
     for i in xrange(bnd.nprob):
+        ## Marciniak-Kuczynski parameters
+        n  = [1.,0.,0.];   t  = [0.,1.,0.]
+        f  = f0; psi = psi0
+
+        rot_mat = rot(psi)
+        n = lib.rot_vec(rot_mat,n)
+        t = lib.rot_vec(rot_mat,t)
+
         eps_b_eq = 0.
         TT0 = time.time()
         ## Load from pickles.
@@ -154,7 +155,6 @@ def main(f0=0.999,psi0=0):
             = data_collection_FLDA[i]
 
         t  =  0.
-        x0 =  1e-5
         eps6_b=np.zeros((6,))
         # print 'nit, f1, f2, jac, x0, objf(x0)'
         plt.ioff()
@@ -176,31 +176,50 @@ def main(f0=0.999,psi0=0):
             sig6_b_grv  = c2s6(sig33_b_grv)
 
             sr33_b_grv      = np.zeros((3,3))
-            sr33_b_grv[0,0] =-1e-3 ## unknown
+            sr33_b_grv[0,0] = sr33_a_grv[0,0]
             sr33_b_grv[1,1] = sr33_a_grv[1,1]
-            sr33_b_grv[2,2] = 1e-3 ## unknown but linked with sr33_b_grv[0,0]
+            sr33_b_grv[2,2] = sr33_a_grv[2,2]
             sr33_b_grv[0,1] = sr33_a_grv[0,1]
             sr33_b_grv[1,0] = sr33_a_grv[1,0]
             sr6_b_grv       = c2s6(sr33_b_grv)
 
-            # print 'sr12_b_grv:',sr33_b_grv[0,1],sr33_b_grv[1,0]
-            # print 'sr12_a_grv:',sr33_a_grv[0,1],sr33_a_grv[1,0]
-            # return
+            if j==0:
+                x0 = 1e-4 #sr33_a_grv[0,0]
+                print 'x0:', x0
 
             ## Find e11_dot
             objf = modules.find_e11_dot(
                 sig6_b_grv,mat.func_yd,sr6_b_grv,
                 eps_b_eq,dt,mat.func_sr,mat.func_hd)
 
-            if np.mod(j,20)==0:
-                print 'Ea_eq :', '%6.4f'%eps_a_eq,
-                print 'Eb_eq :', '%6.4f'%eps_b_eq,
-                print 'sbar_a:', '%6.1f'%sbar_a
+            if np.mod(j,30)==0:
+                print head
+
+            if np.mod(j,100)==0 and False:
+                print 'Ea_eq     ',
+                print 'Eb_eq     ',
+                print 'sbar_a    ',
+                print 'siga_11   ',
+                print 'siga_22   ',
+                print 'sr11_a_grv',
+                print 'sr22_a_grv',
+                print 'sr33_a_grv',
+                print 'sr12_a_grv'
+
+                print '%11.4f'%eps_a_eq,
+                print '%11.4f'%eps_b_eq,
+                print '%11.1f'%sbar_a,
+                print '%11.1f'%sig6_a[0],
+                print '%11.1f'%sig6_a[1],
+                print '%11.1e'%sr33_a_grv[0,0],
+                print '%11.1e'%sr33_a_grv[1,1],
+                print '%11.1e'%sr33_a_grv[2,2],
+                print '%11.1e'%sr33_a_grv[0,1]
 
             ## N/R
-            irepeat = True; nit = 0; nit_mx = 100
-            err_tol = 1.5e-2
-            dx      = 1.e-7 ## debug?
+            irepeat = True; nit = 0; nit_mx = 1000
+            err_tol = 1e-1
+            dx      = 1.e-6 ## debug?
             verbose = False#True
             if verbose and np.mod(j,20)==0:
                 print '%4s %4s %4s %8s %8s %8s %8s'%(
@@ -208,24 +227,29 @@ def main(f0=0.999,psi0=0):
 
             while (irepeat):
                 f   = objf(x0)
-
-                if np.isnan(f):
-                    print 'x0:', x0
-                    raise IOError, 'objf(x0) led to nan'
-                if np.isnan(x0): raise IOError, 'x0 is nan'
-
-
+                # if np.isnan(f):
+                #     print 'x0:', x0
+                #     raise IOError, 'objf(x0) led to nan'
+                # if np.isnan(x0): raise IOError, 'x0 is nan'
 
                 try:
                     ## Jacobian as middle value
                     f1  = objf(x0-dx)
                     f2  = objf(x0+dx)
-                    jac = (f2-f1)/(dx*2)
-
+                    jac_new = (f2-f1)/(dx*2)
                 except:
                     ## Jacobian from forward direction
-                    f1  = objf(x0+dx)
-                    jac = (f1-f)/dx
+                    try:
+                        f1  = objf(x0+dx)
+                        jac_new = (f1-f)/dx
+                    except:
+                        f1  = objf(x0-dx)
+                        jac_new = -(f1-f)*dx
+
+                if jac_new == 0:
+                    pass
+                else:
+                    jac = jac_new
 
                 x0  = x0 - f/jac
 
@@ -276,7 +300,7 @@ def main(f0=0.999,psi0=0):
             Eeq_B[i,j]   = eps_b_eq
             edt_B[i,j]   = eps_b_eq_dot
 
-            times[i] = t
+            times[j] = t
 
             t = t + dt
 
@@ -290,10 +314,11 @@ def main(f0=0.999,psi0=0):
 
             ## check the thickness strain rate difference.
             ## write values.
+            print fmt%(j+1,x0,f,df,eps_a_eq,eps_b_eq,
+                       siga_eq,sigb_eq,eps_a_eq_dot,eps_b_eq_dot,
+                       ratio)
+
             if ratio>10:
-                print fmt%(j+1,x0,f,df,eps_a_eq,eps_b_eq,
-                           siga_eq,sigb_eq,eps_a_eq_dot,eps_b_eq_dot,
-                           ratio)
                 print 'Congratulations, you just failed'
                 x0 = 1e-4
                 break
@@ -311,9 +336,9 @@ def main(f0=0.999,psi0=0):
 
     for i in xrange(bnd.nprob):
         ax1.plot(eps_A[i,1,:],eps_A[i,0,:],'b-')
-        ax1.plot(eps_B[i,1,:],eps_B[i,0,:],'r-')
+        ax1.plot(eps_B[i,1,:],eps_B[i,0,:],'r-',zorder=-1)
         ax2.plot(sig_A[i,1,:],sig_A[i,0,:],'b-')
-        ax2.plot(sig_B[i,1,:],sig_B[i,0,:],'r-')
+        ax2.plot(sig_B[i,1,:],sig_B[i,0,:],'r-',zorder=-1)
         l, = ax3.plot(Eeq_A[i,:], Seq_A[i,:],ls='-')
         ax3.plot(Eeq_B[i,:], Seq_B[i,:],color=l.get_color(),ls='--')
 
@@ -344,3 +369,7 @@ def main(f0=0.999,psi0=0):
     plt.draw()
     plt.tight_layout()
     fig.savefig('FLD_results.pdf',bbox_inches='tight')
+
+
+if __name__=='__main__':
+    main()

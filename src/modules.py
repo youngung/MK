@@ -38,11 +38,28 @@ def find_e11_dot(
     func_F     (characterized strain rate function)
     func_G     (characterized strain hardening function)
     """
+
+    """
+    1.
+    sig_b is the stress that B region should have
+    at the current incremental step in order to meet
+    the force equilibrium condition
+
+    2.
+    deps_b should be the incremental strain
+    that B region should have at the current incremental
+    step in order to meet the compatibility condition
+    But only deps_b_11 is unknown and should be determined.
+    """
+
     sigb_eq = func_yld(sig_b)
-    deps_b  = deps_b_ref.copy()
+
+    # print 'sigb_eq:', sigb_eq
+    # raise IOError
 
     ## objective function to minimize
     def objf(e11dot):
+        deps_b  = deps_b_ref[::]
         deps_b[0] = e11dot
         deps_b[2] = -deps_b[0]-deps_b[1] ## incompressibility
         # wrate = np.dot(sig_b,deps_b) ## equivalent work rate
@@ -51,7 +68,24 @@ def find_e11_dot(
             wrate = wrate+sig_b[i]  *deps_b[i]
             wrate = wrate+sig_b[i+3]*deps_b[i+3]*2.
 
+        if wrate<0:
+            print 'sigb'
+            for j in xrange(6): print '%7.1f '%sig_b[j],
+            print
+            print 'deps_b'
+            for j in xrange(6): print '%7.1e '%deps_b[j],
+            print
+            #raise IOError,'wrate should be positive'
+            print 'wrate should be positive'
+
+        if eps_b_old<0:
+            raise IOError, 'epsb_old should be positive'
+
         eps_b_dot_eq_tilde = wrate / sigb_eq
+        # if eps_b_dot_eq_tilde<0:
+        #     eps_b_dot_eq_tilde=0.
+        #     eps_b_dot_eq_tilde=1e-10 ## very low value
+
         eps_b_tilde = eps_b_old + eps_b_dot_eq_tilde * dt
         F = func_F(eps_b_dot_eq_tilde)
         G = func_G(eps_b_tilde)
