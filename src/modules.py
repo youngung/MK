@@ -54,8 +54,7 @@ def find_e11_dot(
 
     sigb_eq = func_yld(sig_b)
 
-    # print 'sigb_eq:', sigb_eq
-    # raise IOError
+
 
     ## objective function to minimize
     def objf(e11dot):
@@ -99,6 +98,7 @@ def find_e11_dot(
         # print 'F*G:', F*G
         # print '|sigb_eq - F*G|:',abs(F*G-sigb_eq)
         # print '-'*20,'\n'
+
         return abs(sigb_eq - F*G)
 
     return objf

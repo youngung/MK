@@ -128,7 +128,7 @@ def prop_loading_long():
     long proportional loading
     """
     my_loading = Bnd_A(name='proportional_long',
-                       alpha0=0,alpha1=1,alphan=15,beta=0,
+                       alpha0=0,alpha1=1,alphan=3,beta=0,
                        sr_eq=1e-3,dbar=5e-4,ebar_mx=1.5)
     return my_loading
 
