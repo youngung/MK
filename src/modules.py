@@ -18,6 +18,7 @@ def eps_dot_eq(sig,sig_eq,edot):
 ## Below is the two contributions: one from strain hardening; one from strain rate sensitivity.
 from func_sr import *
 from func_hard import *
+from lib import assoc_flow_c
 
 def find_e11_dot(
         sig_b,func_yld,
@@ -52,15 +53,52 @@ def find_e11_dot(
     But only deps_b_11 is unknown and should be determined.
     """
 
-    sigb_eq = func_yld(sig_b)
-
-
-
     ## objective function to minimize
     def objf(e11dot):
         deps_b  = deps_b_ref[::]
         deps_b[0] = e11dot
         deps_b[2] = -deps_b[0]-deps_b[1] ## incompressibility
+
+
+        ## Find correspondin "stress direction"
+        ## Find sig_b_tilde that satisfies
+        ## such that  e_tilde = assoc_flow_c(s_tilde_6,1.,func_yld)
+        objf_sd = find_stress(func_yld,deps_b,sig_b)
+
+        s22=sig_b[1]#10.
+        irepeat = True; nit=0; nit_mx =5
+        err_tol = 1e-1; dx=1e-4
+        verbose = False
+        while (irepeat):
+            f = objf_sd(s22)
+            if abs(f)<err_tol:
+                irepeat=False
+                break
+            elif abs(f)>err_tol:
+                f1 = objf_sd(s22-dx)
+                f2 = objf_sd(s22+dx)
+                jac_new = (f2-f1)/(dx*2.)
+                if np.isinf(jac_new):
+                    pass
+                else:
+                    jac = jac_new
+
+                s22 = s22 - f / jac
+                nit = nit+ 1
+                print 'nit, f1, f2, jac, s22, f'
+                print '%4i %4.1f %4.1f %8.1e %8.5f %8.5f'%(
+                    nit, f1, f2, jac, s22, f)
+                if nit>nit_mx:
+                    raise IOError, 'Could not find the solution'
+
+        raise IOError, 'debug'
+
+        ## s22 was found.
+        sig_b[1]=s22
+
+
+        sigb_eq = func_yld(sig_b) ##
+
         # wrate = np.dot(sig_b,deps_b) ## equivalent work rate
         wrate = 0.
         for i in xrange(3):
@@ -100,5 +138,38 @@ def find_e11_dot(
         # print '-'*20,'\n'
 
         return abs(sigb_eq - F*G)
+
+    return objf
+
+
+def find_stress(yfunc,d6,s6_old):
+    """
+    """
+    d6_n = d6/np.sqrt(((d6**2).sum()))
+    s6_n = np.sqrt((s6_old**2).sum())
+    def objf(s22):
+        s6 = s6_old[::]
+        s6[1]=s22
+
+        s6 = s6/np.sqrt((s6**2).sum())*s6_n
+
+        sn=s6[::]
+        # sn[:3] = sn[:3] - sn[2]
+
+        if np.isnan(s22) or np.isinf(s22):
+            raise IOError
+
+        guess = assoc_flow_c(sn,1.,yfunc)
+        guess = guess/np.sqrt((guess**2).sum())
+
+        for i in xrange(6): print '%7.2f '%sn[i],
+        print '|',
+        for i in xrange(6): print '%7.2f '%guess[i],
+        print '|',
+        for i in xrange(6): print '%7.2f '%d6_n[i],
+        print
+        # print '\n\n'
+
+        return np.sqrt(((d6_n-guess)**2).sum())
 
     return objf

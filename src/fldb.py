@@ -146,7 +146,6 @@ def main(f0=0.990,psi0=45.):
     Seq_A = np.zeros((bnd.nprob  ,mx_dp))*np.nan
     Eeq_A = np.zeros((bnd.nprob  ,mx_dp))*np.nan
 
-
     sig_B = np.zeros((bnd.nprob,6,mx_dp))*np.nan
     eps_B = np.zeros((bnd.nprob,6,mx_dp))*np.nan
     eps_B_grv = np.zeros((bnd.nprob,3,3))
@@ -195,13 +194,6 @@ def main(f0=0.990,psi0=45.):
 
             sig33_b_grv = sig33_a_grv/f
             sig6_b_grv  = c2s6(sig33_b_grv.copy())
-
-
-            # sr33_b_grv[0,0] = sr33_a_grv[0,0]
-            # sr33_b_grv[1,1] = sr33_a_grv[1,1]
-            # sr33_b_grv[2,2] = sr33_a_grv[2,2]
-            # sr33_b_grv[0,1] = sr33_a_grv[0,1]
-            # sr33_b_grv[1,0] = sr33_a_grv[1,0]
             sr33_b_grv[:,:] = sr33_a_grv[:,:]
             sr6_b_grv       = c2s6(sr33_b_grv.copy())
 
@@ -245,7 +237,7 @@ def main(f0=0.990,psi0=45.):
                     ## Jacobian as middle value
                     f1  = objf(x0-dx)
                     f2  = objf(x0+dx)
-                    jac_new = (f2-f1)/(dx*2)
+                    jac_new = (f2-f1)/(dx*2.)
                 except:
                     ## Jacobian from forward direction
                     try:
