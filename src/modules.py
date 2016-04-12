@@ -173,3 +173,80 @@ def find_stress(yfunc,d6,s6_old):
         return np.sqrt(((d6_n-guess)**2).sum())
 
     return objf
+
+def find_s22(
+        sig_b,func_yld,
+        deps_b_ref,eps_b_old,
+        dt,func_F,func_G,
+        af):
+    """
+    Main function of MK FLD
+    Find s22
+
+    Given the current dsig_b
+
+    Arguments
+    ---------
+    sig_b      (6D cauchy stress)
+    func_yld   (characterized yield function)
+    deps_b     (6D strain increment) given.
+    eps_b_old  (6D strain at the previous step)
+    dt         (time increment)
+    func_F     (characterized strain rate function)
+    func_G     (characterized strain hardening function)
+    af         (partial derivative of equi stress by stress)
+
+    Version 2016 April
+    """
+    def objf(sig22):
+        """
+        1. The given sig22 must fully complete the stress tensor
+            of region B
+        2. Therefore, equivalent stress can be obtained
+            using yield function
+        3. The equivalent strain 'dot' can be obtained
+           based on:
+            sig_eq =  H(eps) F*(eps_eq_dot)
+        4. Following the associated flow rule, E_11_dot is obtained
+        5. Action 4 fully completes the strain rate tensor
+        6. return the difference between wdot
+        """
+        sig_b_tilde = sig_b[::]
+        sig_b_tilde[1] = sig22
+        sig_eq_tilde = func_yld(sig_b_tilde)
+        F_tilde = sig_eq_tilde / func_G(eps_b_old)
+
+        ## find eps_eq_dot_tilde
+        dx = 1.e-6; tol = 1.e-8
+        edot_eq_tilde = 1.e-3
+        nit = 0;mxit=10
+        #verbose = True
+        verbose = False
+        if verbose: print '-'*50
+        while(True):
+
+            objf0 = F_tilde - func_F(edot_eq_tilde)
+            if verbose:
+                if nit==0: print ('%8s '*4)%('nit','Edot','objf','offset [%]')
+
+            if (abs(objf0)<tol):
+                if verbose:
+                    print ('%8i %8f %8f %8.1f')%(
+                        nit,edot_eq_tilde,objf0,abs(objf0)/tol*100.)
+                break
+            if mxit>10: raise IOError, 'Could not converge'
+
+            objf1 = F_tilde - func_F(edot_eq_tilde+dx)
+            jac_new = (objf1-objf0) / dx
+            edot_eq_tilde = edot_eq_tilde - objf0 / jac_new
+            if edot_eq_tilde<0:
+                raise IOError, 'edot_eq_tilde is negative...'
+            nit=nit+1
+            ##
+        if verbose: print '-'*50
+        # raise IOError
+        edot_tilde = edot_eq_tilde * af(sig_b_tilde)
+        fobj_value = np.dot(sig_b_tilde,edot_tilde) - edot_eq_tilde * sig_eq_tilde
+        return fobj_value,edot_eq_tilde,sig_b_tilde,edot_tilde
+
+    return objf

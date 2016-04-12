@@ -197,75 +197,57 @@ def main(f0=0.990,psi0=45.):
             sr33_b_grv[:,:] = sr33_a_grv[:,:]
             sr6_b_grv       = c2s6(sr33_b_grv.copy())
 
-            if j==0:
-                x0 = 1e-4 #sr33_a_grv[0,0]
-                print 'x0:', x0
 
-            ## Find e11_dot
-            objf = modules.find_e11_dot(
+            objf = modules.find_s22(
                 sig6_b_grv,mat.func_yd,sr6_b_grv,
-                eps_b_eq,dt,mat.func_sr,mat.func_hd)
-
-            if np.mod(j,30)==0:
-                print head
-
-            if np.mod(j,100)==0 and False:
-                fmt_s = '%11s'*9
-                print fmt_s%('Ea_eq','Eb_eq','sbar_a','siga_11','siga_22',
-                             'sr11_a_grv','sr22_a_grv','sr33_a_grv','sr12_a_grv')
-                fmt_v = '%11.4f'*2+'%11.1f'*3+'%11.1e'*4
-                print fmt_v%(eps_a_eq,eps_b_eq,sbar_a,sig6_a[0],sig6_a[1],
-                             sr33_a_grv[0,0],sr33_a_grv[1,1],sr33_a_grv[2,2],
-                             sr33_a_grv[0,1])
+                eps_b_eq,dt,mat.func_sr,mat.func_hd,
+                mat.af)
 
             ## N/R
-            irepeat = True; nit = 0; nit_mx = 1000
-            err_tol = 1e-1; dx      = 1.e-6 ## debug?
-            verbose = False#True
-            if verbose and np.mod(j,20)==0:
-                print '%4s %4s %4s %8s %8s %8s %8s'%(
-                    'nit','f1','f2','jac','x0','objf','eb_eq')
+            nit = 0
+            dx = 1e-2
+            x  = sig33_a_grv[1,1]
+            tol = 1e-5
+            verbose_NR = True
+            if verbose_NR: print '-'*50
+            while (True):
+                f0,e_b_eq_tilde,sig_b_tilde6,edot_b_tilde6,\
+                    sig_eq_tilde = objf(x)
+                if verbose_NR:
+                    if nit==0:
+                        print ('%8s '*7)%(
+                            'nit','s1','s2','ed1','ed2','eeq_dot','objf')
 
-            while (irepeat):
-                f   = objf(x0)
-                # if np.isnan(f):
-                #     print 'x0:', x0
-                #     raise IOError, 'objf(x0) led to nan'
-                # if np.isnan(x0): raise IOError, 'x0 is nan'
+                    print ('%8i '+'%8.1f '*2+'%8.1e '*4)%(
+                        nit,sig_b_tilde6[0],sig_b_tilde6[1],
+                        edot_b_tilde6[0],edot_b_tilde6[1],
+                        e_b_eq_tilde,f0)
 
-                try:
-                    ## Jacobian as middle value
-                    f1  = objf(x0-dx)
-                    f2  = objf(x0+dx)
-                    jac_new = (f2-f1)/(dx*2.)
-                except:
-                    ## Jacobian from forward direction
-                    try:
-                        f1  = objf(x0+dx)
-                        jac_new = (f1-f)/dx
-                    except:
-                        f1  = objf(x0-dx)
-                        jac_new = -(f1-f)*dx
 
-                if jac_new==0: ## use old Jacobian
-                    pass
-                else:
-                    jac = jac_new
+                if (abs(f0)<tol): break
+                if nit> 100:raise IOError, 'Too many iteration'
 
-                x0  = x0 - f/jac
+                f1 = objf(x-dx)[0]
+                f2 = objf(x+dx)[0]
+                jac_new = (f2-f1)/(dx*2.)
+                x = x - f0 / jac_new
+                nit = nit + 1
+                #raise IOError
+            sig33_b_grv[1]=x
+            sr33_b_grv[0,0]=edot_b_tilde6[0]
+            sr33_b_grv[2,2]=-sr33_b_grv[0,0]-sr33_b_grv[1,1]
+            sbar_b = sig_eq_tilde
 
-                if verbose:
-                    print '%4i %4.1f %4.1f %8.1e %8.5f %8.5f %8.5f'%(
-                        nit, f1, f2, jac, x0, f, eps_b_eq)
+            if verbose_NR: print '-'*50
 
-                if abs(f) < err_tol:
-                    sr33_b_grv[0,0] = x0
-                    sr33_b_grv[2,2] = - sr33_b_grv[0,0] - sr33_b_grv[1,1]
-                    irepeat         = False
-                if nit>=nit_mx:
-                    raise IOError, 'could not find the solution..'
-                else:
-                    nit=nit+1
+            # fmt_s = '%11s'*8
+            # print fmt_s%('Ea_eq','sa','sa1','sa2',
+            #              'sra_g1','sra_g2','sra_g3','sra_g6',)
+            # fmt_v = '%11.4f'*1+'%11.1f'*3+'%11.1e'*4
+            # print fmt_v%(eps_a_eq,sbar_a,sig6_a[0],sig6_a[1],
+            #              sr33_a_grv[0,0],sr33_a_grv[1,1],sr33_a_grv[2,2],
+            #              sr33_a_grv[0,1])
+
 
             ## updates (Increase by time incremental step)
             ## Complete strain increment for region B:
@@ -338,7 +320,7 @@ def main(f0=0.990,psi0=45.):
 
 
             print fmt_head%(
-                j+1,x0,f,df,
+                j+1,np.nan,f,df,
                 eps_a_eq,    eps_b_eq,   siga_eq,   sigb_eq,
                 eps_a_eq_dot,eps_b_eq_dot,ratio,psi,'|',
                 # eps_A[i,0,j],eps_A[i,1,j],eps_A[i,5,j],eps_A[i,2,j],

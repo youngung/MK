@@ -20,11 +20,13 @@ class Mat_A:
         pass
     def assign_yd(self,iyd_opt,**kwargs):
         self.func_yd = return_c_yld(iyd_opt,**kwargs)
+        self.af      = lib.return_af(1.,self.func_yd)
     def calc_ys(self):
         """
         yield lous in pi-plane
         """
         return lib.y_locus_c(100,self.func_yd)
+
     def tension_test(self):
         """
         """

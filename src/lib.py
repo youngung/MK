@@ -320,6 +320,11 @@ def assoc_flow(s6,lamb,yfunc,**kwargs):
     e_k[2] = - e_k[:2].sum()
     return e_k
 
+def return_af(lamb,yfunc):
+    def af(s6):
+        return assoc_flow_c(s6,lamb,yfunc)
+    return af
+
 def assoc_flow_c(s6,lamb,yfunc):
     """
     Argument
@@ -333,7 +338,7 @@ def assoc_flow_c(s6,lamb,yfunc):
     -------
     edot in 6D (strain rate vector)
     """
-    dlt = 1e-8
+    dlt = 1e-10
     s1  = np.zeros(6)
     s2  = np.zeros(6)
     dki = np.identity(6)
