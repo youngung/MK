@@ -81,7 +81,7 @@ def load_a(fn=None,hash_code=None):
     return data_collection_FLDA
 
 
-def main(f0=0.990,psi0=0.):
+xdef main(f0=0.990,psi0=30.):
     """
     Arguments
     ---------
@@ -137,7 +137,6 @@ def main(f0=0.990,psi0=0.):
         'D11_b','D22_b','D12_b','D33_b',
         'S11_b','S22_b','S12_b','S33_b')
 
-
     mx_dp = len(data_collection_FLDA[0][0])*5
 
     sig_A = np.zeros((bnd.nprob,6,mx_dp))*np.nan
@@ -185,13 +184,9 @@ def main(f0=0.990,psi0=0.):
         print 'log file:', fn_log
         for j in xrange(len(eps6)):
             ## Find response of region B.
-            eps6_a   = eps6[j,:]
-            sig6_a   = sig6[j,:]
-            eps_a_eq = ebar[j]
-            sbar_a   = sbar[j]
-            sr6_a    = sr6[j,:]
-            dt       = times[j]-time_flow
-
+            eps6_a   = eps6[j,:]; sig6_a = sig6[j,:]
+            eps_a_eq = ebar[j]; sbar_a   = sbar[j]
+            sr6_a    = sr6[j,:]; dt      = times[j]-time_flow
             sig33_a  = s62c(sig6_a.copy())
             sr33_a   = s62c(sr6_a.copy())
             eps33_a  = s62c(eps6_a.copy())
@@ -211,9 +206,9 @@ def main(f0=0.990,psi0=0.):
 
             ## N/R
             nit = 0; nit_mx = 20
-            dx  = 1e-4
-            x   = sig33_a_grv[1,1]
-            tol = 1e-3
+            dx  = 1e-3
+            x   = sig33_a_grv[1,1]/f
+            tol = 1e-2
             verbose_NR = False
             # verbose_NR = True
             if verbose_NR: print '-'*70
@@ -330,23 +325,23 @@ def main(f0=0.990,psi0=0.):
                 j+1,np.nan,f,df,
                 eps_a_eq,    eps_b_eq,   siga_eq,   sigb_eq,
                 eps_a_eq_dot,eps_b_eq_dot,ratio,psi,'|',
-                # eps_A[i,0,j],eps_A[i,1,j],eps_A[i,5,j],eps_A[i,2,j],
-                eps33_a_grv[0,0],eps33_a_grv[1,1],eps33_a_grv[0,1],eps33_a_grv[2,2],
-                # ed6_A[i,0,j],ed6_A[i,1,j],ed6_A[i,5,j],ed6_A[i,2,j],
-                sr33_a_grv[0,0],sr33_a_grv[1,1],sr33_a_grv[0,1],sr33_a_grv[2,2],
-                # sig_A[i,0,j],sig_A[i,1,j],sig_A[i,5,j],sig_A[i,2,j],
-                sig33_a_grv[0,0],sig33_a_grv[1,1],sig33_a_grv[0,1],sig33_a_grv[2,2],
+                eps_A[i,0,j],eps_A[i,1,j],eps_A[i,5,j],eps_A[i,2,j],
+                #eps33_a_grv[0,0],eps33_a_grv[1,1],eps33_a_grv[0,1],eps33_a_grv[2,2],
+                ed6_A[i,0,j],ed6_A[i,1,j],ed6_A[i,5,j],ed6_A[i,2,j],
+                #sr33_a_grv[0,0],sr33_a_grv[1,1],sr33_a_grv[0,1],sr33_a_grv[2,2],
+                sig_A[i,0,j],sig_A[i,1,j],sig_A[i,5,j],sig_A[i,2,j],
+                #sig33_a_grv[0,0],sig33_a_grv[1,1],sig33_a_grv[0,1],sig33_a_grv[2,2],
                 '||',
                 eps_B_grv[i,0,0],eps_B_grv[i,1,1],eps_B_grv[i,0,1],eps_B_grv[i,2,2],
-                sr33_b_grv[0,0],sr33_b_grv[1,1],sr33_b_grv[0,1],sr33_b_grv[2,2],
-                sig33_b_grv[0,0],sig33_b_grv[1,1],sig33_b_grv[0,1],sig33_b_grv[2,2],
-                # ed6_B[i,0,j],ed6_B[i,1,j],ed6_B[i,5,j],ed6_B[i,2,j],
-                # sig_B[i,0,j],sig_B[i,1,j],sig_B[i,5,j],sig_B[i,2,j])
+                #sr33_b_grv[0,0],sr33_b_grv[1,1],sr33_b_grv[0,1],sr33_b_grv[2,2],
+                #sig33_b_grv[0,0],sig33_b_grv[1,1],sig33_b_grv[0,1],sig33_b_grv[2,2],
+                ed6_B[i,0,j],ed6_B[i,1,j],ed6_B[i,5,j],ed6_B[i,2,j],
+                sig_B[i,0,j],sig_B[i,1,j],sig_B[i,5,j],sig_B[i,2,j]
                 )
             if np.mod(j,200)==0: print cnt
             fo_log.write(cnt+'\n')
 
-            if ratio>3.0:
+            if ratio>10.0 and j>10:
                 print 'Congratulations, you just failed'
                 x0 = 1e-4
                 break
@@ -382,6 +377,9 @@ def main(f0=0.990,psi0=0.):
 
     draw_guide(ax1)
     draw_guide(ax2,r_line=[0,0.5,1],max_r=1000)
+
+    for ax in fig.axes:
+        ax.locator_params(nbins=4)
 
     ax1.set_aspect('equal')
     ax2.set_ylim(0.,);ax3.set_ylim(0.,);ax2.set_aspect('equal')

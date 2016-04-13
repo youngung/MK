@@ -29,7 +29,6 @@ def plot_log(fn):
 
             eeq_a.append(Eeq_A); eeq_b.append(Eeq_B); edeq_a.append(EdeqA); edeq_b.append(EdeqB)
             
-
     e_a = np.array(e_a).T; e_b = np.array(e_b).T
     d_a = np.array(d_a).T; d_b = np.array(d_b).T
 
@@ -78,9 +77,6 @@ def plot_log(fn):
     ax.locator_params(nbins=4)
     fig.tight_layout()
     ax.legend();plt.close(fig);pdf_master.savefig(fig)    
-
-
-
 
 
     pdf_master.close()

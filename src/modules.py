@@ -212,7 +212,7 @@ def find_s22(
         6. return the difference between wdot
         """
         sig_b_tilde = sig_b[::]
-        sig_b_tilde[1] = sig22
+        sig_b_tilde[1] = sig22 ## 6D
         sig_eq_tilde = func_yld(sig_b_tilde)
         F_tilde = sig_eq_tilde / func_G(eps_b_old)
 
