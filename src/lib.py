@@ -445,3 +445,28 @@ def gen_hash_code(nchar=6):
     m.update(time.asctime())
     m.update(str(time.time()))
     return m.hexdigest()[:nchar]
+
+def find_tmp():
+    """
+    Find the relevant temp folder
+    in compliance with the CTCMS cluster policy,
+    The rule is if there's /data/
+    create files there and run vpsc there.
+
+    Returns
+    -------
+    _tmp_
+    """
+    import os
+    ## Find /data/
+    if os.path.isdir('/local_scratch/'): ## Palmetto@Clemson
+        _tmp_ = '/local_scratch/'
+    elif os.path.isdir('/data/'): ## CTCMS cluster@NIST
+        # _tmp_='/data/ynj/'
+        _tmp_='/data/ynj/scratch/'
+    else:
+        _tmp_='/tmp/ynj/'
+    if not(os.path.isdir(_tmp_)):
+        os.mkdir(_tmp_)
+    print '_tmp_:', _tmp_
+    return _tmp_

@@ -81,7 +81,7 @@ def load_a(fn=None,hash_code=None):
     return data_collection_FLDA
 
 
-def main(f0=0.990,psi0=45.):
+def main(f0=0.990,psi0=0.):
     """
     Arguments
     ---------
@@ -102,8 +102,8 @@ def main(f0=0.990,psi0=45.):
     mat.func_sr as a function of ebar dot
     mat.func_yd as a function of cauchy stress
     """
-    bnd = materials.prop_loading_long()
-    #bnd = materials.prop_loading_refine()
+    # bnd = materials.prop_loading_long()
+    bnd = materials.prop_loading_refine()
 
     ## Save FLDa
     FLDA_pck_name = save_a(mat, bnd)
@@ -118,13 +118,14 @@ def main(f0=0.990,psi0=45.):
     dbar    = bnd.dbar
     ebar_mx = bnd.ebar_mx
 
-    fmt_head='%5i'*1+'%8.4f'*2+'%8.1e'*1+'%8.4f'*2+'%8.1f'*2+\
+    fmt_head='%5i'*1+'%8.4f'*2+'%5.1f'*1+'%8.4f'*2+'%8.1f'*2+\
         '%8.4f'*2+'%8.2f'*2+' %6s '*1+\
         '%8.3f'*4+\
         '%10.2e'*4+\
         '%8.1f'*4+'%8s'+\
         '%8.3f'*4+'%10.2e'*4+'%8.1f'*4
-    head= ('%5s'+'%8s'*16+'%10s'*4+'%8s'*9+'%10s'*4+'%8s'*4)%(
+    head= ('%5s'+'%8s'*2+'%5s'+'%8s'*13+
+           '%10s'*4+'%8s'*9+'%10s'*4+'%8s'*4)%(
         'stp','x0','f','df',
         'Eeq_A','Eeq_B','Seq_A','Seq_B',
         'EdeqA','EdeqB','ratio','psi','',
@@ -175,8 +176,14 @@ def main(f0=0.990,psi0=45.):
         # print 'nit, f1, f2, jac, x0, objf(x0)'
         plt.ioff()
         sr33_b_grv      = np.zeros((3,3))
-        for j in xrange(len(eps6)):
 
+        fn_log = os.path.join(
+            lib.find_tmp(),
+            'mk-log-%s'%lib.gen_hash_code())
+
+        fo_log = open(fn_log,'w')
+        print 'log file:', fn_log
+        for j in xrange(len(eps6)):
             ## Find response of region B.
             eps6_a   = eps6[j,:]
             sig6_a   = sig6[j,:]
@@ -197,21 +204,21 @@ def main(f0=0.990,psi0=45.):
             sr33_b_grv[:,:] = sr33_a_grv[:,:]
             sr6_b_grv       = c2s6(sr33_b_grv.copy())
 
-
             objf = modules.find_s22(
                 sig6_b_grv,mat.func_yd,sr6_b_grv,
                 eps_b_eq,dt,mat.func_sr,mat.func_hd,
                 mat.af)
 
             ## N/R
-            nit = 0
-            dx = 1e-2
-            x  = sig33_a_grv[1,1]
-            tol = 1e-5
-            verbose_NR = True
-            if verbose_NR: print '-'*50
+            nit = 0; nit_mx = 20
+            dx  = 1e-4
+            x   = sig33_a_grv[1,1]
+            tol = 1e-3
+            verbose_NR = False
+            # verbose_NR = True
+            if verbose_NR: print '-'*70
             while (True):
-                f0,e_b_eq_tilde,sig_b_tilde6,edot_b_tilde6,\
+                obj_f0,e_b_eq_tilde,sig_b_tilde6,edot_b_tilde6,\
                     sig_eq_tilde = objf(x)
                 if verbose_NR:
                     if nit==0:
@@ -221,19 +228,29 @@ def main(f0=0.990,psi0=45.):
                     print ('%8i '+'%8.1f '*2+'%8.1e '*4)%(
                         nit,sig_b_tilde6[0],sig_b_tilde6[1],
                         edot_b_tilde6[0],edot_b_tilde6[1],
-                        e_b_eq_tilde,f0)
+                        e_b_eq_tilde,obj_f0)
 
 
-                if (abs(f0)<tol): break
-                if nit> 100:raise IOError, 'Too many iteration'
+                if (abs(obj_f0)<tol): break
+                if nit> nit_mx:
+                    print '-'*70
+                    print ('%8s '*7)%(
+                        'nit','s1','s2','ed1','ed2','eeq_dot','objf')
 
-                f1 = objf(x-dx)[0]
-                f2 = objf(x+dx)[0]
-                jac_new = (f2-f1)/(dx*2.)
-                x = x - f0 / jac_new
+                    print ('%8i '+'%8.1f '*2+'%8.1e '*4)%(
+                        nit,sig_b_tilde6[0],sig_b_tilde6[1],
+                        edot_b_tilde6[0],edot_b_tilde6[1],
+                        e_b_eq_tilde,obj_f0)
+                    print '-'*70, '\n\n'
+                    raise IOError, 'Too many iteration'
+
+                obj_f1 = objf(x-dx)[0]
+                obj_f2 = objf(x+dx)[0]
+                jac_new = (obj_f2-obj_f1)/(dx*2.)
+                x = x - obj_f0 / jac_new
                 nit = nit + 1
                 #raise IOError
-            sig33_b_grv[1]=x
+            sig33_b_grv[1,1]=x
             sr33_b_grv[0,0]=edot_b_tilde6[0]
             sr33_b_grv[2,2]=-sr33_b_grv[0,0]-sr33_b_grv[1,1]
             sbar_b = sig_eq_tilde
@@ -305,21 +322,11 @@ def main(f0=0.990,psi0=45.):
 
             ## check the thickness strain rate difference.
             ## Write values in laboratory axes
-            # print fmt_head%(
-            #     j+1,x0,f,df,
-            #     eps_a_eq,    eps_b_eq,   siga_eq,   sigb_eq,
-            #     eps_a_eq_dot,eps_b_eq_dot,ratio,psi,'|',
-            #     eps_A[i,0,j],eps_A[i,1,j],eps_A[i,5,j],eps_A[i,2,j],
-            #     ed6_A[i,0,j],ed6_A[i,1,j],ed6_A[i,5,j],ed6_A[i,2,j],
-            #     sig_A[i,0,j],sig_A[i,1,j],sig_A[i,5,j],sig_A[i,2,j],
-            #     '||',
-            #     eps_B[i,0,j],eps_B[i,1,j],eps_B[i,5,j],eps_B[i,2,j],
-            #     ed6_B[i,0,j],ed6_B[i,1,j],ed6_B[i,5,j],ed6_B[i,2,j],
-            #     sig_B[i,0,j],sig_B[i,1,j],sig_B[i,5,j],sig_B[i,2,j])
-            ## Write values in Groove axes
 
+            if j==0: fo_log.write(head+'\n')
+            if np.mod(j,4000)==0:print head
 
-            print fmt_head%(
+            cnt = fmt_head%(
                 j+1,np.nan,f,df,
                 eps_a_eq,    eps_b_eq,   siga_eq,   sigb_eq,
                 eps_a_eq_dot,eps_b_eq_dot,ratio,psi,'|',
@@ -336,8 +343,10 @@ def main(f0=0.990,psi0=45.):
                 # ed6_B[i,0,j],ed6_B[i,1,j],ed6_B[i,5,j],ed6_B[i,2,j],
                 # sig_B[i,0,j],sig_B[i,1,j],sig_B[i,5,j],sig_B[i,2,j])
                 )
+            if np.mod(j,200)==0: print cnt
+            fo_log.write(cnt+'\n')
 
-            if ratio>3:
+            if ratio>3.0:
                 print 'Congratulations, you just failed'
                 x0 = 1e-4
                 break

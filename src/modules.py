@@ -217,9 +217,9 @@ def find_s22(
         F_tilde = sig_eq_tilde / func_G(eps_b_old)
 
         ## find eps_eq_dot_tilde
-        dx = 1.e-6; tol = 1.e-8
+        dx = 1.e-3; tol = 1.e-4
         edot_eq_tilde = 1.e-3
-        nit = 0;mxit=10
+        nit = 0;mxit=20
         #verbose = True
         verbose = False
         if verbose: print '-'*50
@@ -234,19 +234,29 @@ def find_s22(
                     print ('%8i %8f %8f %8.1f')%(
                         nit,edot_eq_tilde,objf0,abs(objf0)/tol*100.)
                 break
-            if mxit>10: raise IOError, 'Could not converge'
+            if nit>mxit:
+                print '-'*50
+                print ('%8s '*4)%('nit','Edot','objf','offset [%]')
+                print ('%8i %8f %8f %8.1f')%(
+                    nit,edot_eq_tilde,objf0,abs(objf0)/tol*100.)
+                print '-'*50
+                raise IOError, 'Could not converge'
 
             objf1 = F_tilde - func_F(edot_eq_tilde+dx)
             jac_new = (objf1-objf0) / dx
-            edot_eq_tilde = edot_eq_tilde - objf0 / jac_new
+            if (jac_new==0): jac=jac_old
+            else: jac=jac_new
+            edot_eq_tilde = edot_eq_tilde - objf0 / jac
+            jac_old = jac
             if edot_eq_tilde<0:
-                raise IOError, 'edot_eq_tilde is negative...'
+                edot_eq_tilde=dx
+                #raise IOError, 'edot_eq_tilde is negative...'
             nit=nit+1
             ##
         if verbose: print '-'*50
         # raise IOError
         edot_tilde = edot_eq_tilde * af(sig_b_tilde)
         fobj_value = np.dot(sig_b_tilde,edot_tilde) - edot_eq_tilde * sig_eq_tilde
-        return fobj_value,edot_eq_tilde,sig_b_tilde,edot_tilde
+        return fobj_value,edot_eq_tilde,sig_b_tilde,edot_tilde,sig_eq_tilde
 
     return objf
