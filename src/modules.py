@@ -20,7 +20,7 @@ from func_sr import *
 from func_hard import *
 from lib import assoc_flow_c
 
-def find_e11_dot(
+def find_e11_dot_old(
         sig_b,func_yld,
         deps_b_ref,eps_b_old,dt,func_F,func_G):
     """
@@ -259,4 +259,39 @@ def find_s22(
         fobj_value = np.dot(sig_b_tilde,edot_tilde) - edot_eq_tilde * sig_eq_tilde
         return fobj_value,edot_eq_tilde,sig_b_tilde,edot_tilde,sig_eq_tilde
 
+    return objf
+
+
+def find_e11_dot(
+        sig_b,func_yld,
+        deps_b_ref,eps_b_old,
+        dt,func_F,func_G,
+        af):
+    """
+    Main function of MK FLD
+    Find s22
+
+    Given the current dsig_b
+
+    Arguments
+    ---------
+    sig_b      (6D cauchy stress)
+    func_yld   (characterized yield function)
+    deps_b     (6D strain increment) given.
+    eps_b_old  (6D strain at the previous step)
+    dt         (time increment)
+    func_F     (characterized strain rate function)
+    func_G     (characterized strain hardening function)
+    af         (partial derivative of equi stress by stress)
+
+    Version 2016 April
+    """
+    sig_eq = func_yld(sig_b)
+    edot_tilde = deps_b_ref[::]
+
+    def objf(x):
+        edot_eq_tilde = x/af(sig_b)[0]
+        edot_tilde[0] = x
+        return x * sig_b[0] + deps_b_ref[1]*sig_b[1] - edot_eq_tilde * sig_eq,\
+            edot_eq_tilde,edot_tilde,sig_eq
     return objf

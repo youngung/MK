@@ -81,7 +81,7 @@ def load_a(fn=None,hash_code=None):
     return data_collection_FLDA
 
 
-xdef main(f0=0.990,psi0=30.):
+def main(f0=0.990,psi0=30.):
     """
     Arguments
     ---------
@@ -199,29 +199,33 @@ xdef main(f0=0.990,psi0=30.):
             sr33_b_grv[:,:] = sr33_a_grv[:,:]
             sr6_b_grv       = c2s6(sr33_b_grv.copy())
 
-            objf = modules.find_s22(
+            objf = modules.find_e11_dot(
                 sig6_b_grv,mat.func_yd,sr6_b_grv,
                 eps_b_eq,dt,mat.func_sr,mat.func_hd,
                 mat.af)
+            # objf = modules.find_s22(
+            #     sig6_b_grv,mat.func_yd,sr6_b_grv,
+            #     eps_b_eq,dt,mat.func_sr,mat.func_hd,
+            #     mat.af)
 
             ## N/R
+
             nit = 0; nit_mx = 20
-            dx  = 1e-3
-            x   = sig33_a_grv[1,1]/f
-            tol = 1e-2
-            verbose_NR = False
-            # verbose_NR = True
+            dx  = 1e-4
+            x   = sr33_a_grv[0,0]
+            tol = 1e-3
+            # verbose_NR = False
+            verbose_NR = True
             if verbose_NR: print '-'*70
             while (True):
-                obj_f0,e_b_eq_tilde,sig_b_tilde6,edot_b_tilde6,\
+                obj_f0,e_b_eq_tilde,edot_b_tilde6,\
                     sig_eq_tilde = objf(x)
                 if verbose_NR:
                     if nit==0:
                         print ('%8s '*7)%(
                             'nit','s1','s2','ed1','ed2','eeq_dot','objf')
-
                     print ('%8i '+'%8.1f '*2+'%8.1e '*4)%(
-                        nit,sig_b_tilde6[0],sig_b_tilde6[1],
+                        nit,sig6_b_grv[0],sig6_b_grv[1],
                         edot_b_tilde6[0],edot_b_tilde6[1],
                         e_b_eq_tilde,obj_f0)
 
@@ -231,9 +235,8 @@ xdef main(f0=0.990,psi0=30.):
                     print '-'*70
                     print ('%8s '*7)%(
                         'nit','s1','s2','ed1','ed2','eeq_dot','objf')
-
                     print ('%8i '+'%8.1f '*2+'%8.1e '*4)%(
-                        nit,sig_b_tilde6[0],sig_b_tilde6[1],
+                        nit,sig6_b_grv[0],sig6_b_grv[1],
                         edot_b_tilde6[0],edot_b_tilde6[1],
                         e_b_eq_tilde,obj_f0)
                     print '-'*70, '\n\n'
@@ -244,21 +247,72 @@ xdef main(f0=0.990,psi0=30.):
                 jac_new = (obj_f2-obj_f1)/(dx*2.)
                 x = x - obj_f0 / jac_new
                 nit = nit + 1
-                #raise IOError
-            sig33_b_grv[1,1]=x
-            sr33_b_grv[0,0]=edot_b_tilde6[0]
-            sr33_b_grv[2,2]=-sr33_b_grv[0,0]-sr33_b_grv[1,1]
+            raise IOError
+
+            # sig33_b_grv[1,1]=x
+            # sr33_b_grv[0,0]=edot_b_tilde6[0]
+            sr33_b_grv[0,0] = x
+            sr33_b_grv[2,2] = - sr33_b_grv[0,0]- sr33_b_grv[1,1]
+            sr6_b_grv[0]=x;sr6_b_grv[2]=sr33_b_grv[2,2]
             sbar_b = sig_eq_tilde
 
             if verbose_NR: print '-'*50
 
-            # fmt_s = '%11s'*8
-            # print fmt_s%('Ea_eq','sa','sa1','sa2',
-            #              'sra_g1','sra_g2','sra_g3','sra_g6',)
-            # fmt_v = '%11.4f'*1+'%11.1f'*3+'%11.1e'*4
-            # print fmt_v%(eps_a_eq,sbar_a,sig6_a[0],sig6_a[1],
-            #              sr33_a_grv[0,0],sr33_a_grv[1,1],sr33_a_grv[2,2],
-            #              sr33_a_grv[0,1])
+            # raise IOError
+
+            # -- FIND s22 algorithm
+
+
+            # ## --- FIND s22 algorithm
+            # nit = 0; nit_mx = 20
+            # dx  = 1e-3
+            # x   = sig33_a_grv[1,1]/f
+            # tol = 1e-2
+            # verbose_NR = False
+            # # verbose_NR = True
+            # if verbose_NR: print '-'*70
+            # while (True):
+            #     obj_f0,e_b_eq_tilde,sig_b_tilde6,edot_b_tilde6,\
+            #         sig_eq_tilde = objf(x)
+            #     if verbose_NR:
+            #         if nit==0:
+            #             print ('%8s '*7)%(
+            #                 'nit','s1','s2','ed1','ed2','eeq_dot','objf')
+
+            #         print ('%8i '+'%8.1f '*2+'%8.1e '*4)%(
+            #             nit,sig_b_tilde6[0],sig_b_tilde6[1],
+            #             edot_b_tilde6[0],edot_b_tilde6[1],
+            #             e_b_eq_tilde,obj_f0)
+
+
+            #     if (abs(obj_f0)<tol): break
+            #     if nit> nit_mx:
+            #         print '-'*70
+            #         print ('%8s '*7)%(
+            #             'nit','s1','s2','ed1','ed2','eeq_dot','objf')
+
+            #         print ('%8i '+'%8.1f '*2+'%8.1e '*4)%(
+            #             nit,sig_b_tilde6[0],sig_b_tilde6[1],
+            #             edot_b_tilde6[0],edot_b_tilde6[1],
+            #             e_b_eq_tilde,obj_f0)
+            #         print '-'*70, '\n\n'
+            #         raise IOError, 'Too many iteration'
+
+            #     obj_f1 = objf(x-dx)[0]
+            #     obj_f2 = objf(x+dx)[0]
+            #     jac_new = (obj_f2-obj_f1)/(dx*2.)
+            #     x = x - obj_f0 / jac_new
+            #     nit = nit + 1
+            #     #raise IOError
+            # sig33_b_grv[1,1]=x
+            # sr33_b_grv[0,0]=edot_b_tilde6[0]
+            # sr33_b_grv[2,2]=-sr33_b_grv[0,0]-sr33_b_grv[1,1]
+            # sbar_b = sig_eq_tilde
+
+            # if verbose_NR: print '-'*50
+            ## -- FIND s22 algorithm
+
+
 
 
             ## updates (Increase by time incremental step)
