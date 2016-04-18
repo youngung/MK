@@ -116,6 +116,17 @@ class Bnd_A:
         self.dbar    = dbar
         self.ebar_mx = ebar_mx
 
+
+def bb():
+    """
+    bb
+    """
+    my_loading = Bnd_A(name='proportional_short',
+                       alpha0=1,alpha1=1,alphan=1,beta=0,
+                       sr_eq=1e-3,dbar=1e-3,ebar_mx=1.5)
+    return my_loading
+
+
 def prop_loading_short():
     """
     short proportional loading

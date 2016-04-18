@@ -40,14 +40,22 @@ def test_FLDA_onepath():
     for i in xrange(len(alphs)):
         strain_6, stress_6, strain_eq, \
             stress_eq, strain_rate_6, \
-            time_stamps = FLDA_onepath(
-                alphs[i],0,1e-3,func_yd,
-                func_hd,func_sr,
-                ebar_mx=0.1,debar=1e-4)
-        
+            time_stamps,delta_time = FLDA_onepath(
+                alpha=alphs[i],beta=0,sr_eq=1e-3,
+                debar=1e-4,
+                ebar_mx=0.1,
+                func_yd=func_yd,
+                func_hd=func_hd,
+                func_sr=func_sr)
+
+
         ax1.plot(strain_6[:,1],strain_6[:,0],'r-')
         ax2.plot(stress_6[:,1],stress_6[:,0],'b-')
         ax3.plot(time_stamps,strain_rate_6[:,2],'g-')
+
+    fn = 'FLDA_onepath_test.pdf'
+    fig.savefig(fn)
+    print '%s has been saved'%fn
 
 def FLDA_onepath(
         alpha,beta,sr_eq,
@@ -73,6 +81,7 @@ def FLDA_onepath(
     strain=[]; stress=[]
     strain_eq=[]; stress_eq=[]
     time_stamps=[]; strain_rate=[]
+    delta_time=[];
 
     i=0
     while (ebar<ebar_mx):
@@ -102,11 +111,9 @@ def FLDA_onepath(
             pass
         # delta time
         dt          = debar  / sr_eq
-        time_flow   = time_flow  + dt
         x           = delt_work  / dw
         delta_eps6  = deps6      * x
         reps6       = delta_eps6 / dt
-        eps6        = eps6       + delta_eps6
 
         ## stamps
         strain.append(eps6)
@@ -115,10 +122,19 @@ def FLDA_onepath(
         stress_eq.append(sig_bar)
         strain_rate.append(reps6)
         time_stamps.append(time_flow)
+        delta_time.append(dt)
+
+        eps6        = eps6       + delta_eps6
+        time_flow   = time_flow  + dt
 
         i=i+1
         pass
 
     return np.array(strain),np.array(stress),\
         np.array(strain_eq),np.array(stress_eq),\
-        np.array(strain_rate), np.array(time_stamps)
+        np.array(strain_rate),np.array(time_stamps),\
+        np.array(delta_time)
+
+
+if __name__=='__main__':
+    test_FLDA_onepath()

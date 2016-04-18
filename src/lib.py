@@ -4,6 +4,8 @@ Common libraries
 import os
 import numpy as np
 pi = np.pi
+cos=np.cos
+sin=np.sin
 from MP.mat import voigt
 ijv=voigt.ijv
 vij=voigt.vij
@@ -36,6 +38,15 @@ def rot(psi):
     r[2,2]= 1.
     return r
 
+def nt_psi(psi):
+    n=np.zeros(3)
+    t=np.zeros(3)
+    n[0] = cos(psi)
+    n[1] = sin(psi)
+    t[0] = -sin(psi)
+    t[1] =  cos(psi)
+    return n, t
+
 def rot_vec(r,vect):
     """
     v[i] = r[i,j]*vect[j]
@@ -62,6 +73,7 @@ def rot_tensor(a,psi):
                 for l in xrange(3):
                     b[i,j] = b[i,j] + r[i,k] * a[k,l] * r[j,l]
     return b
+
 
 def th_2_planestress(th):
     """
@@ -166,6 +178,11 @@ def proj_sig33_nt(sig33,n,t):
 c6p  = convert_6sig_princ
 c2s6 = convert_sig33_sig6
 s62c = convert_sig6_sig33
+
+def rot_6d(a6,psi):
+    a33 = s62c(a6.copy())
+    a33 = rot_tensor(a33,psi)
+    return c2s6(a33)
 
 def ys_temp(ax):
     """
