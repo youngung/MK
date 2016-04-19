@@ -31,8 +31,7 @@ def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
     ax.set_ylim(ylim)
 
 def rot(psi):
-    p = psi * np.pi/180.
-    r = np.zeros((3,3)); c = np.cos(p); s = np.sin(p)
+    r = np.zeros((3,3)); c = np.cos(psi); s = np.sin(psi)
     r[0,0]= c;  r[0,1]=-s
     r[1,0]= s;  r[1,1]= c
     r[2,2]= 1.

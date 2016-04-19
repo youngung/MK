@@ -13,6 +13,8 @@ from multiprocessing import Pool
 from scipy import optimize
 import numpy as np
 
+from vpscyld import lib_dat as yld_lib_dat
+
 
 ## Material characteristics
 func_hd   = c_G(0,k=6.00e2, eps_0 = 4.23e-4,n=2.55e-1)
@@ -24,11 +26,13 @@ eps  = np.linspace(0,1.2,100)
 sigma_bar = lambda eps: func_hd(eps)
 
 def test_FLDA_onepath():
-    fig=plt.figure(figsize=(7,6))
-    ax1=fig.add_subplot(221)
-    ax2=fig.add_subplot(222)
-    ax3=fig.add_subplot(223)
-    # ax4=fig.add_subplot(224)
+    fig=plt.figure(figsize=(11,6))
+    ax1=fig.add_subplot(231)
+    ax2=fig.add_subplot(232)
+    ax3=fig.add_subplot(233)
+    ax4=fig.add_subplot(234)
+    ax5=fig.add_subplot(235)
+    ax6=fig.add_subplot(236)
 
     ## Material Characteristics
     func_hd   = c_G(0,k=6.00e2, eps_0 = 4.23e-4,n=2.55e-1)
@@ -40,7 +44,7 @@ def test_FLDA_onepath():
     for i in xrange(len(alphs)):
         strain_6, stress_6, strain_eq, \
             stress_eq, strain_rate_6, \
-            time_stamps,delta_time = FLDA_onepath(
+            time_stamps,delta_time,debar = FLDA_onepath(
                 alpha=alphs[i],beta=0,sr_eq=1e-3,
                 debar=1e-4,
                 ebar_mx=0.1,
@@ -48,13 +52,28 @@ def test_FLDA_onepath():
                 func_hd=func_hd,
                 func_sr=func_sr)
 
-
         ax1.plot(strain_6[:,1],strain_6[:,0],'r-')
         ax2.plot(stress_6[:,1],stress_6[:,0],'b-')
         ax3.plot(time_stamps,strain_rate_6[:,2],'g-')
+        ax4.plot(strain_eq,stress_eq)
 
+    ps,pi = y_locus_c(100,func_yd)
+    ax5.plot(ps[0],ps[1])
+    ax6.plot(pi[0],pi[1])
+
+    yld_lib_dat.ps_rad(ax5)
+    yld_lib_dat.pi_rad(ax6,150)
+
+    ax1.set_xlabel(r'$E_{22}$');ax1.set_ylabel(r'$E_{11}$')
+    ax2.set_xlabel(r'$\Sigma_{22}$');ax2.set_ylabel(r'$\Sigma_{11}$')
+    ax3.set_xlabel('Time');ax3.set_ylabel(r'$\dot{E}_{33}$');
+    ax4.set_xlabel(r'$E^{eq}$'); ax4.set_ylabel(r'$\Sigma^{eq}$')
+
+
+
+    fig.tight_layout()
     fn = 'FLDA_onepath_test.pdf'
-    fig.savefig(fn)
+    fig.savefig(fn,bbox_inches='tight')
     print '%s has been saved'%fn
 
 def FLDA_onepath(
@@ -81,14 +100,13 @@ def FLDA_onepath(
     strain=[]; stress=[]
     strain_eq=[]; stress_eq=[]
     time_stamps=[]; strain_rate=[]
-    delta_time=[];
+    delta_time=[]; debar_ = []
 
     i=0
     while (ebar<ebar_mx):
-        ebar      = ebar + debar
         sig_bar   = func_hd(ebar) ## static flow stress
-        sig_bar   = sig_bar * func_sr(sr_eq)
-        delt_work = debar * sig_bar
+        # sig_bar   = sig_bar * func_sr(sr_eq)
+        wrate = debar * sig_bar
 
         if i==0:
             ## when the initial anisotropy is assumed invariable
@@ -111,9 +129,10 @@ def FLDA_onepath(
             pass
         # delta time
         dt          = debar  / sr_eq
-        x           = delt_work  / dw
+        x           = wrate  / dw
         delta_eps6  = deps6      * x
         reps6       = delta_eps6 / dt
+
 
         ## stamps
         strain.append(eps6)
@@ -123,7 +142,9 @@ def FLDA_onepath(
         strain_rate.append(reps6)
         time_stamps.append(time_flow)
         delta_time.append(dt)
+        debar_.append(debar)
 
+        ebar        = ebar + debar
         eps6        = eps6       + delta_eps6
         time_flow   = time_flow  + dt
 
@@ -133,7 +154,7 @@ def FLDA_onepath(
     return np.array(strain),np.array(stress),\
         np.array(strain_eq),np.array(stress_eq),\
         np.array(strain_rate),np.array(time_stamps),\
-        np.array(delta_time)
+        np.array(delta_time),np.array(debar_)
 
 
 if __name__=='__main__':
