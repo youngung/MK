@@ -314,7 +314,7 @@ def assoc_flow(s6,lamb,yfunc,**kwargs):
     -------
     edot in 6D (strain rate vector)
     """
-    dlt = 1e-10
+    dlt = 1e-8
     s1  = np.zeros(6)
     s2  = np.zeros(6)
     dki = np.identity(6)

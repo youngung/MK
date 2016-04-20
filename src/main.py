@@ -47,10 +47,10 @@ class Path:
         self.rho   = d[1]/d[0]
         self.beta  = s[5]/s[0]
         self.gamma = d[5]/d[0]
-        self.k1    = 1 + self.alpha * self.rho + 2*self.beta*self.gamma
         self.eta   = s[0] / sbar
-        self.k2 = func_k2(psi,self.rho,self.gamma)
-        self.k3 = func_k3(psi,self.alpha,self.beta)
+        self.k1    = 1. + self.alpha * self.rho + 2.*self.beta*self.gamma
+        self.k2    = func_k2(psi,self.rho,  self.gamma)
+        self.k3    = func_k3(psi,self.alpha,self.beta)
 
     def rot_istp(self,istp,psi):
         """
@@ -151,7 +151,7 @@ def update_psi(psi,A,da_):
     return newpsi
 
 def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
-    def objf(alpha_b):
+    def objf(alpha_b,guess_stt):
         """
         Guess alpha_b
         """
@@ -161,12 +161,21 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
         sb_nn = sa_nn/f
         sb_nt = sa_nt/f
 
-        x = sa_grv[1] ## guess as sa_tt
+        if type(guess_stt).__name__=='NoneType':
+            x = sa_grv[1] ## guess as sa_tt
+        else:
+            x=guess_stt
+
         nit = 1;mx=10
-        dx  = 1.e-10
-        tol = 1.e-13
-        # verbose=True
-        verbose=False
+        dx  = 1.e-3
+        tol = 1.e-9
+
+        verbose=True
+        # verbose=False
+
+        # fn=os.path.join(lib.find_tmp(),'MKobjf_%s.log'lib.gen_hash_code(6))
+        # fo=open(fn,'w')
+
         while (True):
             sb_grv0 = np.array([sb_nn,x,0,0,0,sb_nt])
             sb0 = lib.rot_6d(sb_grv0,-psi)
@@ -184,7 +193,7 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
             F1      = alpha1 - alpha_b
             F1_beta = beta1 - beta_b1
 
-            head = ('%10s'*11)%('alpha_b','alph0','beta0','alph1',
+            head = ('%10s'*11)%('alpha0','beta0','alpha_b','alpha1',
                                  'beta1','beta_b0','beta_b1',
                                  'F0','F1','F0_beta','F1_beta')
             fmt = '%10.2e'*11
@@ -214,11 +223,13 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
             x = x - F0/jac
 
             if verbose:
-                if nit==1: print '%s'%'nit','%5s'%'x',\
-                   '%8s'%'F0','%8s'%'alph_b','%8s'%'alph_0',\
-                   ('%7s'*3)%('s1','s2','s6')
-                print '%2.2i'%nit,'%5.1f'%x,'%8.1e'%F0,'%8.1e'%alpha_b,\
-                    '%8.1e'%alpha0,('%7.1f'*3)%(sb0[0],sb0[1],sb0[5])
+                if nit==1: print head
+                print cnt
+                # if nit==1: print '%s'%'nit','%5s'%'x',\
+                #    '%8s'%'F0','%8s'%'alph_b','%8s'%'alph_0',\
+                #    ('%7s'*3)%('s1','s2','s6')
+                # print '%2.2i'%nit,'%5.1f'%x,'%8.1e'%F0,'%8.1e'%alpha_b,\
+                #     '%8.1e'%alpha0,('%7.1f'*3)%(sb0[0],sb0[1],sb0[5])
 
             nit=nit+1
 
@@ -268,11 +279,16 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
     Crystallographic Texture, anisotropic yield
     surfaces and forming limits of sheet metals,
     F. Barlat, MSE, Vol 91, 1987
+
+    Arguments
+    ---------
+    psi0 =0.
+    f0   =0.990
     """
     t0 = time.time()
     ## Choice of material / loading condition
-    mat = materials.iso_metal_vm()
-    #mat = materials.iso_metal_hf8()
+    #mat = materials.iso_metal_vm()
+    mat = materials.iso_metal_hf8()
     uet(time.time() - t0,'Time for MAT');print
 
     """
@@ -304,29 +320,40 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
     dbar    = bnd.dbar
     ebar_mx = bnd.ebar_mx
 
-    fmt_head='%5i'*1+'%8.4f'*2+'%5.1f'*1+'%8.4f'*2+'%8.1f'*2+\
-        '%8.4f'*2+'%8.2f'*2+'%3s'*1+'%8.3f'*4+'%10.2e'*4+\
-        '%8.1f'*4+'%4s'+'%8.3f'*4+'%10.2e'*4+'%8.1f'*4
-    head= ('%5s'+'%8s'*2+'%5s'+'%8s'*8+'%3s'*1+'%8s'*4+\
-           '%10s'*4+'%8s'*4+'%4s'+'%8s'*4+'%10s'*4+'%8s'*4)%(
-               'stp','x0','f','df','Eeq_A','Eeq_B','Seq_A','Seq_B',
-               'EdeqA','EdeqB','ratio','psi','|',
-               'E11_a','E22_a','E12_a','E33_a',
-               'D11_a','D22_a','D12_a','D33_a',
-               'S11_a','S22_a','S12_a','S33_a','||',
-               'E11_b','E22_b','E12_b','E33_b',
-               'D11_b','D22_b','D12_b','D33_b',
-               'S11_b','S22_b','S12_b','S33_b')
+    head= '%4s'%'step'+('%9s'+'%12s'+'%7s'*4)%(
+        'Da','Db','Ea','Eb','Wa','Wb')+\
+          ('%10s'*4)%('D1','D2','D3','D6')+\
+          ('%10s'*4)%('E1','E2','E3','E6')+\
+          ('%7s'*3)%('S1','S2','S6')+\
+          '|'+\
+          ('%10s'*4)%('D1','D2','D3','D6')+\
+          ('%10s'*4)%('E1','E2','E3','E6')+\
+          ('%7s'*3)%('S1','S2','S6')+\
+          '%7s'%'f'+'%5s'%'psi'+'%8s'%'ratio'
 
+    head=head+'\n'+'-'*190
 
     for ipath in xrange(Paths.npath):
         P = Paths.paths[ipath]
         psi = psi0 * np.pi/180.
         f   = f0 * 1.0
+
+        ## accumulative 6D strain for region B
         eb  = np.zeros(6)
-        sb_ = 0.
-        eb_ = 0.
-        db_ = 0.
+
+        ## Equivalent quantifies for stress, strain and strain rate
+        sb_ = 0.; eb_ = 0.; db_ = 0.
+
+        ## Region B is saved as a class for path case.
+        class matB: pass
+        matB.s=[];matB.e=[];matB.d=[]
+
+
+        ## log file
+        fn_log = os.path.join(lib.find_tmp(),'%s.log'%lib.gen_hash_code(6))
+        fo_log = open(fn_log,'w')
+        fo_log.write(head+'\n')
+
         for istp in xrange(P.nstp):
             t  = P.t[istp]
             dt = P.dt[istp]
@@ -334,13 +361,11 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
             ea = P.e[:,istp]
             da = P.d[:,istp]
 
-            wrate = np.dot(sa,da)
-            da_ = wrate/P.sbar[istp]
+            wrate_a = np.dot(sa,da)
+            da_ = wrate_a/P.sbar[istp]
             sa_ = P.sbar[istp]
             ea_ = P.ebar[istp]
             P.values_mk(istp,psi)
-            k2_a = P.k2
-            k3_a = P.k3
 
             ## Guess alpha for region B, -> obtaining also beta for region B
             ## This completes tilde stress state, which gives rho, gamma, and eta for region B.
@@ -351,90 +376,106 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
             ## function of alpha_b
             objf = Barlat_objf(P,psi,sa,da,f,mat.af,mat.func_yd,wa,wb)
 
-            x0 = 0. ## guessed alpha_b
-            dx = 1e-5
-            tol = 1e-4
+            if istp==0:
+                #x0 = 0. ## guessed alpha_b
+                x0 = P.alpha
+                y0 = None
+            else:
+                x0 = B.s[1]/B.s[0]
+                s33=lib.s62c(B.s[::])
+                n,t=lib.nt_psi(psi)
+
+                stt = np.dot(np.dot(s33,t),t)
+                print 'stt:',stt
+
+                y0 = stt
+
+            dx = 1e-8
+            tol = 1e-5
             nit = 1
             nmx = 20
 
             verbose=False
             # verbose=True
 
-            if verbose:
-                pass
-
             while (True):
                 if (nit>nmx): raise IOError
-                rst = objf(x0)
+                rst = objf(x0,y0)
                 F,B = rst
-
                 if verbose:
-                    if nit==1: print '   ',('%3s'+'%8s'*5)%('stp','x0','F','s11','s22','s12')
-                    print '-*-',('%3i'+'%8.4f'*5)%(nit, x0, F, B.s[0],B.s[1],B.s[5])
+                    if nit==1: print '   ',('%3s'+'%8s'*5)%(
+                            'stp','x0','F','s11','s22','s12')
+                    print '-*-',('%3i'+'%8.4f'*5)%(
+                        nit, x0, F, B.s[0],B.s[1],B.s[5])
                 if (abs(F)<tol): break
-                F0 = objf(x0-dx)[0]
-                F1 = objf(x0+dx)[0]
+                F0 = objf(x0-dx,y0)[0]
+                F1 = objf(x0+dx,y0)[0]
                 jac = (F1-F0)/(dx*2)
-                if (jac==0):
-                    raise IOError
+                if (jac==0): raise IOError
                 x0 = x0 - F/jac
                 nit = nit + 1
 
             # raise IOError
-
             B       = rst[1]
             sb, db  = B.s, B.d
 
             ## eq 15
             db_ = (B.eta*B.k1*P.k2)/(P.eta*P.k1*B.k2)*da_
-            # print B.d
-            # print db_
             B.d=B.d*db_
 
             wrate_b = np.dot(B.s,B.d)
             db_     = wrate_b / mat.func_yd(B.s)
-            # print B.d
-            # print db_
-            # raise IOError
-
-            #ratio   = db_ / da_
             ratio   = B.d[2]/P.d[2,istp]
-            eb_     = eb_ + db_ * dt
-            B.eb_   = eb_
 
             ## inhomogeneity
             df = eq20(da_,P.eta,P.k1,P.rho,B.rho,P.k2,B.k2,f)
             f = f + df * dt
             ## rotation
             psi = update_psi(psi,P,da_)
-            # raise IOError
-            # print istp, ratio
 
-            # if (istp>10): raise IOError
+            if np.mod(istp,20)==0: print head
 
-            if np.mod(istp,20)==0:
-                print '%4s'%'step',('%9s'*2)%('Da','Db'),\
-                    ('%10s'*4)%('D1','D2','D3','D6'),('%6s'*3)%('S1','S2','S6'),\
-                    '|',\
-                    ('%10s'*4)%('D1','D2','D3','D6'),('%6s'*3)%('S1','S2','S6'),\
-                    '%6s'%'f','%5s'%'psi','%6s'%'ratio'
-                print '-'*130
+            stamp= '%4.4i'%istp+ '%9.1e'%da_+'%12.4e'%db_+\
+                   ('%7.3f'*2+'%7.1f'*2)%(ea_,eb_,wa,wb)+\
+                   ('%10.2e'*4)%(P.d[0,istp],P.d[1,istp],
+                                 P.d[2,istp],P.d[5,istp])+\
+                   ('%10.2e'*4)%(P.e[0,istp],P.e[1,istp],
+                                 P.e[2,istp],P.e[5,istp])+\
+                   ('%7.1f'*3 )%(P.s[0,istp],P.s[1,istp],
+                                 P.s[5,istp])+' '+\
+                   ('%10.2e'*4)%(B.d[0],    B.d[1],
+                                 B.d[2],     B.d[5])+\
+                   ('%10.2e'*4)%( eb[0],     eb[1],
+                                  eb[2],      eb[5])+\
+                   ('%7.1f'*3 )%(B.s[0],    B.s[1],
+                                 B.s[5])+\
+                   '%7.4f'%f+'%5.1f'%(psi*180/np.pi)+'%8.3f'%ratio
+            print stamp
+            fo_log.write(stamp+'\n')
 
+            eb      = eb + B.d * dt
+            B.e     = eb
+            eb_     = eb_ + db_ * dt
+            B.eb_   = eb_
 
-            print '%4.4i'%istp, '%9.1e'%da_,'%9.1e'%db_,\
-                ('%10.2e'*4)%(P.d[0,istp],P.d[1,istp],P.d[2,istp],P.d[5,istp]),\
-                ('%6.1f'*3 )%(P.s[0,istp],P.s[1,istp],P.s[5,istp]),'|',\
-                ('%10.2e'*4)%(B.d[0],    B.d[1],      B.d[2],     B.d[5]),\
-                ('%6.1f'*3 )%(B.s[0],     B.s[1],     B.s[5]),\
-                '%6.4f'%f,'%5.1f'%(psi*180/np.pi),'%6.3f'%ratio
+            matB.s.append(B.s)
+            matB.e.append(eb)
+            matB.d.append(B.d)
 
-            if ratio>10: raise IOError
+            if ratio>20:
+                print fn_log
+                raise IOError
+                #break
 
 
 if __name__=='__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--fn',   type=str,help='file name')
+        '--fn',   type=str,help='file name for FLDA')
+    parser.add_argument(
+        '--psi',   type=float,help='Initial angle of the groove')
+    parser.add_argument(
+        '--f',   type=float,help='Initial inhomogeneity factor')
     args        = parser.parse_args()
-    main(FLDA_pck_name=args.fn)
+    main(FLDA_pck_name=args.fn,psi0=args.psi,f0=args.f)
