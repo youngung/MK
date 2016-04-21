@@ -166,12 +166,12 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
         else:
             x=guess_stt
 
-        nit = 1;mx=10
-        dx  = 1.e-3
-        tol = 1.e-9
+        nit = 1;mx=30
+        dx  = 1.e-4
+        tol = 1.e-8
 
-        verbose=True
-        # verbose=False
+        #verbose=True
+        verbose=False
 
         # fn=os.path.join(lib.find_tmp(),'MKobjf_%s.log'lib.gen_hash_code(6))
         # fo=open(fn,'w')
@@ -287,8 +287,8 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
     """
     t0 = time.time()
     ## Choice of material / loading condition
-    #mat = materials.iso_metal_vm()
-    mat = materials.iso_metal_hf8()
+    mat = materials.iso_metal_vm()
+    # mat = materials.iso_metal_hf8()
     uet(time.time() - t0,'Time for MAT');print
 
     """
@@ -297,10 +297,10 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
     mat.func_yd as a function of cauchy stress
     """
     t0 = time.time()
-    bnd = materials.prop_loading_long()
+    # bnd = materials.prop_loading_long()
+    bnd = materials.bb() ## balanced biaxial
     uet(time.time() - t0,'Time for BND');print
     # bnd = materials.prop_loading_refine()
-    # bnd = materials.bb() ## balanced biaxial
 
     if type(FLDA_pck_name).__name__=='NoneType':
         ## Save FLDa
@@ -331,10 +331,10 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
           ('%7s'*3)%('S1','S2','S6')+\
           '%7s'%'f'+'%5s'%'psi'+'%8s'%'ratio'
 
-    head=head+'\n'+'-'*190
+    head=head+'\n'+'-'*276
 
     for ipath in xrange(Paths.npath):
-        P = Paths.paths[ipath]
+        P   = Paths.paths[ipath]
         psi = psi0 * np.pi/180.
         f   = f0 * 1.0
 
@@ -348,12 +348,12 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
         class matB: pass
         matB.s=[];matB.e=[];matB.d=[]
 
-
         ## log file
         fn_log = os.path.join(lib.find_tmp(),'%s.log'%lib.gen_hash_code(6))
         fo_log = open(fn_log,'w')
         fo_log.write(head+'\n')
 
+        t0 = time.time()
         for istp in xrange(P.nstp):
             t  = P.t[istp]
             dt = P.dt[istp]
@@ -384,35 +384,52 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
                 x0 = B.s[1]/B.s[0]
                 s33=lib.s62c(B.s[::])
                 n,t=lib.nt_psi(psi)
-
                 stt = np.dot(np.dot(s33,t),t)
-                print 'stt:',stt
-
+                # print 'stt:',stt
                 y0 = stt
 
-            dx = 1e-8
+            dx  = 1e-7
             tol = 1e-5
             nit = 1
-            nmx = 20
+            nmx = 30
 
             verbose=False
             # verbose=True
 
+            head_iter = '   '+('%3s'+'%9s'*6)%(
+                'stp','x0','Stt','F','s11','s22','s12')
+
+            hist_iter=''
+
             while (True):
-                if (nit>nmx): raise IOError
+                if (nit>nmx):
+                    if nit>1:
+                        print head_iter
+                        print hist_iter
+                        #print cnt_iter
+                    raise IOError
                 rst = objf(x0,y0)
                 F,B = rst
                 if verbose:
-                    if nit==1: print '   ',('%3s'+'%8s'*5)%(
-                            'stp','x0','F','s11','s22','s12')
-                    print '-*-',('%3i'+'%8.4f'*5)%(
-                        nit, x0, F, B.s[0],B.s[1],B.s[5])
+                    if nit==1: print head_iter
+                    print cnt_iter
                 if (abs(F)<tol): break
                 F0 = objf(x0-dx,y0)[0]
                 F1 = objf(x0+dx,y0)[0]
                 jac = (F1-F0)/(dx*2)
                 if (jac==0): raise IOError
                 x0 = x0 - F/jac
+
+                s33=lib.s62c(B.s[::])
+                n,t=lib.nt_psi(psi)
+                stt = np.dot(np.dot(s33,t),t)
+                y0 = stt
+
+                cnt_iter= '-*-'+('%3i'+'%9.3f'*6)%(
+                    nit,x0,y0,F,B.s[0],B.s[1],B.s[5])
+
+                hist_iter=hist_iter+'\n'+cnt_iter
+
                 nit = nit + 1
 
             # raise IOError
@@ -449,7 +466,7 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
                                   eb[2],      eb[5])+\
                    ('%7.1f'*3 )%(B.s[0],    B.s[1],
                                  B.s[5])+\
-                   '%7.4f'%f+'%5.1f'%(psi*180/np.pi)+'%8.3f'%ratio
+                   '%7.3f'%f+'%5.1f'%(psi*180/np.pi)+'%8.3f'%ratio
             print stamp
             fo_log.write(stamp+'\n')
 
@@ -462,11 +479,15 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
             matB.e.append(eb)
             matB.d.append(B.d)
 
-            if ratio>20:
+            if ratio>10:
+                fo_log.close()
                 print fn_log
+                import plotter
+                _fn_ = plotter.plot_log2(fn=fn_log,yfunc=mat.func_yd)
+                os.system('open %s'%_fn_)
+
                 raise IOError
                 #break
-
 
 if __name__=='__main__':
     import argparse

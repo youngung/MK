@@ -123,7 +123,7 @@ def bb():
     """
     my_loading = Bnd_A(name='proportional_short',
                        alpha0=1,alpha1=1,alphan=1,beta=0,
-                       sr_eq=1e-3,dbar=1e-3,ebar_mx=1.5)
+                       sr_eq=1e-3,dbar=5.e-4,ebar_mx=1.5)
     return my_loading
 
 
