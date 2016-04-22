@@ -380,6 +380,7 @@ def main(FLDA_pck_name=None,
         ## Region A, Region B (current step)
         #class A: pass; class B: pass
         A=Region(mat); B=Region(mat); A.ebar=0; B.ebar=0
+        A.f0=f0; A.psi0=psi0
 
         ## log file
         fn_log = os.path.join(lib.find_tmp(),'%s.log'%lib.gen_hash_code(6))
@@ -456,15 +457,15 @@ def fonc_fld(A,B,psi,f):
     # B.x[3] ebar (equivalent strain)
 
     ## guess (tilde) stress
-    B.sx     = np.array([B.x[0],B.x[1],0., 0., 0., B.x[2]]) ## grv
-    B.s      = calc_grv(B.sx,-psi) # B stress in the lab axes
+    B.sx     = np.array([B.x[0],B.x[1],0., 0., 0., B.x[2]])## B.sx: B stress referred in groove axes.
+    B.s      = calc_grv(B.sx,-psi) # B stress referred in the lab axes (note the minus sign)
 
     B.phi    = B.func_yd( B.s)
-    B.phi_d1 = B.func_yd1(B.s) ## According to af, its strain rate direction
-    B.phi_d2 = B.func_yd2(B.s)
+    B.phi_d1 = B.func_yd1(B.s) ## derivative gives the stress rate direction (AF)
+    B.phi_d2 = B.func_yd2(B.s) ## second derivative
 
-    ## Strain rates referred in the groove axes
-    B.d_grv = lib.rot_6d(B.phi_d1,psi)
+    ## Strain rate referred in the groove axes
+    B.d_grv = lib.rot_6d(B.phi_d1,psi)# Dnn, Dtt, Dnt
 
     ## 2nd derivative in the groove
     B.F2xB      = np.zeros((6,6)) ## needs rotate to the groove
@@ -480,7 +481,7 @@ def fonc_fld(A,B,psi,f):
     B.F2xB[5,5]=(2*(B.phi_d2[5,1]   -B.phi_d2[5,0])*SC+B.phi_d2[5,5]*(C2-S2))/2.
 
     # hardening parameters
-    sigb  = B.func_hd(  B.x[3])
+    sigb  = B.func_hd(  B.x[3]) ## tilde ebar
     dsigb = B.func_hd_d(B.x[3])
     siga  = A.func_hd(A.ebar)
     if np.isnan(sigb): raise IOError
@@ -491,10 +492,12 @@ def fonc_fld(A,B,psi,f):
     A.beta_grv = A.s_grv[5]/A.s_grv[0]
     ## ------------
     F    = np.zeros(4)
-    F[0] = B.d_grv[1] ## d_tt
-    F[1] = B.x[2] - B.x[1]*A.beta_grv
+    F[0] = B.d_grv[1]                 ## d_tt
+    F[1] = B.x[2] - B.x[0]*A.beta_grv ## Snt - Snn * Snt(A)/Snn(A)
     F[2] = B.phi  - 1.0
-    F[3] = -np.log(f*sigb/siga)+\
+
+    ## - log (f0 * WA/WB)  + (sr_a-sr_b) * log (sr_ref) - e*e_nn
+    F[3] = -np.log(A.f0*sigb/siga)+\
            (sr_m_a-sr_m_b)*np.log(sr_ref)-B.x[3]*B.d_grv[0]
     ## ------------
 

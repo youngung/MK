@@ -87,14 +87,14 @@ def VonMises_D1(s):
     s
     """
     phi  = VonMises(s)
-    s    = s / phi
+    c    = s / phi
 
     ## derivative
-    dff  = 1./(2*phi)
     dphi = np.zeros(6)
-    dphi[0] = dff * (2*s[0]-s[1])
-    dphi[1] = dff * (2*s[1]-s[0])
-    dphi[5] = dff * 6 * s[5]
+    dff  = 1./(2*phi)
+    dphi[0] = dff * (2.*c[0]-c[1])
+    dphi[1] = dff * (2.*c[1]-c[0])
+    dphi[5] = dff * 6. * c[5]
     dphi[5] = dphi[5]/2
 
     return dphi
@@ -110,18 +110,21 @@ def VonMises_D2(s):
     phi = VonMises(s)
     dff = 1./(2*phi)
     dphi= VonMises_D1(s)
+
     d2h = np.zeros((6,6))
     d2h[0,0] = 2.
     d2h[0,1] =-1.
     d2h[1,1] = 2.
     d2h[5,5] = 6.
 
-    d2phi = np.zeros((6,6))
-    d2ff = -(phi**(-3))/4.
-    for i in xrange(5):
-        for j in xrange(5):
-            d2phi[i,j] = d2ff*dphi[i]*dphi[j]+dff*d2h[i,j]
+    d2ff =-(phi**(-3.))/4.
 
+    d2phi = np.zeros((6,6))
+    d2phi[0,0] = d2ff*dphi[0]*dphi[0] + dff*d2h[0,0]
+    d2phi[0,1] = d2ff*dphi[0]*dphi[1] + dff*d2h[0,1]
+    d2phi[1,0] = d2phi[0,1]
+    d2phi[1,1] = d2ff*dphi[1]*dphi[1] + dff*d2h[1,1]
+    d2phi[5,5] = d2ff*dphi[5]*dphi[5] + dff*d2h[5,5]
     return d2phi
 
 def VonMisesE(eps):
@@ -245,7 +248,7 @@ def return_c_yld(iopt,**kwargs):
             return np.nan
         else:
             raise IOError, 'unexpected error'
-        
+
     return yld_func, yld_func_d1, yld_func_d2
 
 if __name__=='__main__':
