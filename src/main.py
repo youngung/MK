@@ -52,21 +52,21 @@ class Path:
         self.k2    = func_k2(psi,self.rho,  self.gamma)
         self.k3    = func_k3(psi,self.alpha,self.beta)
 
-    def rot_istp(self,istp,psi):
-        """
-        Apply coorindate transformation for tensors
-        (The transformation tensor is defined
-        by in-plane rotation quantified by psi angle)
+    # def rot_istp(self,istp,psi):
+    #     """
+    #     Apply coorindate transformation for tensors
+    #     (The transformation tensor is defined
+    #     by in-plane rotation quantified by psi angle)
 
-        Arguments
-        ---------
-        istp
-        psi
-        """
-        s = lib.rot_6d(self.s[:,istp],psi)
-        e = lib.rot_6d(self.e[:,istp],psi)
-        d = lib.rot_6d(self.d[:,istp],psi)
-        return s,e,d
+    #     Arguments
+    #     ---------
+    #     istp
+    #     psi
+    #     """
+    #     s = lib.rot_6d(self.s[:,istp],psi)
+    #     e = lib.rot_6d(self.e[:,istp],psi)
+    #     d = lib.rot_6d(self.d[:,istp],psi)
+    #     return s,e,d
 
 class PathCollection:
     def __init__(self):
@@ -147,8 +147,9 @@ def update_psi(psi,A,da_):
     da_
     """
     f = np.tan(psi)*(A.eta*A.k1+da_) / (A.eta*A.k1+A.rho*da_)
-    newpsi = np.arctan(f)
-    return newpsi
+    new = np.arctan(f)
+    dpsi = new - psi
+    return dpsi
 
 def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
     def objf(alpha_b,guess_stt):
@@ -166,9 +167,9 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
         else:
             x=guess_stt
 
-        nit = 1;mx=30
-        dx  = 1.e-4
-        tol = 1.e-8
+        nit = 1;mx=50
+        dx  = 1.e-7
+        tol = 1.e-9
 
         #verbose=True
         verbose=False
@@ -176,6 +177,7 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
         # fn=os.path.join(lib.find_tmp(),'MKobjf_%s.log'lib.gen_hash_code(6))
         # fo=open(fn,'w')
 
+        hist_iter = ''
         while (True):
             sb_grv0 = np.array([sb_nn,x,0,0,0,sb_nt])
             sb0 = lib.rot_6d(sb_grv0,-psi)
@@ -199,8 +201,14 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
             fmt = '%10.2e'*11
             cnt = fmt%(alpha0, beta0, alpha_b,beta_b0, alpha1,beta1,beta_b1,\
                        F0,F1,F0_beta,F1_beta)
+            if nit==1:
+                hist_iter=hist_iter+head
+            else:
+                hist_iter=hist_iter+'\n'+cnt
+
             # if nit==1: print head
             # print cnt
+
 
             if (abs(F0)<tol):
                 if verbose:
@@ -212,8 +220,9 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
                         ('%7.1f'*3)%(sb0[0],sb0[1],sb0[5])
                 break
             if verbose and nit==1: print '***'*30
-            if (nit>mx): raise IOError,'Cannot find solution'
-
+            if (nit>mx):
+                print hist_iter
+                raise IOError,'Cannot find solution'
 
             jac_new = (F1-F0)/dx
             if jac_new==0:
@@ -225,11 +234,6 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
             if verbose:
                 if nit==1: print head
                 print cnt
-                # if nit==1: print '%s'%'nit','%5s'%'x',\
-                #    '%8s'%'F0','%8s'%'alph_b','%8s'%'alph_0',\
-                #    ('%7s'*3)%('s1','s2','s6')
-                # print '%2.2i'%nit,'%5.1f'%x,'%8.1e'%F0,'%8.1e'%alpha_b,\
-                #     '%8.1e'%alpha0,('%7.1f'*3)%(sb0[0],sb0[1],sb0[5])
 
             nit=nit+1
 
@@ -297,8 +301,8 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
     mat.func_yd as a function of cauchy stress
     """
     t0 = time.time()
-    # bnd = materials.prop_loading_long()
-    bnd = materials.bb() ## balanced biaxial
+    bnd = materials.prop_loading_long()
+    # bnd = materials.bb() ## balanced biaxial
     uet(time.time() - t0,'Time for BND');print
     # bnd = materials.prop_loading_refine()
 
@@ -346,6 +350,7 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
 
         ## Region B is saved as a class for path case.
         class matB: pass
+        class A: pass
         matB.s=[];matB.e=[];matB.d=[]
 
         ## log file
@@ -370,8 +375,7 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
             ## Guess alpha for region B, -> obtaining also beta for region B
             ## This completes tilde stress state, which gives rho, gamma, and eta for region B.
             ## solve equation 18.
-            wa = mat.func_hd(ea_)
-            wb = mat.func_hd(eb_)
+            wa = mat.func_hd(ea_);wb = mat.func_hd(eb_)
 
             ## function of alpha_b
             objf = Barlat_objf(P,psi,sa,da,f,mat.af,mat.func_yd,wa,wb)
@@ -381,24 +385,22 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
                 x0 = P.alpha
                 y0 = None
             else:
-                x0 = B.s[1]/B.s[0]
-                s33=lib.s62c(B.s[::])
-                n,t=lib.nt_psi(psi)
-                stt = np.dot(np.dot(s33,t),t)
-                # print 'stt:',stt
-                y0 = stt
+                x0  = B.s[1]/B.s[0] ## guess alpha from previous result
+                s33 = lib.s62c(B.s[::])
+                nv,tv = lib.nt_psi(psi)
+                stt = np.dot(np.dot(s33,tv),tv)
+                y0  = stt
 
-            dx  = 1e-7
-            tol = 1e-5
+            ## Numerical conditions
+            dx  = 5e-7
+            tol = 1e-9
             nit = 1
-            nmx = 30
+            nmx = 50
 
             verbose=False
             # verbose=True
-
             head_iter = '   '+('%3s'+'%9s'*6)%(
                 'stp','x0','Stt','F','s11','s22','s12')
-
             hist_iter=''
 
             while (True):
@@ -407,48 +409,92 @@ def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
                         print head_iter
                         print hist_iter
                         #print cnt_iter
+
+                    #raise IOError
+                    break
+
+                try:
+                    rst = objf(x0,y0)
+                except:
+                    fo_log.close()
+                    print fn_log
+                    import plotter
+                    _fn_ = plotter.plot_log2(fn=fn_log,yfunc=mat.func_yd)
+                    os.system('open %s'%_fn_)
                     raise IOError
-                rst = objf(x0,y0)
+
+
                 F,B = rst
                 if verbose:
                     if nit==1: print head_iter
                     print cnt_iter
                 if (abs(F)<tol): break
-                F0 = objf(x0-dx,y0)[0]
-                F1 = objf(x0+dx,y0)[0]
+                F0  = objf(x0-dx,y0)[0]
+                F1  = objf(x0+dx,y0)[0]
                 jac = (F1-F0)/(dx*2)
                 if (jac==0): raise IOError
                 x0 = x0 - F/jac
 
                 s33=lib.s62c(B.s[::])
-                n,t=lib.nt_psi(psi)
-                stt = np.dot(np.dot(s33,t),t)
+                nv,tv=lib.nt_psi(psi)
+                stt = np.dot(np.dot(s33,tv),tv)
                 y0 = stt
-
-                cnt_iter= '-*-'+('%3i'+'%9.3f'*6)%(
+                cnt_iter= '-*-'+('%3i'+'%9.3f'*2+'%9.2e'+'%9.3f'*3)%(
                     nit,x0,y0,F,B.s[0],B.s[1],B.s[5])
-
                 hist_iter=hist_iter+'\n'+cnt_iter
-
                 nit = nit + 1
 
             # raise IOError
             B       = rst[1]
             sb, db  = B.s, B.d
 
-            ## eq 15
-            db_ = (B.eta*B.k1*P.k2)/(P.eta*P.k1*B.k2)*da_
-            B.d=B.d*db_
-
+            ## Normalize B.d such that B.dtt = A.dtt
+            A.d=P.d[:,istp]
+            B.d33 = lib.s62c(B.d[::])
+            B.dtt = np.dot(np.dot(B.d33,tv),tv)
+            A.d33 = lib.s62c(A.d[::])
+            A.dtt = np.dot(np.dot(A.d33,tv),tv)
+            scale_factor = B.dtt/A.dtt
+            B.d = B.d/scale_factor
             wrate_b = np.dot(B.s,B.d)
-            db_     = wrate_b / mat.func_yd(B.s)
+            db_    = wrate_b / mat.func_yd(B.s)
+
+
+            # ## eq 15
+            # db_ = (B.eta*B.k1*P.k2)/(P.eta*P.k1*B.k2)*da_
+
+            # # if db_<da_:
+            # #     raise IOError
+
+            # B.d=B.d*db_
+            # A.d=P.d[:,istp]
+
+            # ## check compatibility
+            # B.d33 = lib.s62c(B.d[::])
+            # B.dtt = np.dot(np.dot(B.d33,tv),tv)
+            # A.d33 = lib.s62c(A.d[::])
+            # A.dtt = np.dot(np.dot(A.d33,tv),tv)
+
+            # print 'B.dtt', B.dtt
+            # print 'A.dtt', A.dtt
+            # print 'B.dtt-A.dtt',B.dtt-A.dtt
+            # f = B.dtt/A.dtt
+            # B.d33 = A.d33 / f
+
+            # ## compatability
+
+
+
+            # if db_1<da_:
+            #     raise IOError
+
             ratio   = B.d[2]/P.d[2,istp]
 
             ## inhomogeneity
             df = eq20(da_,P.eta,P.k1,P.rho,B.rho,P.k2,B.k2,f)
             f = f + df * dt
             ## rotation
-            psi = update_psi(psi,P,da_)
+            psi = psi + update_psi(psi,P,da_) * dt
 
             if np.mod(istp,20)==0: print head
 
