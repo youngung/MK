@@ -6,7 +6,6 @@ from MP.mat import mech
 from MP import progress_bar
 import lib
 uet=progress_bar.update_elapsed_time
-
 sin = np.sin
 cos = np.cos
 
@@ -67,6 +66,36 @@ class Path:
     #     e = lib.rot_6d(self.e[:,istp],psi)
     #     d = lib.rot_6d(self.d[:,istp],psi)
     #     return s,e,d
+
+class Region:
+    def __init__(self,mat):
+        ## Yield functions and the derivatives
+        self.func_yd=mat.func_yd
+        self.func_yd1=mat.func_yd1
+        self.func_yd2=mat.func_yd2
+
+        self.func_hd  =mat.func_hd
+        self.func_hd_d=mat.func_hd_d
+
+        pass
+    def assign(self,s,d,e):
+        self.s=s; self.d=d; self.e=e
+        self.calc_etc()
+        pass
+    def calc_etc(self):
+        self.wrate = np.dot(self.s,self.d)
+        self.s_ = self.func_yd(self.s)
+        self.d_ = self.wrate/self.s_
+        self.w  = func_hd(self.e) ## flow stress (hardening)
+    def calc_s_grv(self,psi):
+        self.s_grv=lib.rot_6d(self.s,psi)
+        self.b6 = self.s_grv[5]/self.s_grv[0]
+        pass
+
+def calc_grv(a,psi):
+    """
+    """
+    return lib.rot_6d(a,psi)
 
 class PathCollection:
     def __init__(self):
@@ -276,7 +305,219 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
         return eq18(P.eta,B.eta,P.k3,B.k3,f,wa,wb),B
     return objf
 
-def main(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
+def main(FLDA_pck_name=None,
+         psi0=0,f0=0.990):
+    """
+    Arguments
+    ---------
+    psi0 =0.
+    f0   =0.990
+    """
+    t0 = time.time()
+    ## Choice of material / loading condition
+    mat = materials.iso_metal_vm()
+    # mat = materials.iso_metal_hf8()
+    uet(time.time() - t0,'Time for MAT');print
+    """
+    mat.func_hd as a function of ebar
+    mat.func_sr as a function of ebar dot
+    mat.func_yd as a function of cauchy stress
+    """
+    t0 = time.time()
+    bnd = materials.prop_loading_long()
+    # bnd = materials.bb() ## balanced biaxial
+    uet(time.time() - t0,'Time for BND');print
+    # bnd = materials.prop_loading_refine()
+
+    if type(FLDA_pck_name).__name__=='NoneType':
+        ## Save FLDa
+        t0 = time.time()
+        FLDA_pck_name = save_a(mat, bnd)
+        uet(time.time() - t0,'Time for FLA');print
+
+    hash_a = FLDA_pck_name[::-1][:6][::-1]
+    ## Load from pickles.
+    Paths = load_a_fc(hash_code=hash_a)
+
+    print 'npath:', Paths.npath, '\n'
+
+    ## Boundary condition
+    beta    = bnd.beta
+    sr_eq   = bnd.sr_eq
+    dbar    = bnd.dbar
+    ebar_mx = bnd.ebar_mx
+
+    head= '%4s'%'step'+('%9s'+'%12s'+'%7s'*4)%(
+        'Da','Db','Ea','Eb','Wa','Wb')+\
+          ('%10s'*4)%('D1','D2','D3','D6')+\
+          ('%10s'*4)%('E1','E2','E3','E6')+\
+          ('%7s'*3)%('S1','S2','S6')+\
+          '|'+\
+          ('%10s'*4)%('D1','D2','D3','D6')+\
+          ('%10s'*4)%('E1','E2','E3','E6')+\
+          ('%7s'*3)%('S1','S2','S6')+\
+          '%7s'%'f'+'%5s'%'psi'+'%8s'%'ratio'
+
+    head=head+'\n'+'-'*276
+
+    for ipath in xrange(Paths.npath):
+        P   = Paths.paths[ipath]
+        psi = psi0 * np.pi/180.
+        f   = f0 * 1.0
+
+        ## accumulative 6D strain for region B
+        eb  = np.zeros(6)
+
+        ## Equivalent quantifies for stress, strain and strain rate
+        sb_ = 0.; eb_ = 0.; db_ = 0.
+
+        ## history
+        class matA: pass
+        class matB: pass
+        matA.s=[]; matA.e=[]; matA.d=[]
+        matB.s=[]; matB.e=[]; matB.d=[]
+
+        ## Region A, Region B (current step)
+        #class A: pass; class B: pass
+        A=Region(mat); B=Region(mat); A.ebar=0; B.ebar=0
+
+        ## log file
+        fn_log = os.path.join(lib.find_tmp(),'%s.log'%lib.gen_hash_code(6))
+        fo_log = open(fn_log,'w')
+        fo_log.write(head+'\n')
+
+        t0 = time.time()
+        for istp in xrange(P.nstp):
+            t  = P.t[istp]
+            dt = P.dt[istp]
+
+            ## assign properties to A
+            A.assign(P.s[:,istp],P.d[:,istp],P.e[:,istp])
+            A.calc_s_grv(psi=psi) # A.s_grv
+
+            ## Guess properties of B
+            B.s = A.s[::]; B.d = A.d[::]
+
+            ## flow stress from hardening
+
+            ## guess 4 initial values for region B
+            B.x =[1.,1.,0.,0.] ## X_b, Y_b, Z_b, E0_b
+            newton_raph_fld(A,B,psi,f)
+            B.x # X_b,Y_b,Z_b,E_b
+            print B.x
+            raise IOError
+
+def newton_raph_fld(A,B,psi,f):
+    """
+    Arguments
+    ---------
+    A
+    B
+    psi
+    f
+    """
+    from mk_for import gauss
+    residu = 1.0; it = 0; itmax=100
+    eps = 1e-10 ## convergence criterion
+    while (residu>eps and it<itmax):
+        F, J   = fonc_fld(A,B,psi,f) ##
+        ndim   = len(F)
+        res    = gauss(ndim=ndim,a=J,b=F)
+
+        print it, res, B.x
+
+        if np.isnan(res).any():
+            raise IOError
+        B.x    = B.x - res
+        residu = np.dot(res,res)
+        it = it + 1
+
+def fonc_fld(A,B,psi,f):
+    """
+    Function F and matrix J (jacobian)
+
+    Arguments
+    ---------
+    A
+    B
+    psi
+    f
+
+    Return
+    ------
+    F, J
+    """
+    C=np.cos(psi); S=np.sin(psi); SC=C*S; C2=C**2; S2=S**2
+
+    ## guess stress of B in groove
+    # B.x[0] sxx
+    # B.x[1] syy
+    # B.x[2] sxy
+    # B.x[3] ebar (equivalent strain)
+
+    ## guess (tilde) stress
+    B.sx     = np.array([B.x[0],B.x[1],0., 0., 0., B.x[2]]) ## grv
+    B.s      = calc_grv(B.sx,-psi) # B stress in the lab axes
+
+    B.phi    = B.func_yd( B.s)
+    B.phi_d1 = B.func_yd1(B.s) ## According to af, its strain rate direction
+    B.phi_d2 = B.func_yd2(B.s)
+
+    ## Strain rates referred in the groove axes
+    B.d_grv = lib.rot_6d(B.phi_d1,psi)
+
+    ## 2nd derivative in the groove
+    B.F2xB      = np.zeros((6,6)) ## needs rotate to the groove
+    # ------------------------------------------------------------------ #
+    B.F2xB[0,0]=    B.phi_d2[0,0]*C2+B.phi_d2[0,1]*S2 +B.phi_d2[0,5]*SC
+    B.F2xB[1,0]=    B.phi_d2[1,0]*C2+B.phi_d2[1,1]*S2 +B.phi_d2[1,5]*SC
+    B.F2xB[5,0]=   (B.phi_d2[5,0]*C2+B.phi_d2[5,1]*S2 +B.phi_d2[5,5]*SC)/2.
+    B.F2xB[0,1]=    B.phi_d2[0,0]*S2+B.phi_d2[0,1]*C2 -B.phi_d2[0,5]*SC
+    B.F2xB[1,1]=    B.phi_d2[1,0]*S2+B.phi_d2[1,1]*C2 -B.phi_d2[1,5]*SC
+    B.F2xB[5,1]=   (B.phi_d2[5,0]*S2+B.phi_d2[5,1]*C2 -B.phi_d2[5,5]*SC)/2.
+    B.F2xB[0,5]= 2*(B.phi_d2[0,1]   -B.phi_d2[0,0])*SC+B.phi_d2[0,5]*(C2-S2)
+    B.F2xB[1,5]= 2*(B.phi_d2[1,1]   -B.phi_d2[1,0])*SC+B.phi_d2[1,5]*(C2-S2)
+    B.F2xB[5,5]=(2*(B.phi_d2[5,1]   -B.phi_d2[5,0])*SC+B.phi_d2[5,5]*(C2-S2))/2.
+
+    # hardening parameters
+    sigb  = B.func_hd(  B.x[3])
+    dsigb = B.func_hd_d(B.x[3])
+    siga  = A.func_hd(A.ebar)
+    if np.isnan(sigb): raise IOError
+
+    sr_ref = 1000.;  sr_m_a = 0.05;  sr_m_b = 0.05; dm = 0.
+
+    ## objective functions (4)
+    A.beta_grv = A.s_grv[5]/A.s_grv[0]
+    ## ------------
+    F    = np.zeros(4)
+    F[0] = B.d_grv[1] ## d_tt
+    F[1] = B.x[2] - B.x[1]*A.beta_grv
+    F[2] = B.phi  - 1.0
+    F[3] = -np.log(f*sigb/siga)+\
+           (sr_m_a-sr_m_b)*np.log(sr_ref)-B.x[3]*B.d_grv[0]
+    ## ------------
+
+    if np.isnan(F).any(): raise IOError
+
+    ## Jacobian
+    J      = np.zeros((4,4))
+    J[0,0] = S2  * B.F2xB[0,0] + C2 * B.F2xB[1,0] - 2*SC*B.F2xB[5,0]
+    J[0,1] = S2  * B.F2xB[0,1] + C2 * B.F2xB[1,1] - 2*SC*B.F2xB[5,1]
+    J[0,2] = S2  * B.F2xB[0,5] + C2 * B.F2xB[1,5] - 2*SC*B.F2xB[5,5]
+    J[1,0] = -A.beta_grv
+    J[1,2] = 1.
+    J[2,0] = B.d_grv[0] ## ENNB
+    J[2,1] = B.d_grv[1] ## ETTB
+    J[2,2] = B.d_grv[5] *2 ## 2 ENTB
+    J[3,3] = -dsigb / sigb - dm*np.log(sr_ref) - B.d_grv[0]
+
+    return F, J
+
+
+
+
+def main2(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
          psi0=0,f0=0.990):
     """
     Reference:

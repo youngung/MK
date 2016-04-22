@@ -17,6 +17,17 @@ def func_swift(eps,k,eps_0,n):
     """
     return k * (eps+eps_0) **n
 
+def func_swift_d(eps,k,eps_0,n):
+    """
+     sigma  =     k * (eps+eps_0) ** n
+    dsigma  = n * k * (eps+eps_0) ** (n-1)
+
+    Arguments
+    ---------
+    eps,k,eps_0,n
+    """
+    return k * (eps+eps_0) **n
+
 def func_hollomon(eps,k,n):
     """
     Hollomon 1945
@@ -94,4 +105,19 @@ def c_G(iopt,**kwargs):
             return func_ludwigson(eps_eq,**kwargs)
         elif iopt==5:
             return func_baragar(eps_eq,**kwargs)
-    return func
+
+    def func_d(eps_eq):
+        if iopt==0:
+            return func_swift_d(eps_eq,**kwargs)
+        elif iopt==1:
+            return np.nan
+        elif iopt==2:
+            return np.nan
+        elif iopt==3:
+            return np.nan
+        elif iopt==4:
+            return np.nan
+        elif iopt==5:
+            return np.nan
+
+    return func, func_d

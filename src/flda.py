@@ -17,9 +17,9 @@ from vpscyld import lib_dat as yld_lib_dat
 
 
 ## Material characteristics
-func_hd   = c_G(0,k=6.00e2, eps_0 = 4.23e-4,n=2.55e-1)
+func_hd,func_hd_d = c_G(0,k=6.00e2, eps_0 = 4.23e-4,n=2.55e-1)
 func_sr   = c_F(0,ed0=1e-3,m=1.2)
-func_yd  = return_c_yld(iopt=1) ## Von Mises
+func_yd, func_yd1, func_yd2  = return_c_yld(iopt=1) ## Von Mises
 
 ## maximum strain....
 eps  = np.linspace(0,1.2,100)
@@ -35,9 +35,9 @@ def test_FLDA_onepath():
     ax6=fig.add_subplot(236)
 
     ## Material Characteristics
-    func_hd   = c_G(0,k=6.00e2, eps_0 = 4.23e-4,n=2.55e-1)
-    func_sr   = c_F(0,ed0=1e-3,m=1.2)
-    func_yd  = return_c_yld(iopt=0,R0=1.5,R90=0.7) ## QuadHill
+    func_hd,func_hd_d = c_G(0,k=6.00e2, eps_0 = 4.23e-4,n=2.55e-1)
+    func_sr           = c_F(0,ed0=1e-3,m=1.2)
+    func_yd, func_yd1, func_yd2  = return_c_yld(iopt=0,R0=1.5,R90=0.7) ## QuadHill
     # func_yd  = return_c_yld(iopt=1) ## Von Mises
 
     alphs = np.linspace(0,1,5)
