@@ -11,7 +11,6 @@ log=np.log
 atan2=np.arctan2
 sqrt=np.sqrt
 
-
 def drawing():
     ## given rho:
     rho = -0.6
@@ -27,9 +26,7 @@ def drawing():
     ## s1 should be far left from uniaxial; s2 should be far right from uniaxial
     s1[0]=0; s1[1]=-1
     s2[0]=1; s2[1]= 1
-
     return rho, pth,f_yld,s1,s2
-
 
 def planestrain():
     ## given rho:
@@ -46,7 +43,6 @@ def planestrain():
     ## s1 should be far left from uniaxial; s2 should be far right from uniaxial
     s1[0]=0; s1[1]=-1
     s2[0]=0; s2[1]= 1
-
     return rho, pth,f_yld,s1,s2
 
 
@@ -58,10 +54,7 @@ def main(iverbose=0):
     --------
     verbose
     """
-
     rho,pth,f_yld,s1,s2 = drawing()
-
-
 
     ## find the correct stress that givesn rho of -0.6
     if iverbose>=3: print (8*'%6s ')%('phi','s1','s2','sa1','sa2','sb1','sb2','diff')
@@ -69,7 +62,7 @@ def main(iverbose=0):
     it=0
     while diff>1e-10:
         s       = (s1[::]+s2[::])/2.
-        phi,dphi,d2phi = f_yld(s)
+        s, phi,dphi,d2phi = f_yld(s)
         rac     = sqrt(dphi[0]*dphi[0] + dphi[1]*dphi[1])
         dphi[0] = dphi[0]/rac
         dphi[1] = dphi[1]/rac
@@ -145,7 +138,7 @@ def onepath(f_yld,sa,psi0,f0):
     import os
     from lib import rot_6d
     # from for_lib import swift
-    phia,fa,f2a=f_yld(sa)
+    sa,phia,fa,f2a=f_yld(sa)
 
     # ## debug
     # sa=np.array([1,2,0,0,0,0])
@@ -280,8 +273,8 @@ def hist_plot(f_yld,Ahist,Bhist):
     print s.shape
     X=[]; Y=[]
     for i in xrange(len(s)):
-        phi, dphi, d2phi = vm(s[i])
-        ys=s[i]/phi
+        ys, phi, dphi, d2phi = vm(s[i])
+        # ys=s[i]/phi
         X.append(ys[0])
         Y.append(ys[1])
 
@@ -600,7 +593,7 @@ def func_fld2(ndim,T,sa,b,x,yancien,f_hard,f_yld,verbose):
     sb_dump = np.array([xb,yb,0,0,0,zb])
 
     ## Parameters in region A
-    phia,fa,f2a   = f_yld(sa)
+    sa,phia,fa,f2a   = f_yld(sa)
     mat_A.Y.phi   = phia
     mat_A.Y.dphi  = fa
     mat_A.Y.d2phi = f2a
@@ -627,12 +620,12 @@ def func_fld2(ndim,T,sa,b,x,yancien,f_hard,f_yld,verbose):
         print ma,siga,dsiga,dma,qqa
 
     ## parameters in region B
-    sb            = rot_6d(sb_dump,psi_new)
-    phib,fb,f2b   = f_yld(sb)
+    sb             = rot_6d(sb_dump,psi_new)
+    sb,phib,fb,f2b = f_yld(sb)
     mat_B.Y.phi   = phib
     mat_B.Y.dphi  = fb
     mat_B.Y.d2phi = f2b
-    mat_B.stress  = sb_dump
+    mat_B.stress  = sb
     db_rot        = rot_6d(fb,-psi_new)
     nb,mb,sigb,dsigb,dmb,qqb = f_hard(T+deltat)
     mat_B.H.n = nb
@@ -780,7 +773,7 @@ def func_fld1(ndim,b,x,f_hard,f_yld,verbose):
         print sb
         pass
 
-    phib,fb,f2b=f_yld(sb)
+    sb,phib,fb,f2b=f_yld(sb)
     if verbose:
         print 'phib:',phib
         print 'f2b:'
