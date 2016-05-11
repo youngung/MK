@@ -210,7 +210,6 @@ def plot_log(fn):
     fig.tight_layout()
     ax.legend();plt.close(fig);pdf_master.savefig(fig)
 
-
     pdf_master.close()
 
 if __name__=='__main__':

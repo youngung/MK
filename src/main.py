@@ -305,6 +305,10 @@ def Barlat_objf(P,psi,sa,da,f,af,yfunc,wa,wb):
         return eq18(P.eta,B.eta,P.k3,B.k3,f,wa,wb),B
     return objf
 
+
+
+
+
 def main(FLDA_pck_name=None,
          psi0=0,f0=0.990):
     """
@@ -379,8 +383,11 @@ def main(FLDA_pck_name=None,
 
         ## Region A, Region B (current step)
         #class A: pass; class B: pass
-        A=Region(mat); B=Region(mat); A.ebar=0; B.ebar=0
+        A=Region(mat); B=Region(mat);
+        C=Region(mat)
+        A.ebar=0; B.ebar=0; C.ebar=0.
         A.f0=f0; A.psi0=psi0
+        C.f0=f0; C.psi0=psi0
 
         ## log file
         fn_log = os.path.join(lib.find_tmp(),'%s.log'%lib.gen_hash_code(6))
@@ -393,8 +400,14 @@ def main(FLDA_pck_name=None,
             dt = P.dt[istp]
 
             ## assign properties to A
-            A.assign(P.s[:,istp],P.d[:,istp],P.e[:,istp])
+            A.assign(P.s[:,istp],
+                     P.d[:,istp],
+                     P.e[:,istp])
             A.calc_s_grv(psi=psi) # A.s_grv
+
+            C.s=np.array([1.,0.,0.,0.,0.,0.])
+            C.e=np.array([1.,-0.5,-0.5,0,0,0])
+            C.calc_s_grv(psi=psi)
 
             ## Guess properties of B
             B.s = A.s[::]; B.d = A.d[::]
@@ -403,10 +416,38 @@ def main(FLDA_pck_name=None,
 
             ## guess 4 initial values for region B
             B.x =[1.,1.,0.,0.] ## X_b, Y_b, Z_b, E0_b
-            newton_raph_fld(A,B,psi,f)
+            newton_raph_fld(C,B,psi,f)
             B.x # X_b,Y_b,Z_b,E_b
             print B.x
             raise IOError
+
+sqrt = np.sqrt
+def fld():
+
+    ## plane strin mode RD
+    ang1 = 0; ang2 = 25
+    anginc = 5
+    pth0 = 1.
+    pth1 = 25e-3
+    pth2 = 1.
+    pth3 = 25e-2
+    npt = 9
+
+    sa=np.zeros(6); sb=np.zeros(6)
+    sa[0] = 1.; sa[1] = 0.; sb[0] = 0.; sb[1] = 1.
+
+
+    for npth=1, npt:
+        pthr = pth0 + npth*(pth2-pth0)/npt
+        ptht = pth1 + npth*(pth3-pth1)/npt
+        rac  = sqrt(pthr*pthr + ptht*ptht)
+        pthr = pthr/rac
+        ptht = ptht/rac
+
+        s1=np.zeros(6); s2=np.zeros(6)
+        s1[:2]=sa[:2]
+        s2[:2]=sb[:2]
+
 
 def newton_raph_fld(A,B,psi,f):
     """
@@ -419,7 +460,7 @@ def newton_raph_fld(A,B,psi,f):
     """
     from mk_for import gauss
     residu = 1.0; it = 0; itmax=100
-    eps = 1e-10 ## convergence criterion
+    eps    = 1e-10   ## convergence criterion
     while (residu>eps and it<itmax):
         F, J   = fonc_fld(A,B,psi,f) ##
         ndim   = len(F)
@@ -520,264 +561,264 @@ def fonc_fld(A,B,psi,f):
 
 
 
-def main2(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
-         psi0=0,f0=0.990):
-    """
-    Reference:
-    Crystallographic Texture, anisotropic yield
-    surfaces and forming limits of sheet metals,
-    F. Barlat, MSE, Vol 91, 1987
+# def main2(FLDA_pck_name='FLDA_MACRO_20160414_135512_9b435d',
+#          psi0=0,f0=0.990):
+#     """
+#     Reference:
+#     Crystallographic Texture, anisotropic yield
+#     surfaces and forming limits of sheet metals,
+#     F. Barlat, MSE, Vol 91, 1987
 
-    Arguments
-    ---------
-    psi0 =0.
-    f0   =0.990
-    """
-    t0 = time.time()
-    ## Choice of material / loading condition
-    mat = materials.iso_metal_vm()
-    # mat = materials.iso_metal_hf8()
-    uet(time.time() - t0,'Time for MAT');print
+#     Arguments
+#     ---------
+#     psi0 =0.
+#     f0   =0.990
+#     """
+#     t0 = time.time()
+#     ## Choice of material / loading condition
+#     mat = materials.iso_metal_vm()
+#     # mat = materials.iso_metal_hf8()
+#     uet(time.time() - t0,'Time for MAT');print
 
-    """
-    mat.func_hd as a function of ebar
-    mat.func_sr as a function of ebar dot
-    mat.func_yd as a function of cauchy stress
-    """
-    t0 = time.time()
-    bnd = materials.prop_loading_long()
-    # bnd = materials.bb() ## balanced biaxial
-    uet(time.time() - t0,'Time for BND');print
-    # bnd = materials.prop_loading_refine()
+#     """
+#     mat.func_hd as a function of ebar
+#     mat.func_sr as a function of ebar dot
+#     mat.func_yd as a function of cauchy stress
+#     """
+#     t0 = time.time()
+#     bnd = materials.prop_loading_long()
+#     # bnd = materials.bb() ## balanced biaxial
+#     uet(time.time() - t0,'Time for BND');print
+#     # bnd = materials.prop_loading_refine()
 
-    if type(FLDA_pck_name).__name__=='NoneType':
-        ## Save FLDa
-        t0 = time.time()
-        FLDA_pck_name = save_a(mat, bnd)
-        uet(time.time() - t0,'Time for FLA');print
+#     if type(FLDA_pck_name).__name__=='NoneType':
+#         ## Save FLDa
+#         t0 = time.time()
+#         FLDA_pck_name = save_a(mat, bnd)
+#         uet(time.time() - t0,'Time for FLA');print
 
-    hash_a = FLDA_pck_name[::-1][:6][::-1]
-    ## Load from pickles.
-    Paths = load_a_fc(hash_code=hash_a)
+#     hash_a = FLDA_pck_name[::-1][:6][::-1]
+#     ## Load from pickles.
+#     Paths = load_a_fc(hash_code=hash_a)
 
-    print 'npath:', Paths.npath, '\n'
+#     print 'npath:', Paths.npath, '\n'
 
-    ## Boundary condition
-    beta    = bnd.beta
-    sr_eq   = bnd.sr_eq
-    dbar    = bnd.dbar
-    ebar_mx = bnd.ebar_mx
+#     ## Boundary condition
+#     beta    = bnd.beta
+#     sr_eq   = bnd.sr_eq
+#     dbar    = bnd.dbar
+#     ebar_mx = bnd.ebar_mx
 
-    head= '%4s'%'step'+('%9s'+'%12s'+'%7s'*4)%(
-        'Da','Db','Ea','Eb','Wa','Wb')+\
-          ('%10s'*4)%('D1','D2','D3','D6')+\
-          ('%10s'*4)%('E1','E2','E3','E6')+\
-          ('%7s'*3)%('S1','S2','S6')+\
-          '|'+\
-          ('%10s'*4)%('D1','D2','D3','D6')+\
-          ('%10s'*4)%('E1','E2','E3','E6')+\
-          ('%7s'*3)%('S1','S2','S6')+\
-          '%7s'%'f'+'%5s'%'psi'+'%8s'%'ratio'
+#     head= '%4s'%'step'+('%9s'+'%12s'+'%7s'*4)%(
+#         'Da','Db','Ea','Eb','Wa','Wb')+\
+#           ('%10s'*4)%('D1','D2','D3','D6')+\
+#           ('%10s'*4)%('E1','E2','E3','E6')+\
+#           ('%7s'*3)%('S1','S2','S6')+\
+#           '|'+\
+#           ('%10s'*4)%('D1','D2','D3','D6')+\
+#           ('%10s'*4)%('E1','E2','E3','E6')+\
+#           ('%7s'*3)%('S1','S2','S6')+\
+#           '%7s'%'f'+'%5s'%'psi'+'%8s'%'ratio'
 
-    head=head+'\n'+'-'*276
+#     head=head+'\n'+'-'*276
 
-    for ipath in xrange(Paths.npath):
-        P   = Paths.paths[ipath]
-        psi = psi0 * np.pi/180.
-        f   = f0 * 1.0
+#     for ipath in xrange(Paths.npath):
+#         P   = Paths.paths[ipath]
+#         psi = psi0 * np.pi/180.
+#         f   = f0 * 1.0
 
-        ## accumulative 6D strain for region B
-        eb  = np.zeros(6)
+#         ## accumulative 6D strain for region B
+#         eb  = np.zeros(6)
 
-        ## Equivalent quantifies for stress, strain and strain rate
-        sb_ = 0.; eb_ = 0.; db_ = 0.
+#         ## Equivalent quantifies for stress, strain and strain rate
+#         sb_ = 0.; eb_ = 0.; db_ = 0.
 
-        ## Region B is saved as a class for path case.
-        class matB: pass
-        class A: pass
-        matB.s=[];matB.e=[];matB.d=[]
+#         ## Region B is saved as a class for path case.
+#         class matB: pass
+#         class A: pass
+#         matB.s=[];matB.e=[];matB.d=[]
 
-        ## log file
-        fn_log = os.path.join(lib.find_tmp(),'%s.log'%lib.gen_hash_code(6))
-        fo_log = open(fn_log,'w')
-        fo_log.write(head+'\n')
+#         ## log file
+#         fn_log = os.path.join(lib.find_tmp(),'%s.log'%lib.gen_hash_code(6))
+#         fo_log = open(fn_log,'w')
+#         fo_log.write(head+'\n')
 
-        t0 = time.time()
-        for istp in xrange(P.nstp):
-            t  = P.t[istp]
-            dt = P.dt[istp]
-            sa = P.s[:,istp]
-            ea = P.e[:,istp]
-            da = P.d[:,istp]
+#         t0 = time.time()
+#         for istp in xrange(P.nstp):
+#             t  = P.t[istp]
+#             dt = P.dt[istp]
+#             sa = P.s[:,istp]
+#             ea = P.e[:,istp]
+#             da = P.d[:,istp]
 
-            wrate_a = np.dot(sa,da)
-            da_ = wrate_a/P.sbar[istp]
-            sa_ = P.sbar[istp]
-            ea_ = P.ebar[istp]
-            P.values_mk(istp,psi)
+#             wrate_a = np.dot(sa,da)
+#             da_ = wrate_a/P.sbar[istp]
+#             sa_ = P.sbar[istp]
+#             ea_ = P.ebar[istp]
+#             P.values_mk(istp,psi)
 
-            ## Guess alpha for region B, -> obtaining also beta for region B
-            ## This completes tilde stress state, which gives rho, gamma, and eta for region B.
-            ## solve equation 18.
-            wa = mat.func_hd(ea_);wb = mat.func_hd(eb_)
+#             ## Guess alpha for region B, -> obtaining also beta for region B
+#             ## This completes tilde stress state, which gives rho, gamma, and eta for region B.
+#             ## solve equation 18.
+#             wa = mat.func_hd(ea_);wb = mat.func_hd(eb_)
 
-            ## function of alpha_b
-            objf = Barlat_objf(P,psi,sa,da,f,mat.af,mat.func_yd,wa,wb)
+#             ## function of alpha_b
+#             objf = Barlat_objf(P,psi,sa,da,f,mat.af,mat.func_yd,wa,wb)
 
-            if istp==0:
-                #x0 = 0. ## guessed alpha_b
-                x0 = P.alpha
-                y0 = None
-            else:
-                x0  = B.s[1]/B.s[0] ## guess alpha from previous result
-                s33 = lib.s62c(B.s[::])
-                nv,tv = lib.nt_psi(psi)
-                stt = np.dot(np.dot(s33,tv),tv)
-                y0  = stt
+#             if istp==0:
+#                 #x0 = 0. ## guessed alpha_b
+#                 x0 = P.alpha
+#                 y0 = None
+#             else:
+#                 x0  = B.s[1]/B.s[0] ## guess alpha from previous result
+#                 s33 = lib.s62c(B.s[::])
+#                 nv,tv = lib.nt_psi(psi)
+#                 stt = np.dot(np.dot(s33,tv),tv)
+#                 y0  = stt
 
-            ## Numerical conditions
-            dx  = 5e-7
-            tol = 1e-9
-            nit = 1
-            nmx = 50
+#             ## Numerical conditions
+#             dx  = 5e-7
+#             tol = 1e-9
+#             nit = 1
+#             nmx = 50
 
-            verbose=False
-            # verbose=True
-            head_iter = '   '+('%3s'+'%9s'*6)%(
-                'stp','x0','Stt','F','s11','s22','s12')
-            hist_iter=''
+#             verbose=False
+#             # verbose=True
+#             head_iter = '   '+('%3s'+'%9s'*6)%(
+#                 'stp','x0','Stt','F','s11','s22','s12')
+#             hist_iter=''
 
-            while (True):
-                if (nit>nmx):
-                    if nit>1:
-                        print head_iter
-                        print hist_iter
-                        #print cnt_iter
+#             while (True):
+#                 if (nit>nmx):
+#                     if nit>1:
+#                         print head_iter
+#                         print hist_iter
+#                         #print cnt_iter
 
-                    #raise IOError
-                    break
+#                     #raise IOError
+#                     break
 
-                try:
-                    rst = objf(x0,y0)
-                except:
-                    fo_log.close()
-                    print fn_log
-                    import plotter
-                    _fn_ = plotter.plot_log2(fn=fn_log,yfunc=mat.func_yd)
-                    os.system('open %s'%_fn_)
-                    raise IOError
-
-
-                F,B = rst
-                if verbose:
-                    if nit==1: print head_iter
-                    print cnt_iter
-                if (abs(F)<tol): break
-                F0  = objf(x0-dx,y0)[0]
-                F1  = objf(x0+dx,y0)[0]
-                jac = (F1-F0)/(dx*2)
-                if (jac==0): raise IOError
-                x0 = x0 - F/jac
-
-                s33=lib.s62c(B.s[::])
-                nv,tv=lib.nt_psi(psi)
-                stt = np.dot(np.dot(s33,tv),tv)
-                y0 = stt
-                cnt_iter= '-*-'+('%3i'+'%9.3f'*2+'%9.2e'+'%9.3f'*3)%(
-                    nit,x0,y0,F,B.s[0],B.s[1],B.s[5])
-                hist_iter=hist_iter+'\n'+cnt_iter
-                nit = nit + 1
-
-            # raise IOError
-            B       = rst[1]
-            sb, db  = B.s, B.d
-
-            ## Normalize B.d such that B.dtt = A.dtt
-            A.d=P.d[:,istp]
-            B.d33 = lib.s62c(B.d[::])
-            B.dtt = np.dot(np.dot(B.d33,tv),tv)
-            A.d33 = lib.s62c(A.d[::])
-            A.dtt = np.dot(np.dot(A.d33,tv),tv)
-            scale_factor = B.dtt/A.dtt
-            B.d = B.d/scale_factor
-            wrate_b = np.dot(B.s,B.d)
-            db_    = wrate_b / mat.func_yd(B.s)
+#                 try:
+#                     rst = objf(x0,y0)
+#                 except:
+#                     fo_log.close()
+#                     print fn_log
+#                     import plotter
+#                     _fn_ = plotter.plot_log2(fn=fn_log,yfunc=mat.func_yd)
+#                     os.system('open %s'%_fn_)
+#                     raise IOError
 
 
-            # ## eq 15
-            # db_ = (B.eta*B.k1*P.k2)/(P.eta*P.k1*B.k2)*da_
+#                 F,B = rst
+#                 if verbose:
+#                     if nit==1: print head_iter
+#                     print cnt_iter
+#                 if (abs(F)<tol): break
+#                 F0  = objf(x0-dx,y0)[0]
+#                 F1  = objf(x0+dx,y0)[0]
+#                 jac = (F1-F0)/(dx*2)
+#                 if (jac==0): raise IOError
+#                 x0 = x0 - F/jac
 
-            # # if db_<da_:
-            # #     raise IOError
+#                 s33=lib.s62c(B.s[::])
+#                 nv,tv=lib.nt_psi(psi)
+#                 stt = np.dot(np.dot(s33,tv),tv)
+#                 y0 = stt
+#                 cnt_iter= '-*-'+('%3i'+'%9.3f'*2+'%9.2e'+'%9.3f'*3)%(
+#                     nit,x0,y0,F,B.s[0],B.s[1],B.s[5])
+#                 hist_iter=hist_iter+'\n'+cnt_iter
+#                 nit = nit + 1
 
-            # B.d=B.d*db_
-            # A.d=P.d[:,istp]
+#             # raise IOError
+#             B       = rst[1]
+#             sb, db  = B.s, B.d
 
-            # ## check compatibility
-            # B.d33 = lib.s62c(B.d[::])
-            # B.dtt = np.dot(np.dot(B.d33,tv),tv)
-            # A.d33 = lib.s62c(A.d[::])
-            # A.dtt = np.dot(np.dot(A.d33,tv),tv)
-
-            # print 'B.dtt', B.dtt
-            # print 'A.dtt', A.dtt
-            # print 'B.dtt-A.dtt',B.dtt-A.dtt
-            # f = B.dtt/A.dtt
-            # B.d33 = A.d33 / f
-
-            # ## compatability
+#             ## Normalize B.d such that B.dtt = A.dtt
+#             A.d=P.d[:,istp]
+#             B.d33 = lib.s62c(B.d[::])
+#             B.dtt = np.dot(np.dot(B.d33,tv),tv)
+#             A.d33 = lib.s62c(A.d[::])
+#             A.dtt = np.dot(np.dot(A.d33,tv),tv)
+#             scale_factor = B.dtt/A.dtt
+#             B.d = B.d/scale_factor
+#             wrate_b = np.dot(B.s,B.d)
+#             db_    = wrate_b / mat.func_yd(B.s)
 
 
+#             # ## eq 15
+#             # db_ = (B.eta*B.k1*P.k2)/(P.eta*P.k1*B.k2)*da_
 
-            # if db_1<da_:
-            #     raise IOError
+#             # # if db_<da_:
+#             # #     raise IOError
 
-            ratio   = B.d[2]/P.d[2,istp]
+#             # B.d=B.d*db_
+#             # A.d=P.d[:,istp]
 
-            ## inhomogeneity
-            df = eq20(da_,P.eta,P.k1,P.rho,B.rho,P.k2,B.k2,f)
-            f = f + df * dt
-            ## rotation
-            psi = psi + update_psi(psi,P,da_) * dt
+#             # ## check compatibility
+#             # B.d33 = lib.s62c(B.d[::])
+#             # B.dtt = np.dot(np.dot(B.d33,tv),tv)
+#             # A.d33 = lib.s62c(A.d[::])
+#             # A.dtt = np.dot(np.dot(A.d33,tv),tv)
 
-            if np.mod(istp,20)==0: print head
+#             # print 'B.dtt', B.dtt
+#             # print 'A.dtt', A.dtt
+#             # print 'B.dtt-A.dtt',B.dtt-A.dtt
+#             # f = B.dtt/A.dtt
+#             # B.d33 = A.d33 / f
 
-            stamp= '%4.4i'%istp+ '%9.1e'%da_+'%12.4e'%db_+\
-                   ('%7.3f'*2+'%7.1f'*2)%(ea_,eb_,wa,wb)+\
-                   ('%10.2e'*4)%(P.d[0,istp],P.d[1,istp],
-                                 P.d[2,istp],P.d[5,istp])+\
-                   ('%10.2e'*4)%(P.e[0,istp],P.e[1,istp],
-                                 P.e[2,istp],P.e[5,istp])+\
-                   ('%7.1f'*3 )%(P.s[0,istp],P.s[1,istp],
-                                 P.s[5,istp])+' '+\
-                   ('%10.2e'*4)%(B.d[0],    B.d[1],
-                                 B.d[2],     B.d[5])+\
-                   ('%10.2e'*4)%( eb[0],     eb[1],
-                                  eb[2],      eb[5])+\
-                   ('%7.1f'*3 )%(B.s[0],    B.s[1],
-                                 B.s[5])+\
-                   '%7.3f'%f+'%5.1f'%(psi*180/np.pi)+'%8.3f'%ratio
-            print stamp
-            fo_log.write(stamp+'\n')
+#             # ## compatability
 
-            eb      = eb + B.d * dt
-            B.e     = eb
-            eb_     = eb_ + db_ * dt
-            B.eb_   = eb_
 
-            matB.s.append(B.s)
-            matB.e.append(eb)
-            matB.d.append(B.d)
 
-            if ratio>10:
-                fo_log.close()
-                print fn_log
-                import plotter
-                _fn_ = plotter.plot_log2(fn=fn_log,yfunc=mat.func_yd)
-                os.system('open %s'%_fn_)
+#             # if db_1<da_:
+#             #     raise IOError
 
-                raise IOError
-                #break
+#             ratio   = B.d[2]/P.d[2,istp]
+
+#             ## inhomogeneity
+#             df = eq20(da_,P.eta,P.k1,P.rho,B.rho,P.k2,B.k2,f)
+#             f = f + df * dt
+#             ## rotation
+#             psi = psi + update_psi(psi,P,da_) * dt
+
+#             if np.mod(istp,20)==0: print head
+
+#             stamp= '%4.4i'%istp+ '%9.1e'%da_+'%12.4e'%db_+\
+#                    ('%7.3f'*2+'%7.1f'*2)%(ea_,eb_,wa,wb)+\
+#                    ('%10.2e'*4)%(P.d[0,istp],P.d[1,istp],
+#                                  P.d[2,istp],P.d[5,istp])+\
+#                    ('%10.2e'*4)%(P.e[0,istp],P.e[1,istp],
+#                                  P.e[2,istp],P.e[5,istp])+\
+#                    ('%7.1f'*3 )%(P.s[0,istp],P.s[1,istp],
+#                                  P.s[5,istp])+' '+\
+#                    ('%10.2e'*4)%(B.d[0],    B.d[1],
+#                                  B.d[2],     B.d[5])+\
+#                    ('%10.2e'*4)%( eb[0],     eb[1],
+#                                   eb[2],      eb[5])+\
+#                    ('%7.1f'*3 )%(B.s[0],    B.s[1],
+#                                  B.s[5])+\
+#                    '%7.3f'%f+'%5.1f'%(psi*180/np.pi)+'%8.3f'%ratio
+#             print stamp
+#             fo_log.write(stamp+'\n')
+
+#             eb      = eb + B.d * dt
+#             B.e     = eb
+#             eb_     = eb_ + db_ * dt
+#             B.eb_   = eb_
+
+#             matB.s.append(B.s)
+#             matB.e.append(eb)
+#             matB.d.append(B.d)
+
+#             if ratio>10:
+#                 fo_log.close()
+#                 print fn_log
+#                 import plotter
+#                 _fn_ = plotter.plot_log2(fn=fn_log,yfunc=mat.func_yd)
+#                 os.system('open %s'%_fn_)
+
+#                 raise IOError
+#                 #break
 
 if __name__=='__main__':
     import argparse
