@@ -18,12 +18,13 @@ def main():
     X=[]
     Y=[]
     for i in xrange(len(s)):
-        phi, dphi, d2phi = vm(s[i])
-        print s[i]
-        ys=s[i]/phi
+        ys,phi, dphi, d2phi = vm(s[i])
         X.append(ys[0])
         Y.append(ys[1])
     ax.plot(X,Y)
+    fn='vm_check.pdf'
+    print '%s has been saved'%fn
+    fig.savefig(fn)
 
 if __name__=='__main__':
     main()

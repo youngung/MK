@@ -17,8 +17,15 @@ def drawing():
     ## reference strain vector (pth) of rho
     pth = np.zeros(6)
     pth[0] = 1.
-    pth[1] = rho
+    pth[1] = -0.5
+    pth[2] = 1.
+    npt = 9
+
     f_yld = vm
+
+    ang1   = 0.
+    ang2   = 25.
+    anginc = 1.
 
     ## Find the corresponding stress direction on the yield locus while maintaining (phi=1.)
     ## corresponding two locations of stress that embraces the presumable stress that gives the rho. - correct stress will be found between these two stresses
@@ -26,24 +33,31 @@ def drawing():
     ## s1 should be far left from uniaxial; s2 should be far right from uniaxial
     s1[0]=0; s1[1]=-1
     s2[0]=1; s2[1]= 1
-    return rho, pth,f_yld,s1,s2
 
-def planestrain():
+    return rho, npt, pth,f_yld,s1,s2
+
+
+def PSRD():
     ## given rho:
     rho = 0.
     ## reference strain vector (pth) of rho
     pth = np.zeros(6)
     pth[0] = 1.
-    pth[1] = rho
+    pth[1] = 0.025
+    pth[2] = 1.
+    pth[3] = 0.25
+
+    npt = 6
     f_yld = vm
 
     ## Find the corresponding stress direction on the yield locus while maintaining (phi=1.)
     ## corresponding two locations of stress that embraces the presumable stress that gives the rho. - correct stress will be found between these two stresses
     s1=np.zeros(6); s2=np.zeros(6)
     ## s1 should be far left from uniaxial; s2 should be far right from uniaxial
-    s1[0]=0; s1[1]=-1
+    s1[0]=1; s1[1]= 0
     s2[0]=0; s2[1]= 1
-    return rho, pth,f_yld,s1,s2
+
+    return rho,npt,pth,f_yld,s1,s2
 
 
 def main(iverbose=0):
@@ -54,40 +68,62 @@ def main(iverbose=0):
     --------
     verbose
     """
-    rho,pth,f_yld,s1,s2 = drawing()
+    # rho,npt,pth,f_yld,sa,sb = drawing()
+    rho,npt,pth,f_yld,sa,sb = PSRD()
 
     ## find the correct stress that givesn rho of -0.6
-    if iverbose>=3: print (8*'%6s ')%('phi','s1','s2','sa1','sa2','sb1','sb2','diff')
-    diff = np.sqrt(((s1-s2)**2).sum())
-    it=0
-    while diff>1e-10:
-        s       = (s1[::]+s2[::])/2.
-        s, phi,dphi,d2phi = f_yld(s)
-        rac     = sqrt(dphi[0]*dphi[0] + dphi[1]*dphi[1])
-        dphi[0] = dphi[0]/rac
-        dphi[1] = dphi[1]/rac
+    if iverbose>=3: print (8*'%6s ')%(
+            'phi','s1','s2','sa1','sa2','sb1','sb2','diff')
 
-        ## narrow down s1-s2 bounds
-        if dphi[0]*pth[1]-dphi[1]*pth[0]>=0:
-            s1[:] = s[:]
-        else:
-            s2[:] = s[:]
-        it=it+1
-        if (it>100): raise IOError, 'Could not find the proper s'
-        diff = np.sqrt(((s1-s2)**2).sum())
-        print (7*'%6.3f '+'%9.3e')%(phi,s[0],s[1],s1[0],s1[1],s2[0],s2[1],diff)
+    for npth in xrange(npt):
+        pthr = pth0 + npth*(pth[2]-pth[0])/npt
+        ptht = pth1 + npth*(pth[3]-pth[1])/npt
+        rac  = sqrt(pthr**2+ptht**2)
+        pthr = pthr/rac
+        ptht = ptht/rac
 
+        s1=sa[::]
+        s2=sb[::]
 
-    rho_ = dphi[1]/dphi[0]
-    alf_ = s[1]/s[0]
-    if iverbose>=3: print 'it:',it
-    if iverbose>=3: print 'rho, rho_, alf_',rho,rho_,alf_
-    ynew, Ahist, Bhist,absciss = onepath(f_yld=f_yld,sa=s,psi0=0.,f0=0.996)
-    print 'ynew:'
-    print(ynew)
+        it = 0
 
-    print 'RD strain', 'TD strain', 'Angle psi0', 'angle psif','RD stress','TD stress'
-    print ynew[1],ynew[2] 
+        while diff>1e-10:
+            it = it + 1
+            s       = (s1[::]+s2[::])/2.
+            s,phi,dphi,d2phi = f_yld(s)
+            rac = sqrt(dphi[0]**2 + dphi[1]**2)
+
+            diff = sqrt(((s1-s2)**2).sum())
+
+            rac     = sqrt(dphi[0]*dphi[0] + dphi[1]*dphi[1])
+            dphi[0] = dphi[0]/rac
+            dphi[1] = dphi[1]/rac
+
+            ## narrow down s1-s2 bounds
+            if dphi[0]*pth[1]-dphi[1]*pth[0]>=0:
+                s1[:] = s[:]
+            else:
+                s2[:] = s[:]
+
+            if (it>100): raise IOError, 'Could not find the proper s'
+            diff = np.sqrt(((s1-s2)**2).sum())
+            if iverbose>=3: print (7*'%6.3f '+'%9.3e')%(phi,s[0],s[1],s1[0],s1[1],s2[0],s2[1],diff)
+            pass
+
+    
+        rho_ = dphi[1]/dphi[0]
+        alf_ = s[1]/s[0]
+        if iverbose>=3: print 'it:',it
+        if iverbose>=3: print 'rho, rho_, alf_',rho,rho_,alf_
+        ynew, Ahist, Bhist,absciss = onepath(f_yld=f_yld,sa=s,psi0=0.,f0=0.996)
+        print 'ynew:'
+        print(ynew)
+
+        print 'RD strain', 'TD strain', 'Angle psi0', 'angle psif','RD stress','TD stress'
+        print ynew[1],ynew[2] 
+
+        ## exit
+        os._exit(1)
 
 def return_swift(n,m,ks,e0,qq):
     """
@@ -274,7 +310,6 @@ def hist_plot(f_yld,Ahist,Bhist):
     X=[]; Y=[]
     for i in xrange(len(s)):
         ys, phi, dphi, d2phi = vm(s[i])
-        # ys=s[i]/phi
         X.append(ys[0])
         Y.append(ys[1])
 
@@ -620,8 +655,8 @@ def func_fld2(ndim,T,sa,b,x,yancien,f_hard,f_yld,verbose):
         print ma,siga,dsiga,dma,qqa
 
     ## parameters in region B
-    sb             = rot_6d(sb_dump,psi_new)
-    sb,phib,fb,f2b = f_yld(sb)
+    sb            = rot_6d(sb_dump,psi_new)
+    sb,phib,fb,f2b   = f_yld(sb)
     mat_B.Y.phi   = phib
     mat_B.Y.dphi  = fb
     mat_B.Y.d2phi = f2b
@@ -868,4 +903,4 @@ def func_fld1(ndim,b,x,f_hard,f_yld,verbose):
     return f, J, fb
 
 if __name__=='__main__':
-    main(iverbose=0)
+    main(iverbose=3)
