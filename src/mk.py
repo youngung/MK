@@ -82,7 +82,7 @@ def main(iverbose=0):
         it=it+1
         if (it>100): raise IOError, 'Could not find the proper s'
         diff = np.sqrt(((s1-s2)**2).sum())
-        if iverbose>=3: print (7*'%6.3f '+'%9.3e')%(phi,s[0],s[1],s1[0],s1[1],s2[0],s2[1],diff)
+        print (7*'%6.3f '+'%9.3e')%(phi,s[0],s[1],s1[0],s1[1],s2[0],s2[1],diff)
 
 
     rho_ = dphi[1]/dphi[0]
@@ -316,7 +316,8 @@ def hist_plot(f_yld,Ahist,Bhist):
     ax2.legend();ax3.legend()
 
     fn='hist_plot.pdf'
-    fig.savefig(fn)
+    fig.tight_layout()
+    fig.savefig(fn,bbox_inches='tight')
     print '%s has been saved'%fn
 
 def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):

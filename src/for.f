@@ -4,7 +4,7 @@ c     Von Mises
       implicit none
       integer i
       real*8 s(6),h,phi,dff,dphi(6),d2phi(6,6),d2h(6,6),d2ff
-Cf2py intent(in) s
+Cf2py intent(in,out) s
 Cf2py intent(out) phi,dphi,d2phi
 
 !     von Mises criterion
