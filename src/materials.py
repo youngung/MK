@@ -13,14 +13,15 @@ class Mat_A:
         self.name=name
         pass
     def assign_hd(self,ihd_opt,**kwargs):
-        self.func_hd = c_G(ihd_opt,**kwargs)
+        self.func_hd, self.func_hd_d = c_G(ihd_opt,**kwargs)
         pass
     def assign_sr(self,isr_opt,**kwargs):
         self.func_sr = c_F(isr_opt,**kwargs)
         pass
     def assign_yd(self,iyd_opt,**kwargs):
-        self.func_yd = return_c_yld(iyd_opt,**kwargs)
-        self.af      = lib.return_af(1.,self.func_yd)
+        self.func_yd, self.func_yd1, self.func_yd2 \
+            = return_c_yld(iyd_opt,**kwargs)
+        self.af = lib.return_af(1.,self.func_yd)
     def calc_ys(self):
         """
         yield lous in pi-plane
@@ -116,14 +117,13 @@ class Bnd_A:
         self.dbar    = dbar
         self.ebar_mx = ebar_mx
 
-
 def bb():
     """
     bb
     """
     my_loading = Bnd_A(name='proportional_short',
                        alpha0=1,alpha1=1,alphan=1,beta=0,
-                       sr_eq=1e-3,dbar=1e-3,ebar_mx=1.5)
+                       sr_eq=1e-3,dbar=5.e-4,ebar_mx=1.5)
     return my_loading
 
 

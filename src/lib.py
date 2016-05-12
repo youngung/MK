@@ -31,6 +31,8 @@ def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
     ax.set_ylim(ylim)
 
 def rot(psi):
+    if psi>np.pi or psi<-np.pi:
+        print 'You might have put degree than radian... Please check.'
     r = np.zeros((3,3)); c = np.cos(psi); s = np.sin(psi)
     r[0,0]= c;  r[0,1]=-s
     r[1,0]= s;  r[1,1]= c
@@ -60,7 +62,7 @@ def rot_tensor(a,psi):
     """
     Arguments
     ---------
-    a
+    a (3x3) matrix
     psi (in degree)
     """
     a=np.array(a)
@@ -72,7 +74,6 @@ def rot_tensor(a,psi):
                 for l in xrange(3):
                     b[i,j] = b[i,j] + r[i,k] * a[k,l] * r[j,l]
     return b
-
 
 def th_2_planestress(th):
     """
@@ -119,8 +120,8 @@ def th_planestress_c(th,yfunc):
     """
     Sigma = th_2_planestress(th)
     y     = yfunc(Sigma)
-    return Sigma / y
-
+    rst   = Sigma / y
+    return rst
 
 def convert_6sig_princ(s6):
     """
@@ -180,8 +181,8 @@ s62c = convert_sig6_sig33
 
 def rot_6d(a6,psi):
     a33 = s62c(a6.copy())
-    a33 = rot_tensor(a33,psi)
-    return c2s6(a33)
+    a33r = rot_tensor(a33,psi)
+    return c2s6(a33r)
 
 def ys_temp(ax):
     """
@@ -409,7 +410,6 @@ def alph2sig2(alpha,beta):
     sigma[1,0] = beta
     return sigma
 
-
 def alph2sig6(alpha,beta):
     """
     (alpha,beta) to sigma6
@@ -420,6 +420,12 @@ def alph2sig6(alpha,beta):
 
 def alph2eps(alpha,beta,potential,**kwargs):
     """
+    Based on ready characterizied potential
+
+    In case that the potential cannot provide an analytical
+    solution, use the 'numerical' solution to provide
+    the strain rate vector corresponding to the given
+    stress stress (in terms of alpha, i.e., s22/s11)
     """
     ## 6D stress
     cs6 = alph2sig6(alpha,beta)
@@ -431,7 +437,12 @@ def alph2eps(alpha,beta,potential,**kwargs):
 
 def alph2eps_c(alpha,beta,potential):
     """
-    based on ready characterizied potential
+    Based on ready characterizied potential
+
+    In case that the potential cannot provide an analytical
+    solution, use the 'numerical' solution to provide
+    the strain rate vector corresponding to the given
+    stress stress (in terms of alpha, i.e., s22/s11)
     """
     ## 6D stress
     cs6 = alph2sig6(alpha,beta)
@@ -453,6 +464,13 @@ def get_stime():
     return date,hr+mn+sec
 
 def gen_hash_code(nchar=6):
+    """
+    Generate random hash tag (to mimic what mktemp does)
+
+    Arguments
+    ---------
+    nchar = 6
+    """
     import hashlib, time
     ## -------------------------------------------------------
     ## Gen HASH code
@@ -462,7 +480,7 @@ def gen_hash_code(nchar=6):
     m.update(str(time.time()))
     return m.hexdigest()[:nchar]
 
-def find_tmp():
+def find_tmp(verbose=True):
     """
     Find the relevant temp folder
     in compliance with the CTCMS cluster policy,
@@ -484,5 +502,38 @@ def find_tmp():
         _tmp_='/tmp/ynj/'
     if not(os.path.isdir(_tmp_)):
         os.mkdir(_tmp_)
-    print '_tmp_:', _tmp_
+    if verbose:print '_tmp_:', _tmp_
     return _tmp_
+
+def gen_tempfile(prefix='',affix='',ext='txt'):
+    """
+    Generate temp file in _tmp_
+
+    Arguments
+    ---------
+    prefix = ''
+    affix  = ''
+    ext    = 'txt'  (extension, defualt: txt)
+    """
+    import os
+    _tmp_ = find_tmp(verbose=False)
+    exitCondition = False
+
+    it = 0
+    while not(exitCondition):
+        hc = gen_hash_code(nchar=6)
+        tmpLocation = find_tmp(verbose=False)
+        filename = '%s-%s-%s'%(prefix,hc,affix)
+        if type(ext).__name__=='str':
+            filename = '%s.%s'%(filename,ext)
+
+        ## under the temp folder
+        filename = os.path.join(_tmp_,filename)
+
+        exitCondition = not(os.path.isfile(filename))
+        it = it + 1
+
+    if it>1:
+        print 'Warning: Oddly you just had'+\
+            ' an overlapped file name'
+    return filename
