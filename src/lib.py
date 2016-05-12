@@ -410,7 +410,6 @@ def alph2sig2(alpha,beta):
     sigma[1,0] = beta
     return sigma
 
-
 def alph2sig6(alpha,beta):
     """
     (alpha,beta) to sigma6
@@ -421,6 +420,12 @@ def alph2sig6(alpha,beta):
 
 def alph2eps(alpha,beta,potential,**kwargs):
     """
+    Based on ready characterizied potential
+
+    In case that the potential cannot provide an analytical
+    solution, use the 'numerical' solution to provide
+    the strain rate vector corresponding to the given
+    stress stress (in terms of alpha, i.e., s22/s11)
     """
     ## 6D stress
     cs6 = alph2sig6(alpha,beta)
@@ -432,7 +437,12 @@ def alph2eps(alpha,beta,potential,**kwargs):
 
 def alph2eps_c(alpha,beta,potential):
     """
-    based on ready characterizied potential
+    Based on ready characterizied potential
+
+    In case that the potential cannot provide an analytical
+    solution, use the 'numerical' solution to provide
+    the strain rate vector corresponding to the given
+    stress stress (in terms of alpha, i.e., s22/s11)
     """
     ## 6D stress
     cs6 = alph2sig6(alpha,beta)
@@ -454,6 +464,13 @@ def get_stime():
     return date,hr+mn+sec
 
 def gen_hash_code(nchar=6):
+    """
+    Generate random hash tag (to mimic what mktemp does)
+
+    Arguments
+    ---------
+    nchar = 6
+    """
     import hashlib, time
     ## -------------------------------------------------------
     ## Gen HASH code
@@ -463,7 +480,7 @@ def gen_hash_code(nchar=6):
     m.update(str(time.time()))
     return m.hexdigest()[:nchar]
 
-def find_tmp():
+def find_tmp(verbose=True):
     """
     Find the relevant temp folder
     in compliance with the CTCMS cluster policy,
@@ -485,5 +502,38 @@ def find_tmp():
         _tmp_='/tmp/ynj/'
     if not(os.path.isdir(_tmp_)):
         os.mkdir(_tmp_)
-    print '_tmp_:', _tmp_
+    if verbose:print '_tmp_:', _tmp_
     return _tmp_
+
+def gen_tempfile(prefix='',affix='',ext='txt'):
+    """
+    Generate temp file in _tmp_
+
+    Arguments
+    ---------
+    prefix = ''
+    affix  = ''
+    ext    = 'txt'  (extension, defualt: txt)
+    """
+    import os
+    _tmp_ = find_tmp(verbose=False)
+    exitCondition = False
+
+    it = 0
+    while not(exitCondition):
+        hc = gen_hash_code(nchar=6)
+        tmpLocation = find_tmp(verbose=False)
+        filename = '%s-%s-%s'%(prefix,hc,affix)
+        if type(ext).__name__=='str':
+            filename = '%s.%s'%(filename,ext)
+
+        ## under the temp folder
+        filename = os.path.join(_tmp_,filename)
+
+        exitCondition = not(os.path.isfile(filename))
+        it = it + 1
+
+    if it>1:
+        print 'Warning: Oddly you just had'+\
+            ' an overlapped file name'
+    return filename
