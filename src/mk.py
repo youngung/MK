@@ -4,61 +4,15 @@ Adapted from FB's yld2000-2d subroutines for forming limit diagram predictions
 
 from for_lib import vm
 import numpy as np
+import time
+from MP import progress_bar
+uet = progress_bar.update_elapsed_time
 cos=np.cos
 sin=np.sin
 tan=np.tan
 log=np.log
 atan2=np.arctan2
 sqrt=np.sqrt
-
-def drawing():
-    ## given rho:
-    rho = -0.6
-    ## reference strain vector (pth) of rho
-    pth = np.zeros(6)
-    pth[0] = 1.
-    pth[1] = -0.5
-    pth[2] = 1.
-    npt = 9
-
-    f_yld = vm
-
-    ang1   = 0.
-    ang2   = 25.
-    anginc = 1.
-
-    ## Find the corresponding stress direction on the yield locus while maintaining (phi=1.)
-    ## corresponding two locations of stress that embraces the presumable stress that gives the rho. - correct stress will be found between these two stresses
-    s1=np.zeros(6); s2=np.zeros(6)
-    ## s1 should be far left from uniaxial; s2 should be far right from uniaxial
-    s1[0]=0; s1[1]=-1
-    s2[0]=1; s2[1]= 1
-
-    return rho, npt, pth,f_yld,s1,s2
-
-
-def PSRD():
-    ## given rho:
-    rho = 0.
-    ## reference strain vector (pth) of rho
-    pth = np.zeros(6)
-    pth[0] = 1.
-    pth[1] = 0.025
-    pth[2] = 1.
-    pth[3] = 0.25
-
-    npt = 6
-    f_yld = vm
-
-    ## Find the corresponding stress direction on the yield locus while maintaining (phi=1.)
-    ## corresponding two locations of stress that embraces the presumable stress that gives the rho. - correct stress will be found between these two stresses
-    s1=np.zeros(6); s2=np.zeros(6)
-    ## s1 should be far left from uniaxial; s2 should be far right from uniaxial
-    s1[0]=1; s1[1]= 0
-    s2[0]=0; s2[1]= 1
-
-    return rho,npt,pth,f_yld,s1,s2
-
 
 def main(iverbose=0):
     """
@@ -68,34 +22,44 @@ def main(iverbose=0):
     --------
     verbose
     """
-    # rho,npt,pth,f_yld,sa,sb = drawing()
-    rho,npt,pth,f_yld,sa,sb = PSRD()
+    logFILE = open('mk_log.txt','w')
 
-    ## find the correct stress that givesn rho of -0.6
-    if iverbose>=3: print (8*'%6s ')%(
-            'phi','s1','s2','sa1','sa2','sb1','sb2','diff')
+    import os
+    from mk_paths import *
 
+    #angs,npt,pth,f_yld,sa,sb = DRD()
+    angs, npt,pth,f_yld,sa,sb = PSRD()
+    ang1,ang2,anginc = angs
+
+
+    t_total = 0.
     for npth in xrange(npt):
-        pthr = pth0 + npth*(pth[2]-pth[0])/npt
-        ptht = pth1 + npth*(pth[3]-pth[1])/npt
+        t0=time.time()
+
+        pthr = pth[0] + npth*(pth[2]-pth[0])/npt
+        ptht = pth[1] + npth*(pth[3]-pth[1])/npt
         rac  = sqrt(pthr**2+ptht**2)
-        pthr = pthr/rac
-        ptht = ptht/rac
+        pthr = pthr/rac; ptht = ptht/rac
+
+        print '--------------------'
+        print 'FLD path %2.2i/%2.2i'%(npth,npt)
+        print ('%9s'*2)%('pthr','ptht')
+        print ('%9.3f'*2)%(pthr,ptht)
 
         s1=sa[::]
         s2=sb[::]
 
         it = 0
+        diff=1.
 
+        if iverbose>=3: print (9*'%6s ')%(
+                'it','phi','s1','s2','sa1','sa2',
+                'sb1','sb2','diff')
         while diff>1e-10:
             it = it + 1
-            s       = (s1[::]+s2[::])/2.
+            s  = (s1[::]+s2[::])/2.
             s,phi,dphi,d2phi = f_yld(s)
-            rac = sqrt(dphi[0]**2 + dphi[1]**2)
-
-            diff = sqrt(((s1-s2)**2).sum())
-
-            rac     = sqrt(dphi[0]*dphi[0] + dphi[1]*dphi[1])
+            rac     = sqrt(dphi[0]**2 + dphi[1]**2)
             dphi[0] = dphi[0]/rac
             dphi[1] = dphi[1]/rac
 
@@ -105,25 +69,80 @@ def main(iverbose=0):
             else:
                 s2[:] = s[:]
 
-            if (it>100): raise IOError, 'Could not find the proper s'
-            diff = np.sqrt(((s1-s2)**2).sum())
-            if iverbose>=3: print (7*'%6.3f '+'%9.3e')%(phi,s[0],s[1],s1[0],s1[1],s2[0],s2[1],diff)
-            pass
+            print ('%6i '+7*'%6.3f '+'%9.3e')%(
+                it,phi,s[0],s[1],s1[0],s1[1],
+                s2[0],s2[1],diff)
 
-    
+            if (it>100): raise IOError, 'Could not find the proper s'
+            diff = sqrt(((s1-s2)**2).sum())
+
         rho_ = dphi[1]/dphi[0]
         alf_ = s[1]/s[0]
         if iverbose>=3: print 'it:',it
-        if iverbose>=3: print 'rho, rho_, alf_',rho,rho_,alf_
-        ynew, Ahist, Bhist,absciss = onepath(f_yld=f_yld,sa=s,psi0=0.,f0=0.996)
+        if iverbose>=3: print 'rho_, alf_',rho_,alf_
+
+
+        ## integrate for each path.
+        ntotAngle = ((ang2-ang1)/anginc)+1
+        rad2deg   = 180./np.pi
+        deg2rad   = 1./rad2deg
+        psi0s     = np.linspace(ang1,ang2,ntotAngle)*deg2rad
+
+        absciss = 1e3
+        absciss0 = 1e3
+        print 'Iteration over the given psi angle'
+
+
+        head = ('%8s'*8)%('epsRD','epsTD','psi0','psif','sigRD',
+                          'sigTD','sigA','T\n')
+        logFILE.write(head)
+
+        for psi0_at_each in psi0s:
+            print 'PSI: %5.1f'%(psi0_at_each*rad2deg)
+            ynew, Ahist, Bhist, absciss,xbb,siga,sx = onepath(
+                f_yld=f_yld,sa=s,psi0=psi0_at_each,f0=0.996,T=absciss)
+            psif1=xbb[0]
+            # print ('%8s'*6)%('s1','s2','psi0','psif','siga','absciss')
+            print 'ynew:',ynew
+            cnt = ('%8.3f'*8)%(
+                ynew[1],ynew[2],
+                psi0_at_each*rad2deg,
+                psif1*rad2deg,
+                sx[0],sx[1],
+                siga,
+                absciss)
+            print cnt
+            logFILE.write(cnt+'\n')
+
+            if absciss<absciss0: ## when a smaller total strain is found update the smallest.
+                absciss0=absciss
+                psi0_min=psi0_at_each
+                psif_min=psif1
+                y2      =ynew[1]
+                y3      =ynew[2]
+                ss1     =sx[0]
+                ss2     =sx[1]
+                siga_fin=siga
+
+            print 'sigma:',siga
+            print '*'*50,'\n'
+
+        ## exit
+        logFILE.close(); os._exit(1)
+
+        dt = time.time()-t0
+        t_total = t_total+dt
+        uet(dt,'elapsed time:')
         print 'ynew:'
         print(ynew)
 
         print 'RD strain', 'TD strain', 'Angle psi0', 'angle psif','RD stress','TD stress'
-        print ynew[1],ynew[2] 
+        print ynew[1],ynew[2]
 
-        ## exit
-        os._exit(1)
+    # ## exit
+    # os._exit(1)
+
+    logFILE.close()
 
 def return_swift(n,m,ks,e0,qq):
     """
@@ -162,7 +181,7 @@ def test():
     print e    # dm
     print f    # (qq)
 
-def onepath(f_yld,sa,psi0,f0):
+def onepath(f_yld,sa,psi0,f0,T):
     """
     Arguments
     ---------
@@ -210,9 +229,9 @@ def onepath(f_yld,sa,psi0,f0):
     b[5] = sx[5]/sx[0]
 
     xzero = np.array([1,1,0,0])
-    # for i in xrange(6):
-    #     print 'B%i'%(i+1),'%7.2f'%b[i]
-    #     pass
+    for i in xrange(6):
+        print 'B%i'%(i+1),'%7.2f'%b[i]
+        pass
 
     xfinal,fb=new_raph_fld(
         ndim=ndim,ncase=1,
@@ -237,8 +256,8 @@ def onepath(f_yld,sa,psi0,f0):
     yzero[3] = tzero*fb[0] ## fb: first derivative in region B
     yzero[4] = tzero*fb[1]
 
-    print 'yzero:'
-    print yzero
+    print ('%7s'+'%8.3f'*5)%('yzero:',yzero[0],yzero[1],yzero[2],
+                             yzero[3],yzero[4])
 
     ndds    = 5 ## dimension differential system
     dydx    = np.zeros(ndds)
@@ -252,15 +271,25 @@ def onepath(f_yld,sa,psi0,f0):
 
     print 'xbb:'
     np.set_printoptions(precision=3)
-    print xbb
+    print ('%7.3f'*7)%(xbb[0],xbb[1],xbb[2],
+                       xbb[3],xbb[4],xbb[5],xbb[6])
 
-    ynew,Ahist,Bhist,absciss = pasapas(f0,sa,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose=False)
+    t0=time.time()
+
+    ## integrate function
+    ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin = pasapas(
+        f0,sa,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose=False)
+    psif = xbb[0]
+    print ('%8.3f'*5)%(ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
+    uet(time.time()-t0,'Elapsed time in step by step integration')
+    print
+
     print 'After pasapas'
     print 'absciss:',absciss
     hist_plot(f_yld,Ahist,Bhist)
 
     ## check the hardening curve?
-    return ynew,Ahist,Bhist,absciss
+    return ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin
 
 def hist_plot(f_yld,Ahist,Bhist):
     """
@@ -362,6 +391,16 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
     f_hard
     f_yld
     verbose
+
+    Returns
+    -------
+    ynew
+    Ahist
+    Bhist
+    absciss (T)
+    xbb
+    siga
+    sa
     """
     import os
     absciss = tzero ## xcoordinate in the intergration
@@ -388,14 +427,19 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
     Ahist=[]
     Bhist=[]
 
+    time_used_in_syst=0.
+
     while(k<=nbpas and absciss<tmax and dydx[0]>=1e-1):
         k=k+1
         ## adjusting the incremental size size?
         if   dydx[0]<0.2: deltt = deltat/100.
         elif dydx[0]<0.5: deltt = deltat/10.
         else:             deltt = deltat
-        dydx, ynew, xbb, regA, regB = syst(deltt,t,f0,dydx,xbb,
-                                           S,yancien,f_hard,f_yld,verbose)
+        t0=time.time()
+        dydx, ynew, xbb, regA, regB, siga, SA = syst(
+            deltt,t,f0,dydx,xbb,S,yancien,f_hard,f_yld,verbose)
+
+        time_used_in_syst = time_used_in_syst + (time.time()-t0)
         Ahist.append(regA)
         Bhist.append(regB)
         k1    = deltt * dydx ## Y increments
@@ -417,12 +461,17 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
 
         pass
 
-    print 'k,ynew'
-    print ('%2i '+'%11.4e '*5)%(k, ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
+    uet(time_used_in_syst,'Total time used for iteration in syst')
+    print
+
+    print '-'*70
+    print 'k,ynew resulting from pasapas'
+    print ('%2i '+'%11.3f '*5)%(k, ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
+    print '-'*70
     print 'Stop in paspas for debug'
     print 'End of loop in pasapas ----'
     # os._exit(1)
-    return ynew,Ahist,Bhist,absciss
+    return ynew,Ahist,Bhist,absciss,xbb,siga, SA
 
 ## differential system
 def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
@@ -441,6 +490,8 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
     -------
     dydx
     yancien
+    siga     strain hardening flow stress, sig = hard(E)
+    sa        stress of region a
     """
     import os
     xzero    = np.zeros(4)
@@ -457,7 +508,7 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
     bn[8] = deltt
     bn[9] = xbb[0]
 
-    xfinal, fa, fb, bn, regionA, regionB = new_raph_fld(
+    xfinal, fa, fb, bn, regionA, regionB, siga, sa = new_raph_fld(
         T=t,ndim=ndim,ncase=2,xzero=xzero,y=y,
         b=bn,f_hard=f_hard,f_yld=f_yld,sa=sa,verbose=verbose)
     ##
@@ -489,7 +540,7 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
     np.set_printoptions(precision=3)
 
     # raise IOError
-    return dydx, y, xbb, regionA[-1],regionB[-1]
+    return dydx, y, xbb, regionA[-1],regionB[-1], siga, sa
 
 def new_raph_fld(
         T=None,ndim=None,ncase=None,
@@ -506,6 +557,9 @@ def new_raph_fld(
     b
     f_hard
     verbose=True
+
+    Return
+    ------
     """
     import os
     if ncase==2 and verbose:
@@ -542,7 +596,10 @@ def new_raph_fld(
             if verbose:
                 print '-'*40
                 print '%i ITERATION over func_fld2 in NR'%it
-            F, J, fa, fb, b, mat_A, mat_B = func_fld2(ndim,T,sa,b,xn,y,f_hard,f_yld,verbose)
+
+            F, J, fa, fb, b, mat_A, mat_B, siga, sa \
+                = func_fld2(ndim,T,sa,b,xn,y,f_hard,f_yld,verbose)
+
             A_region.append(mat_A)
             B_region.append(mat_B)
 
@@ -592,19 +649,22 @@ def new_raph_fld(
         return
 
     if ncase==1: return xn1,fb
-    if ncase==2: return xn1,fa,fb,b,A_region,B_region
+    if ncase==2: return xn1,fa,fb,b,A_region,B_region,siga,sa
 
-def func_fld2(ndim,T,sa,b,x,yancien,f_hard,f_yld,verbose):
+def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     """
     ndim
     T      : axis along integration occurs
-    sa   (stress of region A)
+    s       (stress of region A)
     b      : variables?
     x      : the unknowns passed to func_fld
     yancien: yancien defined in pasapas
     f_hard : hardening function
     f_yld  : yield function
     verbose
+
+    Returns
+    F,J,fa,fb,b,mat_A,mat_B, siga, sa
     """
 
     class material:
@@ -628,7 +688,7 @@ def func_fld2(ndim,T,sa,b,x,yancien,f_hard,f_yld,verbose):
     sb_dump = np.array([xb,yb,0,0,0,zb])
 
     ## Parameters in region A
-    sa,phia,fa,f2a   = f_yld(sa)
+    sa,phia,fa,f2a   = f_yld(s)
     mat_A.Y.phi   = phia
     mat_A.Y.dphi  = fa
     mat_A.Y.d2phi = f2a
@@ -775,7 +835,7 @@ def func_fld2(ndim,T,sa,b,x,yancien,f_hard,f_yld,verbose):
         print 'J:'
         print(J)
 
-    return F, J, fa, fb, b, mat_A, mat_B
+    return F, J, fa, fb, b, mat_A, mat_B, siga, sa
 
 def func_fld1(ndim,b,x,f_hard,f_yld,verbose):
     """
