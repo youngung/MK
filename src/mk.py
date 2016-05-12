@@ -909,6 +909,6 @@ if __name__=='__main__':
     from mk_paths import returnPaths
     DRD,PSRD,BBRD,BBTD,PSTD,DTD = returnPaths()
     f0 = 0.996
-    logFN, tTime = main(f0,PSRD)
+    logFN, tTime = main(f0,DRD)
     print logFN
     uet(tTime,'Time elapsed for the given path')

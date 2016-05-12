@@ -47,10 +47,11 @@ def DRD():
     ## to be used to numerically find the actual stress
     ## corresponding to the strain vector given by pth
 
-    stressLeft=np.zeros(6)
+
     stressRight=np.zeros(6)
-    stressRight[1]=-1
+    stressLeft=np.zeros(6)
     stressRight[0]= 0
+    stressRight[1]=-1
     stressLeft[0] = 1 
     stressLeft[1] = 1
 
@@ -75,12 +76,12 @@ def PSRD():
     pth[3] = 0.250
     npt    = 9
 
-    stressLeft=np.zeros(6)
     stressRight=np.zeros(6)
-    stressLeft[0]=1
-    stressLeft[1]=0
-    stressRight[0]=0
-    stressRight[1]=1
+    stressLeft=np.zeros(6)
+    stressRight[0]=1
+    stressRight[1]=0
+    stressLeft[0]=0
+    stressLeft[1]=1
 
     return angs,npt,pth,f_yld,stressRight,stressLeft
 
@@ -102,12 +103,13 @@ def BBRD():
     pth[3] = 1.000
     npt    = 14
 
-    stressLeft=np.zeros(6)
     stressRight=np.zeros(6)
-    stressLeft[0]=1
-    stressLeft[1]=0
-    stressRight[0]=0
-    stressRight[1]=1
+    stressLeft=np.zeros(6)
+    stressRight[0]=1
+    stressRight[1]=0
+    stressLeft[0]=0
+    stressLeft[1]=1
+
 
     return angs,npt,pth,f_yld,stressRight,stressLeft
 
@@ -129,12 +131,12 @@ def BBTD():
     pth[3] = 1.000
     npt    = 14
 
-    stressLeft=np.zeros(6)
     stressRight=np.zeros(6)
-    stressLeft[0]=1
-    stressLeft[1]=0
-    stressRight[0]=0
-    stressRight[1]=1
+    stressLeft=np.zeros(6)
+    stressRight[0]=1
+    stressRight[1]=0
+    stressLeft[0]=0
+    stressLeft[1]=1
 
     return angs,npt,pth,f_yld,stressRight,stressLeft
 
@@ -156,12 +158,12 @@ def PSTD():
     pth[3] = 1.000
     npt    = 9
 
-    stressLeft=np.zeros(6)
     stressRight=np.zeros(6)
-    stressLeft[0]=1
-    stressLeft[1]=0
-    stressRight[0]=0
-    stressRight[1]=1
+    stressLeft=np.zeros(6)
+    stressRight[0]=1
+    stressRight[1]=0
+    stressLeft[0]=0
+    stressLeft[1]=1
 
     return angs,npt,pth,f_yld,stressRight,stressLeft
 
@@ -185,18 +187,22 @@ def DTD():
 
     stressLeft=np.zeros(6)
     stressRight=np.zeros(6)
-    stressLeft[0]=1
-    stressLeft[1]=1
-    stressRight[0]=-1
-    stressRight[1]=0
+    stressRight[0]=1
+    stressRight[1]=1
+    stressLeft[0]=-1
+    stressLeft[1]=0
 
     return angs,npt,pth,f_yld,stressRight,stressLeft
-
 
 def returnPaths():
     return DRD, PSRD, BBRD, BBTD, PSTD, DTD
 
-def test(funcPath=None):
+def testAllPaths():
+    paths = returnPaths()
+    for i in xrange(len(paths)):
+        testEachPath(paths[i])
+
+def testEachPath(funcPath=None):
     from mk_lib import findStressOnYS
     if type(funcPath).__name__=='NoneType':
         angs,npt,pth,f_yld,stressR, stressL = DRD()
