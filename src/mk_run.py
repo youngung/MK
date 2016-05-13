@@ -1,3 +1,6 @@
+"""
+"""
+
 ## running multithreaded mk runs
 
 def makeCommands(f0,psi0,th,logFileName):
@@ -14,7 +17,7 @@ def makeCommands(f0,psi0,th,logFileName):
         prefix='stdout-mkrun')
     cmd = 'python mk.py --fn %s -f %5.5f -p %+5.5f -t %+5.5f > %s'%(
         logFileName,f0,psi0,th,stdoutFileName)
-    print cmd
+    print 'cmd:',cmd
     return cmd
 
 def test_run():
@@ -38,12 +41,8 @@ if __name__=='__main__':
 
     uet=progress_bar.update_elapsed_time
 
-    ncpu  = multiprocessing.cpu_count()
-    pool  = multiprocessing.Pool(processes=ncpu)
-
     f0 = 0.996
     print '---'
-    results = []
 
     ## rho to theta? ( should be later passed as arguments)
     rhos = [-0.5, -0.25, 0, 0.5, 1]#, 1.5, 2, 2.25, 2.5]
@@ -51,27 +50,32 @@ if __name__=='__main__':
     psi0 = 0. ## should be determined in mk_paths
 
     logFileNames=[]
-
     for i in xrange(len(ths)):
         _psi0s_=findCorrectPsi(ths[i])
+        logFileNames.append([])
         for j in xrange(len(_psi0s_)):
             psi0 = _psi0s_[j]
             logFileName = gen_tempfile(
                 prefix='mk-f0%3.3i-psi%+6.3f-th%+6.3f'%(
                     int(f0*1e3),psi0,ths[i]),
                 affix='log',i=(i*10000+j))
-            logFileNames.append(logFileName)
+            logFileNames[i].append(logFileName)
 
+    ncpu  = multiprocessing.cpu_count()
+    pool  = multiprocessing.Pool(processes=ncpu)
+
+    results = []
     for i in xrange(len(ths)):
         _psi0s_=findCorrectPsi(ths[i])
+        results.append([])
         for j in xrange(len(_psi0s_)):
             psi0 = _psi0s_[j]
             # func = mk_main
             func = run
             r=pool.apply_async(
                 func=func,
-                args=(f0,psi0,ths[i],logFileNames[i]))
-            results.append(r)
+                args=(f0,psi0,ths[i],logFileNames[i][j]))
+            results[i].append(r)
     print '----'
 
     t0 = time.time()
@@ -82,13 +86,14 @@ if __name__=='__main__':
     tTimes       =[]
     rstFileName = gen_tempfile(prefix='MK',affix='results')
     with open(rstFileName,'w') as rstFile:
-        for i in xrange(len(results)):
-            tTime = results[i].get()
-            tTimes.append(tTime)
-            logFN = logFileNames[i]
-            rstFile.write('%i %s\n'%(
-                    i,logFN))
-            logFileNames.append(logFN)
+        for i in xrange(len(results)): ## paths
+            for j in xrange(len(results[i])): ## psi0s
+                tTime = results[i][j].get()
+                tTimes.append(tTime)
+                logFN = logFileNames[i][j]
+                rstFile.write('%i %s\n'%(j,logFN))
+                logFileNames.append(logFN)
+            rstFile.write('--\n')
 
     cpuRunTime=np.array(tTimes).sum()
 
@@ -103,7 +108,65 @@ if __name__=='__main__':
     print 'All results are saved to %s'%rstFileName
     print 'Fin --'
 
+def read(fn):
+    f    = float(fn.split('mk-f')[1].split('-psi')[0])*1e-3
+    psi0 = float(fn.split('psi')[1].split('-th')[0])
+    th   = float(fn.split('-th')[1][:6])
+    with open(fn) as FO:
+        data_line = FO.readlines()[1]
+        elements = data_line.split()
+    return map(float, elements),f,psi0,th, data_line
 
+def pp(masterFileName):
+    """
+    Argument
+    --------
+    masterFileName
+    """
+    import numpy as np
+    numFail=0
+    fileFail=[]
 
-def pp(fn):
-    pass
+    fileFLDall = open('allFLD.txt','w')
+    fileFLDmin = open('minFLD.txt','w')
+
+    with open(masterFileName) as FO:
+        blocks = FO.read().split('--\n')[:-1:]
+        dat_min_master=[]
+        print 'number of blocks',len(blocks)
+        for i in xrange(len(blocks)): ## each block
+            eachBlock = blocks[i]
+            linesInBlock = eachBlock.split('\n')[1:-1:]
+            print linesInBlock
+
+            ## find the minimum |(E1,E2)|
+            min_rad =1.5
+            dat_min = None
+            data_min_line = None
+            # print linesInBlock
+
+            for j in xrange(len(linesInBlock)):
+                line = linesInBlock[j]
+                ind, fn = line.split()
+                data, f, psi0, th, data_line = read(fn)
+                fileFLDall.write('%s'%data_line)
+                epsRD, epsTD, psi0, psif, \
+                    sigRD,sigTD,sigA,T,dt = data[:9]
+                rad = np.sqrt(epsRD**2+epsTD**2)
+                if rad<min_rad:
+                    data_min = data[::]
+                    rad = min_rad
+                    data_min_line = data_line
+
+            dat_min_master.append(dat_min)
+            fileFLDmin.write('%s'%data_min_line)
+
+    fileFLDall.close(); fileFLDmin.close()
+
+    print 'numFail:',numFail
+    print 'FileFail:'
+    for i in xrange(numFail):
+        print fileFail[i]
+
+def test_pp(fn='/local_scratch/MK-6e59e6-results.txt'):
+    pp(fn)
