@@ -14,7 +14,7 @@ log=np.log
 atan2=np.arctan2
 sqrt=np.sqrt
 
-def main(f0=0.996,fGenPath=None,**kwargs):
+def main_deprecated(f0=0.996,fGenPath=None,**kwargs):
     """
     Assumed proportional loadings
 
@@ -127,8 +127,7 @@ def calcAlphaRho(s,e):
         alpha = s[0]/s[1]
     return rho, alpha
 
-
-def main2(f0=0.999,psi0=0,th=0):
+def main(f0=0.999,psi0=0,th=0,logFileName=None):
     """
     Assumed proportional loadings
 
@@ -154,10 +153,11 @@ def main2(f0=0.999,psi0=0,th=0):
     print 'alpha:','%3.1f'%alpha
     print 'rho:  ','%3.1f'%rho
 
-    logFileName = gen_tempfile(
-        prefix='mk-f0%3.3i-th%4.4i-psi%2.2i'%(
-            int(f0*1e3),int(th),int(psi0)),
-        affix='log')
+    if type(logFileName).__name__=='NoneType':
+        logFileName = gen_tempfile(
+            prefix='mk-f0%3.3i-th%4.4i-psi%2.2i'%(
+                int(f0*1e3),int(th),int(psi0)),
+            affix='log')
     logFile  = open(logFileName,'w')
 
     ## integrate for each path.
@@ -974,13 +974,33 @@ def func_fld1(ndim,b,x,f_hard,f_yld,verbose):
 
     return f, J, fb
 
-## command line usage
+## command line usage (may be called in mk_run for multi-threaded run)
+
 if __name__=='__main__':
-    main2(f0=0.996,psi0=5,th=0)
-    # from lib import gen_tempfile
-    # from mk_paths import returnPaths
-    # DRD,PSRD,BBRD,BBTD,PSTD,DTD = returnPaths()
-    # f0 = 0.996
-    # logFN, tTime = main(f0,DRD)
-    # print logFN
-    # uet(tTime,'Time elapsed for the given path')
+    from MP import progress_bar
+    import argparse
+    uet = progress_bar.update_elapsed_time
+    #-------------------------------------------------------
+    ## Arguments parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--fn',type=str,default='dummy-log-file-name',
+        help='File name of the final result')
+    parser.add_argument(
+        '-f', type=float,default=0.995,
+        help='Initial inhomogeneity factor')
+    parser.add_argument(
+        '-p', type=float,default=0.,
+        help='Initial angle of the groove')
+    parser.add_argument(
+        '-t', type=float,default=0.,
+        help='Angle [theta in degree] of'+\
+            ' strain rate theta=atan2(eyy,exx) in [degree]')
+    #-------------------------------------------------------
+    args = parser.parse_args()
+    f0=args.f
+    psi0=args.p
+    th=args.t
+    fn = args.fn
+
+    main(f0=f0,psi0=psi0,th=th,logFileName=fn)

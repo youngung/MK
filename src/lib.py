@@ -463,7 +463,7 @@ def get_stime():
     hr,mn,sec = time.split(':')
     return date,hr+mn+sec
 
-def gen_hash_code(nchar=6):
+def gen_hash_code(nchar=6,i=0):
     """
     Generate random hash tag (to mimic what mktemp does)
 
@@ -478,6 +478,7 @@ def gen_hash_code(nchar=6):
     m.update(get_stime()[0]+get_stime()[1])
     m.update(time.asctime())
     m.update(str(time.time()))
+    m.update('%i'%i)
     return m.hexdigest()[:nchar]
 
 def find_tmp(verbose=True):
@@ -505,7 +506,7 @@ def find_tmp(verbose=True):
     if verbose:print '_tmp_:', _tmp_
     return _tmp_
 
-def gen_tempfile(prefix='',affix='',ext='txt'):
+def gen_tempfile(prefix='',affix='',ext='txt',i=0):
     """
     Generate temp file in _tmp_
 
@@ -521,7 +522,7 @@ def gen_tempfile(prefix='',affix='',ext='txt'):
 
     it = 0
     while not(exitCondition):
-        hc = gen_hash_code(nchar=6)
+        hc = gen_hash_code(nchar=6,i=i+it)
         tmpLocation = find_tmp(verbose=False)
         filename = '%s-%s-%s'%(prefix,hc,affix)
         if type(ext).__name__=='str':
@@ -537,3 +538,21 @@ def gen_tempfile(prefix='',affix='',ext='txt'):
         print 'Warning: Oddly you just had'+\
             ' an overlapped file name'
     return filename
+
+
+def rho2th(rho):
+    """
+    convert rho prime to thetas
+    """
+    from numpy import arctan2
+    if rho<=1:
+        th = arctan2(rho,1.)
+    else:
+        th = arctan2(1.,rho)
+    return th
+
+def rhos2ths(rhos):
+    ths=[]
+    for rho in rhos:
+        ths.append(rho2th(rho))
+    return ths

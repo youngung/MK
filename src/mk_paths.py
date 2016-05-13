@@ -46,7 +46,6 @@ def DRD():
     ## to be used to numerically find the actual stress
     ## corresponding to the strain vector given by pth
 
-
     stressRight=np.zeros(6)
     stressLeft=np.zeros(6)
     stressRight[0]= 0
@@ -190,6 +189,21 @@ def DTD():
 
 def returnPaths():
     return DRD, PSRD, BBRD, BBTD, PSTD, DTD
+
+def findCorrectPsi(epsAng):
+    """
+    Recommend the most required (relevnt) psi anges
+    for the given strain paths <epsAng>
+    """
+    path = findCorrectPath(epsAng)[0]
+    rst = path()
+    ang1,ang2,anginc = rst[0]
+
+    ntotAngle = ((ang2-ang1)/anginc)+1
+    rad2deg   = 180./np.pi
+    deg2rad   =   1./rad2deg
+    psi0s     = np.linspace(ang1,ang2,ntotAngle)*deg2rad
+    return psi0s
 
 
 def findCorrectPath(epsAng):
