@@ -52,7 +52,7 @@ def DRD():
     stressLeft=np.zeros(6)
     stressRight[0]= 0
     stressRight[1]=-1
-    stressLeft[0] = 1 
+    stressLeft[0] = 1
     stressLeft[1] = 1
 
     return angs,npt,pth,f_yld,stressRight,stressLeft
@@ -201,6 +201,8 @@ def testAllPaths():
     paths = returnPaths()
     for i in xrange(len(paths)):
         testEachPath(paths[i])
+        pass
+    pass
 
 def testEachPath(funcPath=None):
     from mk_lib import findStressOnYS
@@ -224,6 +226,109 @@ def testEachPath(funcPath=None):
             f_yld,SR.copy(),SL.copy(),
             pth=strainVector,
             verbose=False)
+        pass
+    pass
+
+
+def constructBC(epsAng,verbose=False):
+    """
+    Arguments
+    ---------
+    epsAng
+    verbose
+    """
+    stressLowerAngle, stressUpperAngle = calcStressWindow(epsAng)
+    stressLower = th2s6(stressLowerAngle)
+    stressUpper = th2s6(stressUpperAngle)
+    if verbose:
+        print 'upper',stressUpperAngle*180./np.pi,stressUpper
+        print 'lower',stressLowerAngle*180./np.pi,stressLower
+    return stressLower, stressUpper
+
+def th2s6(th):
+    from numpy import cos, sin
+    x=cos(th)
+    y=sin(th)
+    return np.array([x,y,0,0,0,0])
+
+def th2th(th):
+    """
+    Restrain th within (-pi,pi) range.
+    """
+    x,y = np.cos(th),np.sin(th)
+    return np.arctan2(y,x)
+
+def calcStressWindow(theta):
+    """
+    Given the rho, provide the stress that most probably
+    embraces the corresponding stress state in yield locus.
+
+    Argument
+    --------
+    theta as the angle by (eyy,exx), degree
+    1. Calculates the corresponding von Mises stress bound first.
+    2. Return an extended range to make sure that the stress is embraced within
+
+    Returns
+    -------
+    stressLowerAngle, stressUpperAngle  (all in radian)
+    """
+    from numpy import cos, sin, tan, pi
+    d2r = pi/180.
+    r2d = 1./d2r
+    th = theta * d2r
+    e1 = cos(th); e2 = sin(th)
+
+    ## vm
+    s=np.array([1,1,0,0,0,0]) ## initial guess
+
+    tol  = 1e-5
+    diff = 1.
+    dx   = 1e-8
+
+    th_sig = np.arctan2(s[1],s[0])
+    it = 0
+    print ('%4s %8s %8s %8s %8s %11s')%('it','th_sig','th_eps','th','diff','jac')
+    while abs(diff)>tol:
+        it = it + 1
+        if it>100:
+            raise IOError, 'could not find the stress ...'
+
+        x0     = th_sig
+        x1     = th_sig+dx
+        F1     = objf(x1)-th
+        F0     = objf(x0)-th
+        jacob  = (F1-F0)/(x1-x0)
+        th_sig = th_sig - F1 / jacob
+        th_eps = objf(th_sig)
+        diff   = th_eps  - th
+
+        th_sig_ = th2th(th_sig)
+        th_eps_ = th2th(th_eps)
+        print '%4i %8.2f %8.2f %8.2f %8.3f %11.3e'%(it,th_sig_*r2d,th_eps_*r2d,th*r2d,diff*r2d,jacob)
+
+    window = 45*d2r
+    return th_sig_-window,  th_sig_+window
+
+def objf(th=None,f_yld=None):
+    """
+    Given stress th, return strain rate angle (-pi,pi)
+    th = arc2tan(s2,s1)
+    """
+    from numpy import cos, sin, tan, pi
+
+    if type(f_yld).__name__=='NoneType':
+        f_yld = vm
+    elif type(f_yld).__name__=='function':
+        pass
+    else:
+        raise IOError, 'unexpected choice of f_yld'
+
+    s1=cos(th); s2=sin(th)
+    s=np.array([s1,s2,0,0,0,0])
+    s,phi,dphi,d2phi = f_yld(s)
+    th_eps = np.arctan2(dphi[1],dphi[0])
+    return th_eps
 
 if __name__=='__main__':
     ## test.

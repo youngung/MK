@@ -6,7 +6,7 @@ from for_lib import vm
 import numpy as np
 import time
 from MP import progress_bar
-uet = progress_bar.update_elapsed_time
+uet=progress_bar.update_elapsed_time
 cos=np.cos
 sin=np.sin
 tan=np.tan
