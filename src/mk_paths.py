@@ -229,7 +229,6 @@ def testEachPath(funcPath=None):
         pass
     pass
 
-
 def constructBC(epsAng,verbose=False):
     """
     Arguments
@@ -307,7 +306,7 @@ def calcStressWindow(theta):
         th_eps_ = th2th(th_eps)
         print '%4i %8.2f %8.2f %8.2f %8.3f %11.3e'%(it,th_sig_*r2d,th_eps_*r2d,th*r2d,diff*r2d,jacob)
 
-    window = 45*d2r
+    window = 40*d2r
     return th_sig_-window,  th_sig_+window
 
 def objf(th=None,f_yld=None):

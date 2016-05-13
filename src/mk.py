@@ -115,6 +115,98 @@ def main(f0=0.996,fGenPath=None,**kwargs):
     logFile.close()
     return logFileName,tTime
 
+
+def main2(f0=0.999,psi=0,th=0):
+    """
+    Assumed proportional loadings
+
+    Argument
+    --------
+    f0
+    psi
+    th  (epsAng)
+    """
+    import os
+    from mk_lib   import findStressOnYS
+    from lib      import gen_tempfile
+    from mk_paths import constructBC
+
+    stressLeft,stressRight = constructBC(
+        epsAng=th,verbose=False)
+
+    stressLeft = stressLeft
+    stressRight = stressRight
+
+    f_yld = vm
+    x=cos(th)
+    y=sin(th)
+    pth = [x,y]
+
+    s,dphi = findStressOnYS(
+        f_yld,stressLeft.copy(),stressRight.copy(),
+        pth=pth,verbose=True)
+
+    logFileName = gen_tempfile(prefix='mk',affix='log')
+    logFile     = open(logFileName,'w')
+    tTime = 0.
+
+    ## integrate for each path.
+    ntotAngle = ((ang2-ang1)/anginc)+1
+    rad2deg   = 180./np.pi
+    deg2rad   =   1./rad2deg
+    psi0s     = np.linspace(ang1,ang2,ntotAngle)*deg2rad
+
+    absciss  = 1e3
+    absciss0 = 1e3
+    print 'Iteration over the given psi angle'
+    head = ('%8s'*9)%('epsRD','epsTD','psi0','psif','sigRD',
+                          'sigTD','sigA','T','cmpTime\n')
+    logFile.write(head)
+
+    print 'PSI: %5.1f'%(psi0_at_each*rad2deg)
+    t0   = time.time()
+    ynew, Ahist, Bhist, absciss,xbb,siga,sx = onepath(
+        f_yld=f_yld,sa=s,psi0=psi0_at_each,f0=f0,T=absciss)
+    dTime = time.time() - t0
+    tTime = tTime+dTime
+
+    psif1=xbb[0]
+    # print ('%8s'*6)%('s1','s2','psi0','psif','siga','absciss')
+    print 'ynew:',ynew
+    cnt = ('%8.3f'*8+'%8i')%(
+        ynew[1],ynew[2],
+        psi0_at_each*rad2deg,
+        psif1*rad2deg,
+        sx[0],sx[1],
+        siga,
+        absciss,dTime)
+    print cnt
+    logFile.write(cnt+'\n')
+
+    if absciss<absciss0: ## when a smaller total strain is found update the smallest.
+        absciss0=absciss
+        psi0_min=psi0_at_each
+        psif_min=psif1
+        y2      =ynew[1]
+        y3      =ynew[2]
+        ss1     =sx[0]
+        ss2     =sx[1]
+        siga_fin=siga
+
+    print 'sigma:',siga
+    print '*'*50,'\n'
+
+    print 'ynew:'
+    print(ynew)
+
+    print 'RD strain', 'TD strain', 'Angle psi0', 'angle psif','RD stress','TD stress'
+    print ynew[1],ynew[2]
+
+    uet(tTime,'total time spent')
+    logFile.close()
+    return logFileName,tTime
+
+
 def onepath(f_yld,sa,psi0,f0,T):
     """
     Arguments
