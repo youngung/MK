@@ -1,113 +1,9 @@
 """
 """
+import matplotlib as mpl
+mpl.use('Agg') ## In case X-window is not available.
 
 ## running multithreaded mk runs
-
-def makeCommands(f0,psi0,th,logFileName):
-    """
-    Arguments
-    ---------
-    f0
-    psi0
-    th
-    logFileName
-    """
-    from lib      import gen_tempfile
-    stdoutFileName = gen_tempfile(
-        prefix='stdout-mkrun')
-    cmd = 'python mk.py --fn %s -f %5.5f -p %+5.5f -t %+5.5f > %s'%(
-        logFileName,f0,psi0,th,stdoutFileName)
-    print 'cmd:',cmd
-    return cmd
-
-def test_run():
-    run(f0=0.995,psi0=0.,th=0.,logFileName='dum')
-
-def run(*args):
-    import os,subprocess, time
-    t0=time.time()
-    cmd = makeCommands(*args)
-    dt  = time.time()-t0
-    os.system(cmd)
-    return dt
-
-if __name__=='__main__':
-    import numpy as np
-    from mk import main as mk_main
-    from lib import gen_tempfile, rhos2ths
-    import os,multiprocessing,time
-    from MP import progress_bar
-    from mk_paths import findCorrectPsi
-
-    uet=progress_bar.update_elapsed_time
-
-    f0 = 0.996
-    print '---'
-
-    ## rho to theta? ( should be later passed as arguments)
-    rhos = [-0.5, -0.25, 0, 0.5, 1]#, 1.5, 2, 2.25, 2.5]
-    ths  = rhos2ths(rhos)
-    psi0 = 0. ## should be determined in mk_paths
-
-    logFileNames=[]
-    for i in xrange(len(ths)):
-        _psi0s_=findCorrectPsi(ths[i])
-        logFileNames.append([])
-        for j in xrange(len(_psi0s_)):
-            psi0 = _psi0s_[j]
-            logFileName = gen_tempfile(
-                prefix='mk-f0%3.3i-psi%+6.3f-th%+6.3f'%(
-                    int(f0*1e3),psi0,ths[i]),
-                affix='log',i=(i*10000+j))
-            logFileNames[i].append(logFileName)
-
-    ncpu  = multiprocessing.cpu_count()
-    pool  = multiprocessing.Pool(processes=ncpu)
-
-    results = []
-    for i in xrange(len(ths)):
-        _psi0s_=findCorrectPsi(ths[i])
-        results.append([])
-        for j in xrange(len(_psi0s_)):
-            psi0 = _psi0s_[j]
-            # func = mk_main
-            func = run
-            r=pool.apply_async(
-                func=func,
-                args=(f0,psi0,ths[i],logFileNames[i][j]))
-            results[i].append(r)
-    print '----'
-
-    t0 = time.time()
-    pool.close(); pool.join(); pool.terminate()
-    wallClockTime = time.time()-t0
-
-    ## end of calculation
-    tTimes       =[]
-    rstFileName = gen_tempfile(prefix='MK',affix='results')
-    with open(rstFileName,'w') as rstFile:
-        for i in xrange(len(results)): ## paths
-            for j in xrange(len(results[i])): ## psi0s
-                tTime = results[i][j].get()
-                tTimes.append(tTime)
-                logFN = logFileNames[i][j]
-                rstFile.write('%i %s\n'%(j,logFN))
-                logFileNames.append(logFN)
-            rstFile.write('--\n')
-
-    cpuRunTime=np.array(tTimes).sum()
-
-    for i in xrange(len(logFileNames)):
-        print '%4.4i   %s'%(i,logFileNames[i])
-
-    uet(wallClockTime,'Total wallclocktime:');print
-
-    # uet(cpuRunTime,   'CPU running time   :');print
-    # speedup = cpuRunTime / wallClockTime
-    # print 'speedup: %5.2f'%(speedup)
-    print 'All results are saved to %s'%rstFileName
-    print 'Fin --'
-
 def read(fn):
     f    = float(fn.split('mk-f')[1].split('-psi')[0])*1e-3
     psi0 = float(fn.split('psi')[1].split('-th')[0])
@@ -152,14 +48,21 @@ def pp(masterFileName):
                 fileFLDall.write('%s'%data_line)
                 epsRD, epsTD, psi0, psif, \
                     sigRD,sigTD,sigA,T,dt = data[:9]
-                rad = np.sqrt(epsRD**2+epsTD**2)
-                if rad<min_rad:
-                    data_min = data[::]
-                    rad = min_rad
-                    data_min_line = data_line
+
+                if np.isnan(epsRD) or np.isnan(epsTD):
+                    fileFail.append(fn)
+                    numFail=numFail+1
+                    pass
+                else:
+                    rad = np.sqrt(epsRD**2+epsTD**2)
+                    if rad<min_rad:
+                        data_min = data[::]
+                        min_rad = rad
+                        data_min_line = data_line
 
             dat_min_master.append(dat_min)
-            fileFLDmin.write('%s'%data_min_line)
+            if type(data_min_line).__name__!='NoneType':
+                fileFLDmin.write('%s'%data_min_line)
 
     fileFLDall.close(); fileFLDmin.close()
 
@@ -168,5 +71,154 @@ def pp(masterFileName):
     for i in xrange(numFail):
         print fileFail[i]
 
+
+
+    ## iplot?
+    import matplotlib.pyplot as plt
+    fig = plt.figure(figsize=(7,3))
+
+    ax1=fig.add_subplot(121)
+    ax2=fig.add_subplot(122)
+    dat=np.loadtxt(fileFLDmin.name).T
+    ax1.plot(dat[1],dat[0],'o')
+    dat=np.loadtxt(fileFLDall.name).T
+    ax2.plot(dat[1],dat[0],'o')
+    fig.savefig('mk_fld_pp.pdf')
+
 def test_pp(fn='/local_scratch/MK-6e59e6-results.txt'):
     pp(fn)
+
+def makeCommands(f0,psi0,th,logFileName):
+    """
+    Arguments
+    ---------
+    f0
+    psi0
+    th
+    logFileName
+    """
+    from lib      import gen_tempfile
+    # stdoutFileName = gen_tempfile(
+    #     prefix='stdout-mkrun')
+    stdoutFileName ='/tmp/dump'
+    cmd = 'python mk.py --fn %s -f %5.4f -p %+6.2f -t %+6.2f > %s'%(
+        logFileName,f0,psi0,th,stdoutFileName)
+    # print 'cmd:',cmd
+    return cmd
+
+def test_run():
+    run(f0=0.995,psi0=0.,th=0.,logFileName='dum')
+
+def run(*args):
+    import os,subprocess
+    cmd = makeCommands(*args)
+    os.system(cmd)
+    return cmd
+
+def prepRun(*args):
+    import os,subprocess
+    cmd = makeCommands(*args)
+    return cmd
+
+
+if __name__=='__main__':
+    import numpy as np
+    from mk import main as mk_main
+    from lib import gen_tempfile, rhos2ths
+    import os,multiprocessing,time
+    from MP import progress_bar
+    from mk_paths import findCorrectPsi
+
+    uet=progress_bar.update_elapsed_time
+
+    f0 = 0.996
+    print '---'
+
+    ## rho to theta? ( should be later passed as arguments)
+    rhos = [-0.6,-0.5, -0.375, -0.25, 0.125,0,0.125,0.25,0.365, 0.5,0.625, 0.75,1]#, 1.5, 2, 2.25, 2.5]
+    ths  = rhos2ths(rhos)
+    ## os._exit(1)
+
+    logFileNames=[]
+    k=0
+    print '%3s %6s %5s %5s %60s'%('k','rho','th','psi0','logFileName')
+    p0s=[]
+    for i in xrange(len(ths)): ## each rho
+        _psi0s_=findCorrectPsi(ths[i])
+        p0s.append(_psi0s_)
+        logFileNames.append([])
+        for j in xrange(len(_psi0s_)):
+            psi0 = _psi0s_[j]
+            logFileName = gen_tempfile(
+                prefix='mk-f0%3.3i-psi%+6.3f-th%+6.3f'%(
+                    int(f0*1e3),psi0,ths[i]),
+                affix='log',i=(i*10000+j))
+            logFileNames[i].append(logFileName)
+            k=k+1
+            print '%3i %6.2f %5.1f %5.1f %60s'%(
+                k, rhos[i], ths[i]*180/np.pi, psi0*180/np.pi,logFileName)
+        print '-'*83
+
+    ##
+    ## os._exit(1)
+
+
+    # ## test
+    # k = 0
+    # for i in xrange(len(ths)):
+    #     for j in xrange(len(p0s[i])):
+    #         psi0 = p0s[i][j]
+    #         cmd = prepRun(f0,
+    #                       psi0*180/np.pi,
+    #                       ths[i]*180/np.pi,
+    #                       logFileNames[i][j])
+    #         k=k+1
+    #         print '%5i'%k,'cmd:',cmd
+    # ## ------------------------
+    # os._exit(1)
+
+
+    ncpu  = multiprocessing.cpu_count()
+    pool  = multiprocessing.Pool(processes=ncpu)
+
+    results = []
+    for i in xrange(len(ths)):
+        results.append([])
+        for j in xrange(len(p0s[i])):
+            psi0 = p0s[i][j]
+            r=pool.apply_async(
+                func=run,
+                args=(f0,
+                      psi0*180/np.pi,
+                      ths[i]*180/np.pi,
+                      logFileNames[i][j]))
+            results[i].append(r)
+    ## os._exit(-1)
+
+    t0 = time.time()
+    pool.close(); pool.join(); pool.terminate()
+    wallClockTime = time.time()-t0
+
+    ## end of calculation
+    rstFileName = gen_tempfile(prefix='MK',affix='results')
+    with open(rstFileName,'w') as rstFile:
+        for i in xrange(len(results)): ## paths
+            for j in xrange(len(results[i])): ## psi0s
+                cmd = results[i][j].get()
+                logFN = logFileNames[i][j]
+                rstFile.write('%i %s\n'%(j,logFN))
+                logFileNames.append(logFN)
+            rstFile.write('--\n')
+
+    for i in xrange(len(logFileNames)):
+        print '%4.4i   %s'%(i,logFileNames[i])
+
+    uet(wallClockTime,'Total wallclocktime:');print
+
+    # uet(cpuRunTime,   'CPU running time   :');print
+    # speedup = cpuRunTime / wallClockTime
+    # print 'speedup: %5.2f'%(speedup)
+    print 'All results are saved to %s'%rstFileName
+    pp(rstFileName)
+    print 'Fin --'
+

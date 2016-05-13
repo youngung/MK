@@ -137,6 +137,9 @@ def main(f0=0.999,psi0=0,th=0,logFileName=None):
     psi0         in degree
     th  (epsAng) in degree
     """
+    # np.seterr(all='raise')
+    np.seterr(all='ignore')
+
     import os
     from mk_lib   import findStressOnYS
     from lib      import gen_tempfile
@@ -176,7 +179,7 @@ def main(f0=0.999,psi0=0,th=0,logFileName=None):
     psif1=xbb[0]
     cnt = ('%8.3f'*8+'%8i')%(
         ynew[1],ynew[2],
-        psi0*rad2deg,
+        psi0,
         psif1*rad2deg,
         sx[0],sx[1],
         siga,
@@ -207,6 +210,7 @@ def onepath(f_yld,sa,psi0,f0,T):
     # ## debug
     # sa=np.array([1,2,0,0,0,0])
     # psi0=15.*np.pi/180.
+
 
     sx = rot_6d(sa,-psi0)
     # print 'sa:,',sa
@@ -442,7 +446,7 @@ n    verbose
         ## adjusting the incremental size size?
         if   dydx[0]<0.2: deltt = deltat/100.
         elif dydx[0]<0.5: deltt = deltat/10.
-        else:             deltt = deltat
+        else:             deltt = deltat*1.0
         t0=time.time()
         dydx, ynew, xbb, regA, regB, siga, SA = syst(
             deltt,t,f0,dydx,xbb,S,yancien,f_hard,f_yld,verbose)
@@ -794,7 +798,23 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     F=np.zeros(4)
 
     ## conditions to satisfy
-    F[0] = f0*np.exp(E)*sigb*xb-xa*siga*(Q**mb)*qqb**(ma-mb)
+    F[0] = f0*np.exp(E)*sigb*xb
+    F[0] = F[0] - xa*siga*(Q**mb)*qqb**(ma-mb)
+    # try:
+    #     F[0] = F[0] - xa*siga*(Q**mb)*qqb**(ma-mb)
+    # except:
+    #     print 'deltat:',deltat
+    #     print 'xa:',xa
+    #     print 'siga:',siga
+    #     print 'Q:',Q
+    #     print 'mb:',mb
+    #     print 'qqb:',qqb
+    #     print 'ma:',ma
+    #     print 'Q**mb',Q**mb
+    #     print 'qqb**(ma-mb)',qqb**(ma-mb)
+
+    #     raise IOError
+
     F[1] = xb*za - zb*xa
     F[2] = phib - 1.0
     F[3] = deltat*db_rot[1] - x[0]*da_rot[1]
@@ -991,7 +1011,7 @@ if __name__=='__main__':
         help='Initial inhomogeneity factor')
     parser.add_argument(
         '-p', type=float,default=0.,
-        help='Initial angle of the groove')
+        help='Initial angle of the groove [degree]')
     parser.add_argument(
         '-t', type=float,default=0.,
         help='Angle [theta in degree] of'+\
