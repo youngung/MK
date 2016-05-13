@@ -53,8 +53,8 @@ def findStressOnYS(f_yld,stressLeft,stressRight,pth,verbose):
 
     ##
     if verbose: print (9*'%6s ')%(
-            'it','phi','sigL','sigR','sa1','sa2',
-            'sb1','sb2','diff')
+        'it','phi','sigL','sigR','SL0','SL1',
+        'SR0','SR1','diff')
     it = 0
     while diff>tol:
         it = it + 1

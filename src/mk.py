@@ -26,19 +26,20 @@ def main(f0=0.996,fGenPath=None,**kwargs):
     import os
     from mk_lib   import findStressOnYS
     from lib      import gen_tempfile
+    f_yld = vm
 
     if type(fGenPath).__name__=='NoneType':
         from mk_paths import PSRD
-        angs,npt,pth,f_yld,stressLeft,stressRight = PSRD()
+        angs,npt,pth,stressLeft,stressRight = PSRD()
     elif type(fGenPath).__name__=='function':
-        angs,npt,pth,f_yld,stressLeft,stressRight = fGenPath()
+        angs,npt,pth,stressLeft,stressRight = fGenPath()
     else:
         print type(fGenPath).__name__
         raise IOError, 'unexpected type of fGenPath given'
 
     ang1,ang2,anginc = angs
 
-    logFileName = gen_tempfile(prefix='mk',affix='log')
+    logFileName = gen_tempfile(prefix='log',affix='mk')
     logFile     = open(logFileName,'w')
 
     tTime = 0.
@@ -115,97 +116,77 @@ def main(f0=0.996,fGenPath=None,**kwargs):
     logFile.close()
     return logFileName,tTime
 
+def calcAlphaRho(s,e):
+    """
+    """
+    if e[0]>e[1]: ## RD
+        rho = e[1]/e[0]
+        alpha = s[1]/s[0]
+    else: ## TD
+        rho = e[0]/e[1]
+        alpha = s[0]/s[1]
+    return rho, alpha
 
-def main2(f0=0.999,psi=0,th=0):
+
+def main2(f0=0.999,psi0=0,th=0):
     """
     Assumed proportional loadings
 
     Argument
     --------
     f0
-    psi
-    th  (epsAng)
+    psi0         in degree
+    th  (epsAng) in degree
     """
     import os
     from mk_lib   import findStressOnYS
     from lib      import gen_tempfile
-    from mk_paths import constructBC
-
-    stressLeft,stressRight = constructBC(
-        epsAng=th,verbose=False)
-
-    stressLeft = stressLeft
-    stressRight = stressRight
-
-    f_yld = vm
-    x=cos(th)
-    y=sin(th)
-    pth = [x,y]
-
-    s,dphi = findStressOnYS(
-        f_yld,stressLeft.copy(),stressRight.copy(),
-        pth=pth,verbose=True)
-
-    logFileName = gen_tempfile(prefix='mk',affix='log')
-    logFile     = open(logFileName,'w')
-    tTime = 0.
-
-    ## integrate for each path.
-    ntotAngle = ((ang2-ang1)/anginc)+1
+    from mk_paths import constructBC,findCorrectPath
     rad2deg   = 180./np.pi
     deg2rad   =   1./rad2deg
-    psi0s     = np.linspace(ang1,ang2,ntotAngle)*deg2rad
+    f_yld = vm
+    stressA_off, dum1, dum2 = constructBC(epsAng=th, f_yld=f_yld,verbose=False)
+    stressA, phi, dphi, d2phi = f_yld(stressA_off) ## put the stress on the locus
+    np.set_printoptions(precision=3)
+    alpha,rho = calcAlphaRho(stressA,dphi)
+    print 'stressA:', stressA
+    print 'strainA:', dphi
+    print 'alpha:','%3.1f'%alpha
+    print 'rho:  ','%3.1f'%rho
 
+    logFileName = gen_tempfile(
+        prefix='mk-f0%3.3i-th%4.4i-psi%2.2i'%(
+            int(f0*1e3),int(th),int(psi0)),
+        affix='log')
+    logFile  = open(logFileName,'w')
+
+    ## integrate for each path.
     absciss  = 1e3
     absciss0 = 1e3
     print 'Iteration over the given psi angle'
     head = ('%8s'*9)%('epsRD','epsTD','psi0','psif','sigRD',
-                          'sigTD','sigA','T','cmpTime\n')
+                      'sigTD','sigA','T','cmpT[s]\n')
     logFile.write(head)
-
-    print 'PSI: %5.1f'%(psi0_at_each*rad2deg)
     t0   = time.time()
     ynew, Ahist, Bhist, absciss,xbb,siga,sx = onepath(
-        f_yld=f_yld,sa=s,psi0=psi0_at_each,f0=f0,T=absciss)
+        f_yld=f_yld,sa=stressA,
+        psi0=psi0*deg2rad,f0=f0,T=absciss)
     dTime = time.time() - t0
-    tTime = tTime+dTime
 
     psif1=xbb[0]
-    # print ('%8s'*6)%('s1','s2','psi0','psif','siga','absciss')
-    print 'ynew:',ynew
     cnt = ('%8.3f'*8+'%8i')%(
         ynew[1],ynew[2],
-        psi0_at_each*rad2deg,
+        psi0*rad2deg,
         psif1*rad2deg,
         sx[0],sx[1],
         siga,
         absciss,dTime)
     print cnt
     logFile.write(cnt+'\n')
-
-    if absciss<absciss0: ## when a smaller total strain is found update the smallest.
-        absciss0=absciss
-        psi0_min=psi0_at_each
-        psif_min=psif1
-        y2      =ynew[1]
-        y3      =ynew[2]
-        ss1     =sx[0]
-        ss2     =sx[1]
-        siga_fin=siga
-
-    print 'sigma:',siga
-    print '*'*50,'\n'
-
-    print 'ynew:'
-    print(ynew)
-
-    print 'RD strain', 'TD strain', 'Angle psi0', 'angle psif','RD stress','TD stress'
-    print ynew[1],ynew[2]
-
-    uet(tTime,'total time spent')
+    uet(dTime,'total time spent');print
     logFile.close()
-    return logFileName,tTime
-
+    print '%s has been saved'%logFileName
+    return logFileName,dTime
 
 def onepath(f_yld,sa,psi0,f0,T):
     """
@@ -419,7 +400,7 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
     xbb :
     f_hard : strain hardening function
     f_yld  : yield function
-    verbose
+n    verbose
 
     Returns
     -------
@@ -993,14 +974,13 @@ def func_fld1(ndim,b,x,f_hard,f_yld,verbose):
 
     return f, J, fb
 
-
-
 ## command line usage
 if __name__=='__main__':
-    from lib import gen_tempfile
-    from mk_paths import returnPaths
-    DRD,PSRD,BBRD,BBTD,PSTD,DTD = returnPaths()
-    f0 = 0.996
-    logFN, tTime = main(f0,DRD)
-    print logFN
-    uet(tTime,'Time elapsed for the given path')
+    main2(f0=0.996,psi0=5,th=0)
+    # from lib import gen_tempfile
+    # from mk_paths import returnPaths
+    # DRD,PSRD,BBRD,BBTD,PSTD,DTD = returnPaths()
+    # f0 = 0.996
+    # logFN, tTime = main(f0,DRD)
+    # print logFN
+    # uet(tTime,'Time elapsed for the given path')

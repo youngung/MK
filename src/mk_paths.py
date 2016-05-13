@@ -27,7 +27,6 @@ def DRD():
     """
     Drawing condition RD
     """
-    f_yld  = vm ## material card...
     ang1   =  0
     ang2   = 25
     anginc =  1
@@ -55,13 +54,12 @@ def DRD():
     stressLeft[0] = 1
     stressLeft[1] = 1
 
-    return angs,npt,pth,f_yld,stressRight,stressLeft
+    return angs,npt,pth,stressRight,stressLeft
 
 def PSRD():
     """
     Near plane-strain RD
     """
-    f_yld  = vm ## material card... should replace this.
     ang1   =  0
     ang2   = 25
     anginc =  5
@@ -83,13 +81,12 @@ def PSRD():
     stressLeft[0]=0
     stressLeft[1]=1
 
-    return angs,npt,pth,f_yld,stressRight,stressLeft
+    return angs,npt,pth,stressRight,stressLeft
 
 def BBRD():
     """
     Near biaxial RD
     """
-    f_yld  = vm ## material card...
     ang1   =  0
     ang2   = 90
     anginc =  5
@@ -111,13 +108,12 @@ def BBRD():
     stressLeft[1]=1
 
 
-    return angs,npt,pth,f_yld,stressRight,stressLeft
+    return angs,npt,pth,stressRight,stressLeft
 
 def BBTD():
     """
     Near biaxial TD
     """
-    f_yld  = vm ## material card...
     ang1   = 90
     ang2   =  0
     anginc = -5
@@ -138,13 +134,12 @@ def BBTD():
     stressLeft[0]=0
     stressLeft[1]=1
 
-    return angs,npt,pth,f_yld,stressRight,stressLeft
+    return angs,npt,pth,stressRight,stressLeft
 
 def PSTD():
     """
     Near plane-strain TD
     """
-    f_yld  = vm ## material card...
     ang1   = 90
     ang2   = 60
     anginc = -5
@@ -165,13 +160,12 @@ def PSTD():
     stressLeft[0]=0
     stressLeft[1]=1
 
-    return angs,npt,pth,f_yld,stressRight,stressLeft
+    return angs,npt,pth,stressRight,stressLeft
 
 def DTD():
     """
     Drawing condition TD
     """
-    f_yld  = vm ## material card...
     ang1   = 90
     ang2   = 65
     anginc = -1
@@ -192,10 +186,51 @@ def DTD():
     stressLeft[0]=-1
     stressLeft[1]=0
 
-    return angs,npt,pth,f_yld,stressRight,stressLeft
+    return angs,npt,pth,stressRight,stressLeft
 
 def returnPaths():
     return DRD, PSRD, BBRD, BBTD, PSTD, DTD
+
+
+def findCorrectPath(epsAng):
+    """
+    Argument
+    --------
+    epsAng [in degree]
+    """
+    import numpy as np
+    pth = np.ones(2)
+    e11 = np.cos(epsAng*np.pi/180.)
+    e22 = np.sin(epsAng*np.pi/180.)
+
+    if e11>e22:
+        rho = e22/e11
+    else:
+        rho = e11/e22
+
+    if epsAng<45:
+        pth[1]=rho
+    else:
+        pth[0]=rho
+
+    ## RD // Axis1
+    if -45.<epsAng<0:
+        return DRD, pth
+    elif 0<=epsAng<30:
+        return PSRD, pth
+    elif 30<=epsAng<45:
+        return BBRD, pth
+
+
+    ## TD // Axis1
+    elif 45<=epsAng<60:
+        return BBTD, pth
+    elif 60<=epsAng<90:
+        return PSTD, pth
+    elif 90<=epsAng<145:
+        return UTD, pth
+    else:
+        raise IOError,'Could not find the corrent range'
 
 def testAllPaths():
     paths = returnPaths()
@@ -229,20 +264,22 @@ def testEachPath(funcPath=None):
         pass
     pass
 
-def constructBC(epsAng,verbose=False):
+def constructBC(epsAng,f_yld,verbose=False):
     """
     Arguments
     ---------
     epsAng
     verbose
     """
-    stressLowerAngle, stressUpperAngle = calcStressWindow(epsAng)
+    stress, stressLowerAngle, stressUpperAngle = \
+        calcStressWindow(epsAng,f_yld,verbose)
     stressLower = th2s6(stressLowerAngle)
     stressUpper = th2s6(stressUpperAngle)
     if verbose:
         print 'upper',stressUpperAngle*180./np.pi,stressUpper
         print 'lower',stressLowerAngle*180./np.pi,stressLower
-    return stressLower, stressUpper
+
+    return stress, stressLower, stressUpper
 
 def th2s6(th):
     from numpy import cos, sin
@@ -257,20 +294,24 @@ def th2th(th):
     x,y = np.cos(th),np.sin(th)
     return np.arctan2(y,x)
 
-def calcStressWindow(theta):
+def calcStressWindow(theta=0,f_yld=None,verbose=False):
     """
     Given the rho, provide the stress that most probably
     embraces the corresponding stress state in yield locus.
 
     Argument
     --------
-    theta as the angle by (eyy,exx), degree
+    theta: the angle by (eyy,exx), degree
+    f_yld: yield function (if not(None),
+            use it as a the actual yield function
+            if None, von Mises will be used as a default
+
     1. Calculates the corresponding von Mises stress bound first.
     2. Return an extended range to make sure that the stress is embraced within
 
     Returns
     -------
-    stressLowerAngle, stressUpperAngle  (all in radian)
+    s, stressLowerAngle, stressUpperAngle  (all in radian)
     """
     from numpy import cos, sin, tan, pi
     d2r = pi/180.
@@ -279,15 +320,18 @@ def calcStressWindow(theta):
     e1 = cos(th); e2 = sin(th)
 
     ## vm
-    s=np.array([1,1,0,0,0,0]) ## initial guess
+    s=np.array([1,1,0,0,0,0],dtype='float') ## initial guess
 
-    tol  = 1e-5
+    tol  = 1e-10
     diff = 1.
-    dx   = 1e-8
+    dx   = 1e-12
 
     th_sig = np.arctan2(s[1],s[0])
+    th_sig_ = th2th(th_sig)
     it = 0
-    print ('%4s %8s %8s %8s %8s %11s')%('it','th_sig','th_eps','th','diff','jac')
+    if verbose:
+        print ('%4s %8s %8s %8s %11s %11s')%(
+            'it','th_sig','th_eps','th','diff','jac')
     while abs(diff)>tol:
         it = it + 1
         if it>100:
@@ -295,19 +339,24 @@ def calcStressWindow(theta):
 
         x0     = th_sig
         x1     = th_sig+dx
-        F1     = objf(x1)-th
-        F0     = objf(x0)-th
+        F1     = objf(x1,f_yld)-th
+        F0     = objf(x0,f_yld)-th
         jacob  = (F1-F0)/(x1-x0)
         th_sig = th_sig - F1 / jacob
-        th_eps = objf(th_sig)
+        th_eps = objf(th_sig,f_yld)
         diff   = th_eps  - th
 
         th_sig_ = th2th(th_sig)
         th_eps_ = th2th(th_eps)
-        print '%4i %8.2f %8.2f %8.2f %8.3f %11.3e'%(it,th_sig_*r2d,th_eps_*r2d,th*r2d,diff*r2d,jacob)
+        if verbose: print '%4i %8.2f %8.2f %8.2f %11.3e %11.3e'%(
+            it,th_sig_*r2d,th_eps_*r2d,th*r2d,diff*r2d,jacob)
+
+    ## the final stress estimate:
+    s[0] = cos(th_sig_)
+    s[1] = sin(th_sig_)
 
     window = 40*d2r
-    return th_sig_-window,  th_sig_+window
+    return s, th_sig_-window,  th_sig_+window
 
 def objf(th=None,f_yld=None):
     """
@@ -318,7 +367,10 @@ def objf(th=None,f_yld=None):
 
     if type(f_yld).__name__=='NoneType':
         f_yld = vm
-    elif type(f_yld).__name__=='function':
+    # f2py modules are named 'fortran'
+    elif type(f_yld).__name__=='fortran':
+        pass
+    elif type(f_yld).__name__=='function': ## just in case
         pass
     else:
         raise IOError, 'unexpected choice of f_yld'
@@ -331,4 +383,11 @@ def objf(th=None,f_yld=None):
 
 if __name__=='__main__':
     ## test.
-    test()
+    testAllPaths() ## testing all pre-defined path functions
+
+    ## test the calcStressWindow
+    epsAngles = np.linspace(-45,135,30)
+
+    for i in xrange(len(epsAngles)):
+        th = epsAngles[i]
+        calcStressWindow(theta=th,verbose=True)
