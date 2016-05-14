@@ -32,7 +32,7 @@ def pp(masterFileName):
         print 'number of blocks',len(blocks)
         for i in xrange(len(blocks)): ## each block
             eachBlock = blocks[i]
-            linesInBlock = eachBlock.split('\n')[1:-1:]
+            linesInBlock = eachBlock.split('\n')[0:-1:]
             print linesInBlock
 
             ## find the minimum |(E1,E2)|
@@ -122,7 +122,6 @@ def prepRun(*args):
     cmd = makeCommands(*args)
     return cmd
 
-
 if __name__=='__main__':
     import numpy as np
     from mk import main as mk_main
@@ -134,8 +133,7 @@ if __name__=='__main__':
 
     ## rho to theta? ( should be later passed as arguments)
     f0 = 0.996
-    # rhos = np.linspace(-0.6,2.6,15)
-    rhos = [0]
+    rhos = np.linspace(-0.6,1.,17)
     ths  = rhos2ths(rhos)
 
     logFileNames=[]
