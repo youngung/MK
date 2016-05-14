@@ -44,21 +44,25 @@ def pp(masterFileName):
             for j in xrange(len(linesInBlock)):
                 line = linesInBlock[j]
                 ind, fn = line.split()
-                data, f, psi0, th, data_line = read(fn)
-                fileFLDall.write('%s'%data_line)
-                epsRD, epsTD, psi0, psif, \
-                    sigRD,sigTD,sigA,T,dt = data[:9]
-
-                if np.isnan(epsRD) or np.isnan(epsTD):
-                    fileFail.append(fn)
-                    numFail=numFail+1
+                try:
+                    data, f, psi0, th, data_line = read(fn)
+                except:
                     pass
                 else:
-                    rad = np.sqrt(epsRD**2+epsTD**2)
-                    if rad<min_rad:
-                        data_min = data[::]
-                        min_rad = rad
-                        data_min_line = data_line
+                    fileFLDall.write('%s'%data_line)
+                    epsRD, epsTD, psi0, psif, \
+                        sigRD,sigTD,sigA,T,dt = data[:9]
+
+                    if np.isnan(epsRD) or np.isnan(epsTD):
+                        fileFail.append(fn)
+                        numFail=numFail+1
+                        pass
+                    else:
+                        rad = np.sqrt(epsRD**2+epsTD**2)
+                        if rad<min_rad:
+                            data_min = data[::]
+                            min_rad = rad
+                            data_min_line = data_line
 
             dat_min_master.append(dat_min)
             if type(data_min_line).__name__!='NoneType':
@@ -70,8 +74,6 @@ def pp(masterFileName):
     print 'FileFail:'
     for i in xrange(numFail):
         print fileFail[i]
-
-
 
     ## iplot?
     import matplotlib.pyplot as plt
@@ -101,7 +103,7 @@ def makeCommands(f0,psi0,th,logFileName):
     # stdoutFileName = gen_tempfile(
     #     prefix='stdout-mkrun')
     stdoutFileName ='/tmp/dump'
-    cmd = 'python mk.py --fn %s -f %5.4f -p %+6.2f -t %+6.2f > %s'%(
+    cmd = 'python mk.py --fn %s -f %5.4f -p %+6.1f -t %+7.2f > %s'%(
         logFileName,f0,psi0,th,stdoutFileName)
     # print 'cmd:',cmd
     return cmd
@@ -128,21 +130,19 @@ if __name__=='__main__':
     import os,multiprocessing,time
     from MP import progress_bar
     from mk_paths import findCorrectPsi
-
-    uet=progress_bar.update_elapsed_time
-
-    f0 = 0.996
-    print '---'
+    uet = progress_bar.update_elapsed_time
 
     ## rho to theta? ( should be later passed as arguments)
-    rhos = [-0.6,-0.5, -0.375, -0.25, 0.125,0,0.125,0.25,0.365, 0.5,0.625, 0.75,1]#, 1.5, 2, 2.25, 2.5]
+    f0 = 0.996
+    # rhos = np.linspace(-0.6,2.6,15)
+    rhos = [0]
     ths  = rhos2ths(rhos)
-    ## os._exit(1)
 
     logFileNames=[]
     k=0
     print '%3s %6s %5s %5s %60s'%('k','rho','th','psi0','logFileName')
     p0s=[]
+    print '---'
     for i in xrange(len(ths)): ## each rho
         _psi0s_=findCorrectPsi(ths[i])
         p0s.append(_psi0s_)
@@ -157,26 +157,9 @@ if __name__=='__main__':
             k=k+1
             print '%3i %6.2f %5.1f %5.1f %60s'%(
                 k, rhos[i], ths[i]*180/np.pi, psi0*180/np.pi,logFileName)
+            pass
         print '-'*83
-
-    ##
-    ## os._exit(1)
-
-
-    # ## test
-    # k = 0
-    # for i in xrange(len(ths)):
-    #     for j in xrange(len(p0s[i])):
-    #         psi0 = p0s[i][j]
-    #         cmd = prepRun(f0,
-    #                       psi0*180/np.pi,
-    #                       ths[i]*180/np.pi,
-    #                       logFileNames[i][j])
-    #         k=k+1
-    #         print '%5i'%k,'cmd:',cmd
-    # ## ------------------------
-    # os._exit(1)
-
+        pass
 
     ncpu  = multiprocessing.cpu_count()
     pool  = multiprocessing.Pool(processes=ncpu)
@@ -193,7 +176,8 @@ if __name__=='__main__':
                       ths[i]*180/np.pi,
                       logFileNames[i][j]))
             results[i].append(r)
-    ## os._exit(-1)
+            pass
+        pass
 
     t0 = time.time()
     pool.close(); pool.join(); pool.terminate()
@@ -209,16 +193,13 @@ if __name__=='__main__':
                 rstFile.write('%i %s\n'%(j,logFN))
                 logFileNames.append(logFN)
             rstFile.write('--\n')
+            pass
+        pass
 
     for i in xrange(len(logFileNames)):
         print '%4.4i   %s'%(i,logFileNames[i])
 
     uet(wallClockTime,'Total wallclocktime:');print
-
-    # uet(cpuRunTime,   'CPU running time   :');print
-    # speedup = cpuRunTime / wallClockTime
-    # print 'speedup: %5.2f'%(speedup)
     print 'All results are saved to %s'%rstFileName
     pp(rstFileName)
     print 'Fin --'
-
