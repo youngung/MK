@@ -86,6 +86,7 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     dxp[5] = (c2-s2)*(xb-yb)-4*sc*zb
     dpe = (fa[0]-fa[1])*tan(psi_new)/(1+tan(psi_new)**2)
     Q=x[0]/deltat # x[0]: psi
+
     F=np.zeros(4)
     ## conditions to satisfy
     F[0] = f0*np.exp(E)*sigb*xb - xa*siga*(Q**mb)*qqb**(ma-mb)

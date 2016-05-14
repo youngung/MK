@@ -435,24 +435,14 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
     freq   = 100      # frequency of output (probably not needed for this)
     deltat = 0.001    # (stepsize)
     tmax   = 1.5      # (maximum effective strain upper limit (2.0?))
-    class int_opt:
-        def __init__(self):
-            self.nbpas  = nbpas
-            self.freq   = freq      # frequency of output (probably not needed for this)
-            self.deltat = deltat    # (stepsize)
-            self.tmax   = tmax      # (maximum effective strain upper limit (2.0?))
 
     k =-1
     t = tzero
-    print 'nbpas:',nbpas
-    print 'tmax:', tmax
-    print 'dydx(1):',dydx[0]
-
     Ahist=[]; Bhist=[]
     time_used_in_syst=0.
     while(k<=nbpas and absciss<tmax and dydx[0]>=1e-1):
         k=k+1
-        ## adjusting the incremental size size?
+        ## adjusting the incremental size size
         if dydx[0]<0.5:
             deltt = deltat/10.
             if dydx[0]<0.2:
@@ -461,41 +451,17 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
             deltt = deltat*1.0
 
         t0=time.time()
-        #dydx, ynew, xbb, regA, regB, siga, SA = syst(
         dydx, ynew, xbb, siga, SA = syst(            
             deltt,t,f0,dydx,xbb,S,yancien,f_hard,f_yld,verbose)
-
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
-        # Ahist.append(regA)
-        # Bhist.append(regB)
-        k1   = deltt * dydx ## Y increments
-        ynew = yancien + k1
-        t    = t +deltt
-
-        # np.set_printoptions(precision=6)
-        # print '------------------------------------------------------------'
-        # print ('%2i '+'%11.4e '*5)%(k, ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
-        # np.set_printoptions(precision=3)
-
-        absciss=t
+        k1     = deltt * dydx ## Y increments
+        ynew   = yancien + k1
+        t      = t +deltt
+        absciss=t*1.
         yancien[::] = ynew[::]
-
-        # if k==3:
-        #     import os
-        #     print 'Stop in pasapas for debug'
-        #     os._exit(1)
-
         pass
 
     uet(time_used_in_syst,'Total time used for iteration in syst')
-    print
-    print '-'*70
-    print 'k,ynew resulting from pasapas'
-    print ('%2i '+'%11.3f '*5)%(k, ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
-    print '-'*70
-    print 'Stop in paspas for debug'
-    print 'End of loop in pasapas ----'
-    # return ynew,Ahist,Bhist,absciss,xbb,siga, SA
     return ynew,absciss,xbb,siga, SA
 
 ## differential system
@@ -571,11 +537,13 @@ def new_raph_fld(
 
     Return
     ------
+    xn1, fb (case 1)
+    xn1, fa, fb, b, siga, sa (case 2)
     """
+    import os
     from for_lib import gauss,norme
     from func_fld import func_fld1, func_fld2
     # from func_fld_cy import func_fld1, func_fld2 -- cython was not impressive...
-    import os
 
     residu  = 1.0
     xn      = xzero[::]
@@ -587,7 +555,7 @@ def new_raph_fld(
     # if ncase==2: verbose=True ##override
     while (residu>eps and it<itmax):
         it = it+1
-        t0=time.time()
+        t0 = time.time()
         if ncase==1:
             if verbose:
                 print '-'*40
@@ -617,7 +585,6 @@ def new_raph_fld(
         return
 
     if ncase==1: return xn1,fb
-    # if ncase==2: return xn1,fa,fb,b,A_region,B_region,siga,sa
     if ncase==2: return xn1,fa,fb,b,siga,sa
 
 ## command line usage (may be called in mk_run for multi-threaded run)

@@ -34,7 +34,7 @@ def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
 @jit
 def rot(psi):
     if psi>np.pi or psi<-np.pi:
-        print 'You might have put degree than radian... Please check.'
+        print('You might have put degree than radian... Please check.')
     r = np.zeros((3,3)); c = np.cos(psi); s = np.sin(psi)
     r[0,0]= c;  r[0,1]=-s
     r[1,0]= s;  r[1,1]= c
