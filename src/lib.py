@@ -1,6 +1,7 @@
 """
 Common libraries
 """
+from numba import jit
 import os
 import numpy as np
 pi = np.pi
@@ -30,6 +31,7 @@ def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
 
+@jit
 def rot(psi):
     if psi>np.pi or psi<-np.pi:
         print 'You might have put degree than radian... Please check.'
@@ -39,6 +41,7 @@ def rot(psi):
     r[2,2]= 1.
     return r
 
+@jit
 def nt_psi(psi):
     n=np.zeros(3)
     t=np.zeros(3)
@@ -48,6 +51,7 @@ def nt_psi(psi):
     t[1] =  cos(psi)
     return n, t
 
+@jit
 def rot_vec(r,vect):
     """
     v[i] = r[i,j]*vect[j]
@@ -58,6 +62,7 @@ def rot_vec(r,vect):
             v[i]=v[i]+r[i,j]*vect[j]
     return v
 
+@jit
 def rot_tensor(a,psi):
     """
     Arguments
@@ -123,6 +128,7 @@ def th_planestress_c(th,yfunc):
     rst   = Sigma / y
     return rst
 
+@jit
 def convert_6sig_princ(s6):
     """
     Convert 6D stress vectors to
@@ -146,6 +152,7 @@ def convert_6sig_princ(s6):
     w,v = np.linalg.eig(sig33)
     return w,v
 
+@jit
 def convert_sig33_sig6(sig33):
     s6=np.zeros(6)
     for k in xrange(6):
@@ -153,6 +160,7 @@ def convert_sig33_sig6(sig33):
         s6[k] = sig33[i,j]
     return s6
 
+@jit
 def convert_sig6_sig33(sig6):
     s33=np.zeros((3,3))
     for k in xrange(6):
@@ -179,6 +187,8 @@ c6p  = convert_6sig_princ
 c2s6 = convert_sig33_sig6
 s62c = convert_sig6_sig33
 
+
+@jit
 def rot_6d(a6,psi):
     a33 = s62c(a6.copy())
     a33r = rot_tensor(a33,psi)
@@ -218,7 +228,6 @@ def es_temp(ax):
     ticks_bins(ax,axis='x',n=4)
     ticks_bins(ax,axis='y',n=4)
 
-
 def es_tempr(ax):
     """
     2D strain space (e11, e22)
@@ -251,6 +260,7 @@ def pi_proj(sd):
     y =                sd[1] / sq2 - sd[2] / sq2
     return x,y
 
+@jit
 def devit(x,p=0.):
     """
     Convert it to a deviatoric space with
@@ -301,6 +311,7 @@ def y_locus_c(nths,yfunc):
 def norm_vec(a):
     return np.sqrt((a**2).sum())
 
+@jit
 def assoc_flow(s6,lamb,yfunc,**kwargs):
     """
     Argument
@@ -377,13 +388,13 @@ def assoc_flow_c(s6,lamb,yfunc):
     e_k[2] = - e_k[:2].sum()
     return e_k
 
-
 def alph2sig(alpha,beta):
     if alpha<=1.:
         return alph2sig1(alpha,beta)
     if alpha>1.:
         return alph2sig2(2-alpha,beta)
 
+@jit
 def alph2sig1(alpha,beta):
     """
             |   1   beta   0 |
@@ -397,6 +408,7 @@ def alph2sig1(alpha,beta):
     sigma[1,0] = beta
     return sigma
 
+@jit
 def alph2sig2(alpha,beta):
     """
             |alpha  beta   0 |
@@ -410,6 +422,7 @@ def alph2sig2(alpha,beta):
     sigma[1,0] = beta
     return sigma
 
+@jit
 def alph2sig6(alpha,beta):
     """
     (alpha,beta) to sigma6

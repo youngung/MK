@@ -1,8 +1,30 @@
 import numpy as np
+from numba import jit
 cos = np.cos
 sin = np.sin
 log = np.log
 tan = np.tan
+
+
+@jit
+def calcD2FB(psi,f2b):
+    """
+    """
+    d2fb = np.zeros((6,6))
+    d2fb=np.zeros((6,6))
+    cp = cos(psi);  sp = sin(psi)
+    c2 = cp*cp; s2 = sp*sp; sc = sp*cp
+    d2fb[0,0] = f2b[0,0]*c2+f2b[0,1]*s2+f2b[0,5]*sc/2
+    d2fb[1,0] = f2b[1,0]*c2+f2b[1,1]*s2+f2b[1,5]*sc/2
+    d2fb[5,0] = f2b[5,0]*c2+f2b[5,1]*s2+f2b[5,5]*sc/2
+    d2fb[0,1] = f2b[0,0]*s2+f2b[0,1]*c2-f2b[0,5]*sc/2
+    d2fb[1,1] = f2b[1,0]*s2+f2b[1,1]*c2-f2b[1,5]*sc/2
+    d2fb[5,1] = f2b[5,0]*s2+f2b[5,1]*c2-f2b[5,5]*sc/2
+    d2fb[0,5] = 2*sc*(f2b[0,1]-f2b[0,0])+f2b[0,5]*(c2-s2)/2
+    d2fb[1,5] = 2*sc*(f2b[1,1]-f2b[1,0])+f2b[1,5]*(c2-s2)/2
+    d2fb[5,5] = 2*sc*(f2b[5,1]-f2b[5,0])+f2b[5,5]*(c2-s2)/2
+    return d2fb
+
 
 def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     """
@@ -20,19 +42,10 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
 
     Returns
     -------
-    F,J,fa,fb,b,mat_A,mat_B,siga,s (region A strss)
+    F,J,fa,fb,b,siga,s (region A strss)
     """
     import os
     from lib import rot_6d
-
-    class material:
-        class H:
-            pass
-        class Y:
-            pass
-
-    mat_A = material()
-    mat_B = material()
 
     f0     = b[1]
     deltat = b[8]
@@ -41,16 +54,10 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     xb      = x[1]
     yb      = x[2]
     zb      = x[3]
-
     sb_dump = np.array([xb,yb,0.,0.,0.,zb])
 
     ## Parameters in region A
     s,phia,fa,f2a = f_yld(s)
-    mat_A.Y.phi   = phia
-    mat_A.Y.dphi  = fa
-    mat_A.Y.d2phi = f2a
-    mat_A.stress  = s
-
     dpsi     = x[0] * (fa[0]-fa[1])*tan(b[9])/(1+tan(b[9])**2)
     b[10]    = dpsi*1.
     psi_new  = b[9]+dpsi
@@ -58,66 +65,20 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     xa,ya,za = sa_rot[0], sa_rot[1],sa_rot[5]
     da_rot   = rot_6d(fa,-psi_new)
     na,ma,siga,dsiga,dma,qqa=f_hard(x[0]+yancien[0])
-    mat_A.H.n    = na*1.
-    mat_A.H.m    = ma*1.
-    mat_A.H.eps  = x[0]+yancien[0]
-    mat_A.H.sig  = siga*1.
-    mat_A.H.dsig = dsiga*1.
-    mat_A.H.dm   = dma*1.
-    mat_A.H.qq   = qqa*1.
-    mat_A.psi    = psi_new*1.
-
-    if verbose:
-        print ('%9s'*5)%('ma','siga','dsiga','dma','qqa')
-        print ('%9.2f'*5)%(ma,siga,dsiga,dma,qqa)
 
     ## parameters in region B
     sb             = rot_6d(sb_dump,psi_new)
     sb,phib,fb,f2b = f_yld(sb)
-    mat_B.Y.phi   = phib*1.
-    mat_B.Y.dphi  = fb*1.
-    mat_B.Y.d2phi = f2b*1.
-    mat_B.stress  = sb*1.
-    db_rot        = rot_6d(fb,-psi_new)
+    db_rot         = rot_6d(fb,-psi_new)
     nb,mb,sigb,dsigb,dmb,qqb = f_hard(T+deltat)
-    mat_B.H.n = nb*1.
-    mat_B.H.m = mb*1.
-    mat_B.H.eps = T+deltat
-    mat_B.H.sig = sigb*1.
-    mat_B.H.dsig = dsigb*1.
-    mat_B.H.dm   = dmb*1.
-    mat_B.H.qq   = qqb*1.
-    mat_B.psi    = psi_new*1.
-    if verbose:
-        print ('%9s'*5)%('mb','sigb','dsigb','dmb','qqb')
-        print ('%9.2f'*5)%(mb,sigb,dsigb,dmb,qqb)
 
-        print 'Yancien in FUNC_FLD2:'
-        for i in xrange(5):
-            print '%13.4e'%yancien[i],
-        print
-
-        print 'deltat',deltat
-        print ('%4s'+'%7.3f'*6)%('fb:',fb[0],fb[1],fb[2],fb[3],fb[4],fb[5],)
-        print 'x[0]:',x[0]
-        print ('%4s'+'%7.3f'*6)%('fa:',fa[0],fa[1],fa[2],fa[3],fa[4],fa[5],)
     E = -yancien[3] - yancien[4]-deltat* (fb[0]+fb[1])\
         + yancien[1]+yancien[2]\
         + x[0] * (fa[0]+fa[1])
 
-    d2fb=np.zeros((6,6))
     cp = cos(psi_new);  sp = sin(psi_new)
     c2 = cp*cp; s2 = sp*sp; sc = sp*cp
-
-    d2fb[0,0] = f2b[0,0]*c2+f2b[0,1]*s2+f2b[0,5]*sc/2
-    d2fb[1,0] = f2b[1,0]*c2+f2b[1,1]*s2+f2b[1,5]*sc/2
-    d2fb[5,0] = f2b[5,0]*c2+f2b[5,1]*s2+f2b[5,5]*sc/2
-    d2fb[0,1] = f2b[0,0]*s2+f2b[0,1]*c2-f2b[0,5]*sc/2
-    d2fb[1,1] = f2b[1,0]*s2+f2b[1,1]*c2-f2b[1,5]*sc/2
-    d2fb[5,1] = f2b[5,0]*s2+f2b[5,1]*c2-f2b[5,5]*sc/2
-    d2fb[0,5] = 2*sc*(f2b[0,1]-f2b[0,0])+f2b[0,5]*(c2-s2)/2
-    d2fb[1,5] = 2*sc*(f2b[1,1]-f2b[1,0])+f2b[1,5]*(c2-s2)/2
-    d2fb[5,5] = 2*sc*(f2b[5,1]-f2b[5,0])+f2b[5,5]*(c2-s2)/2
+    d2fb = calcD2FB(psi=psi_new,f2b=f2b)
 
     dxp    = np.zeros(6)
     dxp[0] = 2*sc*(yb-xb)-2*(c2-s2)*zb
@@ -133,16 +94,7 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     F[3] = deltat*db_rot[1] - x[0]*da_rot[1]
 
     J=np.zeros((4,4))
-    J[0,0] = (fa[0]+fa[1])*f0*np.exp(E)*sigb*xb
-    if verbose:
-        print J[0,0]
-
-    J[0,0] = J[0,0] -xa*dsiga*(Q**mb)*qqb**(ma-mb)
-    dum1=(mb/deltat)*(Q**(mb-1.))*qqb**(ma-mb)
-    dum2=(dma/x[0])*np.log(qqb)*qqb*(ma-mb)
-    dum=dum1+dum2
-
-    J[0,0] = J[0,0] -xa*siga*(dum)
+    J[0,0] = (fa[0]+fa[1])*f0*np.exp(E)*sigb*xb-xa*dsiga*(Q**mb)*qqb**(ma-mb)-xa*siga*((mb/deltat)*(Q**(mb-1.))*qqb**(ma-mb)+(dma/x[0])*np.log(qqb)*qqb*(ma-mb))
     J[0,1] =-deltat*(d2fb[0,0]+d2fb[1,0])*f0*np.exp(E)*sigb*xb\
         +f0*np.exp(E)*sigb
     J[0,2] =-deltat*(d2fb[0,1]+d2fb[1,1])*f0*np.exp(E)*sigb*xb
@@ -159,10 +111,7 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     J[3,1] = deltat*(d2fb[0,0]*s2+d2fb[1,0]*c2-2*d2fb[5,0]*sc)
     J[3,2] = deltat*(d2fb[0,1]*s2+d2fb[1,1]*c2-2*d2fb[5,1]*sc)
     J[3,3] = deltat*(d2fb[0,5]*s2+d2fb[1,5]*c2-2*d2fb[5,5]*sc)
-    if verbose:
-        print 'J:'
-        print(J)
-    return F, J, fa, fb, b, mat_A, mat_B, siga, s
+    return F,J,fa,fb,b,siga,s
 
 def func_fld1(ndim,b,x,f_hard,f_yld,verbose):
     """

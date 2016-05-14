@@ -1,7 +1,7 @@
 """
 Adapted from FB's yld2000-2d subroutines for forming limit diagram predictions
 """
-
+from numba import jit
 from for_lib import vm
 import numpy as np
 import time
@@ -116,6 +116,7 @@ def main_deprecated(f0=0.996,fGenPath=None,**kwargs):
     logFile.close()
     return logFileName,tTime
 
+@jit
 def calcAlphaRho(s,e):
     """
     """
@@ -173,7 +174,8 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
     logFile.write(head)
     t0   = time.time()
 
-    ynew, Ahist, Bhist, absciss,xbb,siga,sx = onepath(
+    # ynew, Ahist, Bhist, absciss,xbb,siga,sx = onepath(
+    ynew, absciss,xbb,siga,sx = onepath(
         f_yld=f_yld,sa=stressA,
         psi0=psi0*deg2rad,f0=f0,T=absciss)
 
@@ -297,7 +299,8 @@ def onepath(f_yld,sa,psi0,f0,T):
     t0=time.time()
 
     ## integrate function
-    ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin = pasapas(
+    # ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin = pasapas(
+    ynew,absciss,xbb,siga, SA_fin = pasapas(
         f0,sa,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose=False)
     psif = xbb[0]
     print ('%8.3f'*5)%(ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
@@ -309,7 +312,8 @@ def onepath(f_yld,sa,psi0,f0,T):
     # hist_plot(f_yld,Ahist,Bhist)
 
     ## check the hardening curve?
-    return ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin
+    # return ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin
+    return ynew,absciss,xbb,siga, SA_fin
 
 def hist_plot(f_yld,Ahist,Bhist):
     """
@@ -457,12 +461,13 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
             deltt = deltat*1.0
 
         t0=time.time()
-        dydx, ynew, xbb, regA, regB, siga, SA = syst(
+        #dydx, ynew, xbb, regA, regB, siga, SA = syst(
+        dydx, ynew, xbb, siga, SA = syst(            
             deltt,t,f0,dydx,xbb,S,yancien,f_hard,f_yld,verbose)
 
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
-        Ahist.append(regA)
-        Bhist.append(regB)
+        # Ahist.append(regA)
+        # Bhist.append(regB)
         k1   = deltt * dydx ## Y increments
         ynew = yancien + k1
         t    = t +deltt
@@ -490,8 +495,8 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
     print '-'*70
     print 'Stop in paspas for debug'
     print 'End of loop in pasapas ----'
-    # os._exit(1)
-    return ynew,Ahist,Bhist,absciss,xbb,siga, SA
+    # return ynew,Ahist,Bhist,absciss,xbb,siga, SA
+    return ynew,absciss,xbb,siga, SA
 
 ## differential system
 def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
@@ -520,11 +525,6 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
     xzero[2] = xbb[2]
     xzero[3] = xbb[6]
 
-    # print 'in syst'
-    # print 'xbb:'
-    # print xbb
-    # os._exit(1)
-
     ndim  = 4
     ncase = 2
 
@@ -533,12 +533,12 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
     bn[8] = deltt
     bn[9] = xbb[0]
 
-    xfinal, fa, fb, bn, regionA, regionB, siga, sa\
+    xfinal, fa, fb, bn, siga, sa\
         = new_raph_fld(
             T=t,ndim=ndim,ncase=2,xzero=xzero,y=y,
             b=bn,f_hard=f_hard,f_yld=f_yld,sa=sa,
             verbose=verbose)
-    ##
+
     xbb[0] = bn[9]+bn[10]
     xbb[1] = xfinal[1]
     xbb[2] = xfinal[2]
@@ -550,24 +550,8 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
     dydx[3] = fb[0]
     dydx[4] = fb[1]
 
-    np.set_printoptions(precision=6)
-
-    # print 'sa:'
-    # print sa
-    # print 'fa'
-    # print(fa)
-    # print 'fb'
-    # print(fb)
-
-    # print 'xbb:'
-    # print(xbb)
-    # print 'dydx'
-    # print dydx[:5]
-
-    np.set_printoptions(precision=3)
-
-    # raise IOError
-    return dydx, y, xbb, regionA[-1],regionB[-1], siga, sa
+    # return dydx, y, xbb, regionA[-1],regionB[-1], siga, sa
+    return dydx, y, xbb, siga, sa
 
 def new_raph_fld(
         T=None,ndim=None,ncase=None,
@@ -590,37 +574,14 @@ def new_raph_fld(
     """
     from for_lib import gauss,norme
     from func_fld import func_fld1, func_fld2
-    # from func_fld_cy import func_fld1, func_fld2
+    # from func_fld_cy import func_fld1, func_fld2 -- cython was not impressive...
     import os
 
-    if ncase==2 and verbose:
-        print 'sa:'
-        print sa
-        print 'T:'
-        print T
-        print 'b:'
-        print b
-        np.set_printoptions(precision=5)
-        print 'y:'
-        print y
-        np.set_printoptions(precision=3)
-
-    residu = 1.0
-    # xn    = np.zeros(ndim)
-
-    # if ncase==2:
-    #     print 'xzero:'
-    #     for i in xrange(4):
-    #         print '%7.3f'%xzero[i],
-    #     print
-    #     os._exit(1)
-
-
-    xn    = xzero[::]
-    it    = 0
-    itmax = 100
-    eps   = 1e-10
-    A_region=[]; B_region=[]
+    residu  = 1.0
+    xn      = xzero[::]
+    it      = 0
+    itmax   = 100
+    eps     = 1e-10
 
     totalTimeFunc = 0.
     # if ncase==2: verbose=True ##override
@@ -640,79 +601,24 @@ def new_raph_fld(
                 print '-'*40
                 print '%i ITERATION over func_fld2 in NR'%it
 
-
-            # print 'xn:'
-            # for i in xrange(4):
-            #     print '%7.3f'%xn[i],
-            # print
-            # os._exit(1)
-
-            F, J, fa, fb, b, mat_A, mat_B, siga, sa \
+            F, J, fa, fb, b,siga, sa \
                 = func_fld2(ndim,T,sa,b,xn,y,f_hard,f_yld,verbose)
             dt = time.time() - t0
-            A_region.append(mat_A)
-            B_region.append(mat_B)
 
         totalTimeFunc = totalTimeFunc + dt
-
-        if ncase==1 and verbose:
-            print 'result prior to gauss'
-            print 'F:'
-            print F
-            print 'J:'
-            print J
-        J,res = gauss(ndim=ndim,a=J,b=F)
-        if ncase==1 and verbose:
-            print 'result after gauss'
-            print 'F:'
-            print F
-            print 'J:'
-            print J
-            print 'res:'
-            print res
-        elif ncase==2 and verbose:
-            print 'F:'
-            print F
-            print 'J:'
-            print J
-            print 'res:'
-            print res
-
-
+        J,res = gauss(ndim=ndim,a=J,b=F) ## f2py module
         xn1=xn-res ## x^(n+1)
         residu = norme(ndim,res)
         xn=xn1[::] ## x^(n)
-        if ncase==2 and verbose:
-            np.set_printoptions(precision=5)
-            print '%3i %13.4e'%(it,residu),xn
-            np.set_printoptions(precision=3)
-            # raw_input('enter for the next step')
-            pass
-
-        pass## end of while
-
-    if ncase==2 and verbose:
-        print it,
-        print 'b:'
-        print b[:10]
-        print 'xn in new_raph_fld ncase==2:'
-        print xn
 
     # if no convergence
     if it>=itmax:
         print 'could not converge'
         return
 
-    if ncase==1:
-        print'it in new_raph_fld:',it
-
-    # if ncase==2:
-    #     uet(totalTimeFunc, 'Total time spent for func_FLD in NR')
-    # print
-
     if ncase==1: return xn1,fb
-    if ncase==2: return xn1,fa,fb,b,A_region,B_region,siga,sa
-
+    # if ncase==2: return xn1,fa,fb,b,A_region,B_region,siga,sa
+    if ncase==2: return xn1,fa,fb,b,siga,sa
 
 ## command line usage (may be called in mk_run for multi-threaded run)
 if __name__=='__main__':
