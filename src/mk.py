@@ -590,6 +590,7 @@ def new_raph_fld(
     """
     from for_lib import gauss,norme
     from func_fld import func_fld1, func_fld2
+    # from func_fld_cy import func_fld1, func_fld2
     import os
 
     if ncase==2 and verbose:

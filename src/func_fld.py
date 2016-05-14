@@ -3,6 +3,7 @@ cos = np.cos
 sin = np.sin
 log = np.log
 tan = np.tan
+
 def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     """
     Arguments
@@ -140,7 +141,6 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     dum1=(mb/deltat)*(Q**(mb-1.))*qqb**(ma-mb)
     dum2=(dma/x[0])*np.log(qqb)*qqb*(ma-mb)
     dum=dum1+dum2
-
 
     J[0,0] = J[0,0] -xa*siga*(dum)
     J[0,1] =-deltat*(d2fb[0,0]+d2fb[1,0])*f0*np.exp(E)*sigb*xb\
