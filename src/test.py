@@ -29,6 +29,13 @@ def test4():
 
     uet(dt,'Total elapsed time');print
 
+def test5():
+    import numpy as np
+    import mk
+    from lib import rho2th
+    th = rho2th(-0.6)*180./np.pi
+    mk.main(f0=0.996,psi0=3, th=th,logFileName='/tmp/dum.log')
+
 if __name__=='__main__':
     import argparse
     ## Arguments parsing
@@ -47,6 +54,8 @@ if __name__=='__main__':
         test3()
     elif ind==4:
         test4()
+    elif ind==5:
+        test5()
     else:
         raise IOError, 'Could not find the test'
 

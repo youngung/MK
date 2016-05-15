@@ -335,9 +335,10 @@ def calcStressWindow(theta=0,f_yld=None,verbose=False):
     ## vm
     s=np.array([1,1,0,0,0,0],dtype='float') ## initial guess
 
-    tol  = 1e-10
+    tol  = 1e-11
     diff = 1.
-    dx   = 1e-12
+    dx   = 1e-13
+    maxIter = 1000
 
     th_sig = np.arctan2(s[1],s[0])
     th_sig_ = th2th(th_sig)
@@ -347,7 +348,7 @@ def calcStressWindow(theta=0,f_yld=None,verbose=False):
             'it','th_sig','th_eps','th','diff','jac')
     while abs(diff)>tol:
         it = it + 1
-        if it>100:
+        if it>maxIter:
             raise IOError, 'could not find the stress ...'
 
         x0     = th_sig

@@ -59,15 +59,17 @@ c$$$      write(*,*)'qq:',qq
       end subroutine swift
 c----------------------------------------------------------------------c
 c     a: jacobian
+c     x: res
+c     b: f
 c     x = a:b
       subroutine gauss(ndim,b,a,x)
       implicit none
       integer ndim,i,k,l,m
       real*8 a(ndim,ndim),b(ndim),x(ndim)
       real*8 c(ndim),d,coef
-Cf2py intent(int) ndim, b
+Cf2py intent(in) ndim
 cf2py intent(out) x
-cf2py intent(in,out) a
+cf2py intent(in,out) b,a
 cf2py depend(ndim) a,b,x,c
 
 ! triangularization of matrix a

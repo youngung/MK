@@ -1,3 +1,5 @@
+import matplotlib as mpl
+mpl.use('Agg') ## In case X-window is not available.
 from for_lib import vm
 import numpy as np
 import matplotlib.pyplot as plt

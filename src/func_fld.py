@@ -25,6 +25,24 @@ def calcD2FB(psi,f2b):
     d2fb[5,5] = 2*sc*(f2b[5,1]-f2b[5,0])+f2b[5,5]*(c2-s2)/2
     return d2fb
 
+# @jit
+# def calcD2FB(psi,f2b):
+#     """
+#     """
+#     d2fb = np.zeros((6,6))
+#     d2fb=np.zeros((6,6))
+#     cp = cos(psi);  sp = sin(psi)
+#     c2 = cp*cp; s2 = sp*sp; sc = sp*cp
+#     d2fb[0,0] = f2b[0,0]*c2+f2b[0,1]*s2+f2b[0,5]*sc/2
+#     d2fb[1,0] = f2b[1,0]*c2+f2b[1,1]*s2+f2b[1,5]*sc/2
+#     d2fb[5,0] =(f2b[5,0]*c2+f2b[5,1]*s2+f2b[5,5]*sc)/2
+#     d2fb[0,1] = f2b[0,0]*s2+f2b[0,1]*c2-f2b[0,5]*sc/2
+#     d2fb[1,1] = f2b[1,0]*s2+f2b[1,1]*c2-f2b[1,5]*sc/2
+#     d2fb[5,1] =(f2b[5,0]*s2+f2b[5,1]*c2-f2b[5,5]*sc)/2
+#     d2fb[0,5] = 2*sc*(f2b[0,1]-f2b[0,0])+f2b[0,5]*(c2-s2)/2
+#     d2fb[1,5] = 2*sc*(f2b[1,1]-f2b[1,0])+f2b[1,5]*(c2-s2)/2
+#     d2fb[5,5] =(2*sc*(f2b[5,1]-f2b[5,0])+f2b[5,5]*(c2-s2))/2
+#     return d2fb
 
 def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     """

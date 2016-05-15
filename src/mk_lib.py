@@ -32,7 +32,7 @@ def findStressOnYS(f_yld,stressLeft,stressRight,pth,verbose):
 
     verbose 
     """
-    tol = 1e-10  # tolerance
+    tol = 1e-15  # tolerance
 
     ## normalize pth just in case.
     pth  = np.array(pth)/sqrt((np.array(pth)**2).sum())
@@ -49,7 +49,7 @@ def findStressOnYS(f_yld,stressLeft,stressRight,pth,verbose):
         ('%6.3f '*2)%(pth[0],pth[1]), 'rho: %6.3f  %s'%(
             _rho_,majorDir)
 
-    diff = tol*100 ## sufficiently large initial tolerance
+    diff = 1. ## sufficiently large initial tolerance
 
     ##
     if verbose: print (9*'%6s ')%(

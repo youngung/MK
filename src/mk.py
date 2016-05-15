@@ -550,7 +550,7 @@ def new_raph_fld(
     residu  = 1.0
     xn      = xzero[::]
     it      = 0
-    itmax   = 100
+    itmax   = 200
     eps     = 1e-10
 
     totalTimeFunc = 0.
@@ -576,7 +576,7 @@ def new_raph_fld(
             dt = time.time() - t0
 
         totalTimeFunc = totalTimeFunc + dt
-        J,res = gauss(ndim=ndim,a=J,b=F) ## f2py module
+        F,J,res = gauss(ndim=ndim,a=J,b=F) ## f2py module
         xn1=xn-res ## x^(n+1)
         residu = norme(ndim,res)
         xn=xn1[::] ## x^(n)
