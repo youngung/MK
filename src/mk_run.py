@@ -136,6 +136,8 @@ if __name__=='__main__':
     rhos = np.linspace(-0.6,1.,17)
     ths  = rhos2ths(rhos)
 
+    ths=[0] ## to debug
+
     logFileNames=[]
     k=0
     print '%3s %6s %5s %5s %60s'%('k','rho','th','psi0','logFileName')

@@ -516,7 +516,7 @@ def find_tmp(verbose=True):
         _tmp_='/tmp/ynj/'
     if not(os.path.isdir(_tmp_)):
         os.mkdir(_tmp_)
-    if verbose:print '_tmp_:', _tmp_
+    if verbose:print ('_tmp_:%s'%_tmp_)
     return _tmp_
 
 def gen_tempfile(prefix='',affix='',ext='txt',i=0):
@@ -548,8 +548,8 @@ def gen_tempfile(prefix='',affix='',ext='txt',i=0):
         it = it + 1
 
     if it>1:
-        print 'Warning: Oddly you just had'+\
-            ' an overlapped file name'
+        print ('Warning: Oddly you just had'+\
+            ' an overlapped file name')
     return filename
 
 

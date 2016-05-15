@@ -152,11 +152,13 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
     stressA, phi, dphi, d2phi = f_yld(stressA_off) ## put the stress on the locus
     np.set_printoptions(precision=3)
     alpha,rho = calcAlphaRho(stressA,dphi)
-    print 'stressA:', ('%7.3f'*6)%(stressA[0],stressA[1],stressA[2],stressA[3],stressA[4],stressA[5])
-    print 'strainA:', ('%7.3f'*6)%(dphi[0],dphi[1],dphi[2],dphi[3],dphi[4],dphi[5])
+    print('stressA:'+('%7.3f'*6)%(
+        stressA[0],stressA[1],stressA[2],stressA[3],stressA[4],stressA[5]))
+    print('strainA:'+('%7.3f'*6)%(
+        dphi[0],dphi[1],dphi[2],dphi[3],dphi[4],dphi[5]))
 
-    print 'alpha:','%7.4f'%alpha
-    print 'rho:  ','%7.4f'%rho
+    print('alpha: %7.4f'%alpha)
+    print('rho  : %7.4f'%rho)
 
     if type(logFileName).__name__=='NoneType':
         logFileName = gen_tempfile(
@@ -168,7 +170,7 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
     ## integrate for each path.
     absciss  = 1e3
     absciss0 = 1e3
-    print 'Iteration over the given psi angle'
+    print('Iteration over the given psi angle')
     head = ('%8s'*9)%('epsRD','epsTD','psi0','psif','sigRD',
                       'sigTD','sigA','T','cmpT[s]\n')
     logFile.write(head)
@@ -189,11 +191,11 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
         sx[0],sx[1],
         siga,
         absciss,dTime)
-    print cnt
+    print(cnt)
     logFile.write(cnt+'\n')
-    uet(dTime,'total time spent');print
+    uet(dTime,'total time spent');print('')
     logFile.close()
-    print '%s has been saved'%logFileName
+    print('%s has been saved'%logFileName)
     return logFileName,dTime
 
 def onepath(f_yld,sa,psi0,f0,T):
@@ -232,8 +234,8 @@ def onepath(f_yld,sa,psi0,f0,T):
 
     # print ks,ma,e0
     na,ma,siga,dsiga,dma,qq = f_hard(0.)
-    print 'siga,dsiga,ma,dma'
-    print siga,dsiga,ma,dma
+    print('siga,dsiga,ma,dma')
+    print(siga,dsiga,ma,dma)
     # os._exit(1)
 
     ## initial_conditions

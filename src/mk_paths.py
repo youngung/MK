@@ -205,7 +205,6 @@ def findCorrectPsi(epsAng):
     psi0s     = np.linspace(ang1,ang2,ntotAngle)*deg2rad
     return psi0s
 
-
 def findCorrectPath(epsAng):
     """
     Argument
@@ -242,7 +241,7 @@ def findCorrectPath(epsAng):
     elif 60<=epsAng<90:
         return PSTD, pth
     elif 90<=epsAng<145:
-        return UTD, pth
+        return DTD, pth
     else:
         raise IOError,'Could not find the corrent range'
 
