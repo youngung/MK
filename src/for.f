@@ -7,11 +7,10 @@ c     Von Mises
 Cf2py intent(in,out) s
 Cf2py intent(out) phi,dphi,d2phi
       h        = 5d-1*((s(1)-s(2))**2+s(1)**2+s(2)**2+6*s(6)**2)
-      phi      = h**5d-1
-      do i = 1 , 6
-         s(i)  = s(i)/phi
-      end do
-!     analytic solutions of first and second derivatives.
+      phi      = h**5d-1        ! yield surface
+      s(:)     = s(:)/phi       ! stress on the yield locus
+!     analytic solutions of first and second derivatives of the yield surface (plastic potential)
+!     dff = 1./(2*(h**0.5))
       dff      = 1d0/(2*phi)
       dphi(1)  = dff*(2*s(1)-s(2))
       dphi(2)  = dff*(2*s(2)-s(1))
@@ -34,16 +33,28 @@ Cf2py intent(out) phi,dphi,d2phi
       return                    !! returns phi, dphi, d2phi
       end subroutine vm
 c----------------------------------------------------------------------c
-      subroutine hillquad(s,r0,r90,phi,dphi,d2phi)
+      subroutine hqe(s,r0,r90,phi,dphi,d2phi)
       implicit none
-      real*8 s(6), r0, r90
-      integer i
-      real*8 h,phi,dphi,d2phi
+      real*8 s(3), r0, r90
+      real*8 h,phi,dphi(3),d2phi, a, b
 cf2py intent(in,out) s
 cf2py intent(in)     r0, r90
 cf2py intent(out)    phi, dphi, d2phi
+      a    =  ((r0 * (1. + r90)) /   (r90*(1.+r0)))
+      b    =      (2.*r0)        /       (1.+r0)
+
+      h    = s(1)**2 + a * (s(2)**2)
+     $     - b *s(1)*s(2)
+      phi  = h**0.5             ! yield surface
+      s(:) = s(:) / phi         ! stress on the yield locus
+
+!     dff     = 1.  / ( 2  * (h**0.5))
+      dff     = 1.  / ( 2. * phi)
+      dphi(:) = 0.
+      dphi(1) = dff * ( 2.     *s(1) -  b  * s(2) )
+      dphi(2) = dff * ( 2. * a *s(2) -  b  * s(1) )
       return
-      end subroutine hillquad
+      end subroutine hqe
 c----------------------------------------------------------------------c
       subroutine swift(e,ks,n,e0,m,sig,dsig,dm,qq)
       implicit none
