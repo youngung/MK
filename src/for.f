@@ -2,7 +2,6 @@ c----------------------------------------------------------------------c
 c     Von Mises
       subroutine vm(s,phi,dphi,d2phi)
       implicit none
-      integer i
       real*8 s(6),h,phi,dff,dphi(6),d2phi(6,6),d2h(6,6),d2ff
 Cf2py intent(in,out) s
 Cf2py intent(out) phi,dphi,d2phi
@@ -33,6 +32,7 @@ Cf2py intent(out) phi,dphi,d2phi
       return                    !! returns phi, dphi, d2phi
       end subroutine vm
 c----------------------------------------------------------------------c
+c     Hill's quadratic yield surface
       subroutine hqe(s,r0,r90,phi,dphi,d2phi)
       implicit none
       real*8 s(3), r0, r90
@@ -40,11 +40,15 @@ c----------------------------------------------------------------------c
 cf2py intent(in,out) s
 cf2py intent(in)     r0, r90
 cf2py intent(out)    phi, dphi, d2phi
+
+      if (s(3).gt.0.01) then
+         write(*,*)'Meant to be used for plane-stress condition'
+         stop
+      endif
+
       a    =  ((r0 * (1. + r90)) /   (r90*(1.+r0)))
       b    =      (2.*r0)        /       (1.+r0)
-
-      h    = s(1)**2 + a * (s(2)**2)
-     $     - b *s(1)*s(2)
+      h    = s(1)**2 + a * (s(2)**2) - b *s(1)*s(2)
       phi  = h**0.5             ! yield surface
       s(:) = s(:) / phi         ! stress on the yield locus
 
@@ -55,6 +59,41 @@ cf2py intent(out)    phi, dphi, d2phi
       dphi(2) = dff * ( 2. * a *s(2) -  b  * s(1) )
       return
       end subroutine hqe
+c----------------------------------------------------------------------c
+!     Hill's 48
+!     f,g,h,n hill's 48
+      subroutine hill48(s,fh,gh,hh,nh,phi,dphi,d2phi)
+      implicit none
+      real*8 s(6),fh,gh,hh,nh
+      real*8 h,phi,dphi(6),d2phi(6,6), d2h(6,6),a, b, dff, d2ff
+cf2py intent(in,out) s
+cf2py intent(in)     fh,gh,hh,nh
+cf2py intent(out)    phi, dphi, d2phi
+      h          = (gh+hh)*s(1)**2+(fh+hh)*s(2)**2-
+     $     2*hh*s(1)*s(2)+2*nh*s(6)**2
+      phi        = h**5d-1
+      s(:)       = s(:)/phi
+      dff        = 1d0/(2*phi)
+      dphi(1)    = dff*(2*(gh+hh)*s(1)-2*hh*s(2))
+      dphi(2)    = dff*(2*(fh+hh)*s(2)-2*hh*s(1))
+      dphi(6)    = dff*4*nh*s(6)
+      d2h(1,1)   = 2d0*(gh+hh)
+      d2h(1,2)   =-1d0*hh
+      d2h(2,2)   = 2d0*(fh+hh)
+      d2h(6,6)   = 4d0*nh
+      d2ff       =-(phi**(-3d0))/4
+      d2phi(1,1) = d2ff*dphi(1)*dphi(1) + dff*d2h(1,1)
+      d2phi(1,2) = d2ff*dphi(1)*dphi(2) + dff*d2h(1,2)
+      d2phi(1,6) = 0d0
+      d2phi(2,1) = d2phi(1,2)
+      d2phi(2,2) = d2ff*dphi(2)*dphi(2) + dff*d2h(2,2)
+      d2phi(2,6) = 0d0
+      d2phi(6,1) = 0d0
+      d2phi(6,2) = 0d0
+      d2phi(6,6) = d2ff*dphi(6)*dphi(6) + dff*d2h(6,6)
+      dphi(6)    = dphi(6)/2
+      return
+      end
 c----------------------------------------------------------------------c
       subroutine swift(e,ks,n,e0,m,sig,dsig,dm,qq)
       implicit none
