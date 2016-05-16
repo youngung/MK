@@ -6,8 +6,6 @@ c     Von Mises
       real*8 s(6),h,phi,dff,dphi(6),d2phi(6,6),d2h(6,6),d2ff
 Cf2py intent(in,out) s
 Cf2py intent(out) phi,dphi,d2phi
-
-!     von Mises criterion
       h        = 5d-1*((s(1)-s(2))**2+s(1)**2+s(2)**2+6*s(6)**2)
       phi      = h**5d-1
       do i = 1 , 6
@@ -35,6 +33,17 @@ Cf2py intent(out) phi,dphi,d2phi
       dphi(6) = dphi(6)/2
       return                    !! returns phi, dphi, d2phi
       end subroutine vm
+c----------------------------------------------------------------------c
+      subroutine hillquad(s,r0,r90,phi,dphi,d2phi)
+      implicit none
+      real*8 s(6), r0, r90
+      integer i
+      real*8 h,phi,dphi,d2phi
+cf2py intent(in,out) s
+cf2py intent(in)     r0, r90
+cf2py intent(out)    phi, dphi, d2phi
+      return
+      end subroutine hillquad
 c----------------------------------------------------------------------c
       subroutine swift(e,ks,n,e0,m,sig,dsig,dm,qq)
       implicit none
@@ -112,7 +121,7 @@ cf2py depend(ndim) a,b,x,c
             b(m) = b(m) - b(k)*coef
          end do
       end do
-      
+
 ! solution of linear system a*x = b
       x(ndim) = b(ndim)/a(ndim,ndim)
       do k = ndim-1 , 1 , -1
@@ -121,19 +130,19 @@ cf2py depend(ndim) a,b,x,c
             x(k) = x(k) - a(k,l)*x(l)/a(k,k)
          end do
       end do
-      
+
       return
       end subroutine gauss
-      
+
 c----------------------------------------------------------------------c
       subroutine norme(ndim,vec,norm)
       implicit none
       integer ndim,i
       real*8 vec(ndim),norm
 cf2py intent(in) ndim, vec
-cf2py intent(out) norm      
+cf2py intent(out) norm
 cf2py depend(ndim) vec
-      
+
       norm = 0.0
       do i = 1 , ndim
          norm = norm + vec(i)*vec(i)
