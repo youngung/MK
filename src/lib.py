@@ -35,8 +35,8 @@ def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
 
 @jit
 def rot(psi):
-    if psi>np.pi or psi<-np.pi:
-        print('You might have put degree than radian... Please check.')
+    #if psi>np.pi or psi<-np.pi:
+    # print("Warning: You might have put degree than radian... Please check.")
     r = np.zeros((3,3)); c = np.cos(psi); s = np.sin(psi)
     r[0,0]= c;  r[0,1]=-s
     r[1,0]= s;  r[1,1]= c
@@ -71,16 +71,15 @@ def rot_tensor(a,psi):
     ---------
     a (3x3) matrix
     psi (in degree)
+
+    Returns
+    -------
+    b
     """
     a=np.array(a)
     r=rot(psi)
-    # for i in xrange(3):
-    #     for j in xrange(3):
-    #         for k in xrange(3):
-    #             for l in xrange(3):
-    #                 b[i,j] = b[i,j] + r[i,k] * a[k,l] * r[j,l]
-    # return b
     return rot_tensor_r(a,r)
+
 @jit
 def rot_tensor_r(a,r):
     b=np.zeros((3,3))
@@ -90,7 +89,6 @@ def rot_tensor_r(a,r):
                 for l in xrange(3):
                     b[i,j] = b[i,j] + r[i,k] * a[k,l] * r[j,l]
     return b
-
 
 @jit
 def rotPrincOrig(rotMatrix, v):
@@ -178,17 +176,8 @@ def convert_6sig_princ(s6):
         sig33[i,j] = s6[k]
         if i!=j: sig33[j,i]=s6[k]
     w,rot = np.linalg.eig(sig33)
-
     ## w, and rot might not be ordered.
     ## Add ordering below
-
-    # v1 = rot[:,0]
-    # v2 = rot[:,1]
-    # v3 = rot[:,2]
-    # vs = [v1,v2,v3]
-    # w, vs = ssort(w, vs)
-    # for i in xrange(3):
-    #      rot[:,i] = vs[i]
     return w,rot
 
 @jit
@@ -555,7 +544,7 @@ def find_tmp(verbose=True):
         _tmp_='/tmp/ynj/'
     if not(os.path.isdir(_tmp_)):
         os.mkdir(_tmp_)
-    if verbose:print ('_tmp_:%s'%_tmp_)
+    if verbose:print('_tmp_:%s'%_tmp_)
     return _tmp_
 
 def gen_tempfile(prefix='',affix='',ext='txt',i=0):
@@ -587,7 +576,7 @@ def gen_tempfile(prefix='',affix='',ext='txt',i=0):
         it = it + 1
 
     if it>1:
-        print ('Warning: Oddly you just had'+\
+        print('Warning: Oddly you just had'+\
             ' an overlapped file name')
     return filename
 
@@ -608,3 +597,15 @@ def rhos2ths(rhos):
     for rho in rhos:
         ths.append(rho2th(rho))
     return ths
+
+if __name__=='__main__':
+    from lib import convert_6sig_princ as c6p
+    s1=[1.,0.,0.,0.,0.,0.] ## uniaxial S1
+    s2=[0.,2.,0.,0.,0.,0.] ## uniaxial S2
+    s3=[1.2,1.1,0.,0.,0.,0.] ## biaxial
+    s4=[0.,0.,0.,0.,0.,1.] ## shear
+    s5=[1.,0.,0.,0.,0.,1.] ## shear + S1
+
+    ss=[s1,s2,s3,s4,s5]
+    for i in xrange(len(ss)):
+        w, rot = c6p(ss[i])

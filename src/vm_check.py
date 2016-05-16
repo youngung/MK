@@ -9,6 +9,9 @@ sin=np.sin
 cos=np.cos
 
 def locus(func):
+    """
+    in-plane biaxial locus
+    """
     th=np.linspace(-pi,pi,100)
     x=cos(th); y=sin(th)
     z=np.zeros(len(th))
@@ -21,9 +24,10 @@ def locus(func):
         Y.append(ys[1])
     return X,Y
 
-def main():
-    fig = plt.figure()
-    ax  = fig.add_subplot(111)
+def main(ax=None):
+    if type(ax).__name__=='NoneType':
+        fig = plt.figure()
+        ax  = fig.add_subplot(111)
 
     funcs=vm,HillQuad
     labs =['von Mises','HillQuadratic']
@@ -37,7 +41,10 @@ def main():
     ax.set_xlim(-1.5,1.5)
     ax.set_ylim(-1.5,1.5)
     ax.set_aspect('equal')
-    fig.savefig(fn)
+
+    if type(ax).__name__=='NoneType':
+        fig.savefig(fn)
+        pass
 
 if __name__=='__main__':
     main()
