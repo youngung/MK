@@ -29,6 +29,7 @@ def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
         xs = r * ys
 
         ax.plot(xs,ys,ls=ls,color=color,alpha=alpha)
+
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
 
@@ -89,6 +90,24 @@ def rot_tensor_r(a,r):
                 for l in xrange(3):
                     b[i,j] = b[i,j] + r[i,k] * a[k,l] * r[j,l]
     return b
+
+
+@jit
+def rotPrincOrig(rotMatrix, v):
+    """
+    Rotate from principal space (3D)
+    to original space (3x3) matrix form
+    """
+    ## v1, v2, v3 - vectors
+    v1 = rotMatrix[:,0] * v[0]
+    v2 = rotMatrix[:,1] * v[1]
+    v3 = rotMatrix[:,2] * v[2]
+    MatrixPrinc = np.zeros((3,3))
+    MatrixPrinc[:,0] = v1[::]
+    MatrixPrinc[:,1] = v2[::]
+    MatrixPrinc[:,2] = v3[::]
+    MatrixOrig = rot_tensor_r(MatrixPrinc, rotMatrix)
+    return MatrixOrig
 
 def th_2_planestress(th):
     """
