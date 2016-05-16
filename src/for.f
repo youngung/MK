@@ -36,7 +36,7 @@ c----------------------------------------------------------------------c
       subroutine hqe(s,r0,r90,phi,dphi,d2phi)
       implicit none
       real*8 s(3), r0, r90
-      real*8 h,phi,dphi(3),d2phi, a, b
+      real*8 h,phi,dphi(3),d2phi, a, b, dff
 cf2py intent(in,out) s
 cf2py intent(in)     r0, r90
 cf2py intent(out)    phi, dphi, d2phi

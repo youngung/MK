@@ -12,6 +12,7 @@ ijv=voigt.ijv
 vij=voigt.vij
 from MP.lib import mpl_lib
 ticks_bins = mpl_lib.ticks_bins
+from MP.ssort import sh as ssort
 
 def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
                ls='--',color='k',alpha=0.5):
@@ -71,8 +72,17 @@ def rot_tensor(a,psi):
     psi (in degree)
     """
     a=np.array(a)
-    b=np.zeros((3,3))
     r=rot(psi)
+    # for i in xrange(3):
+    #     for j in xrange(3):
+    #         for k in xrange(3):
+    #             for l in xrange(3):
+    #                 b[i,j] = b[i,j] + r[i,k] * a[k,l] * r[j,l]
+    # return b
+    return rot_tensor_r(a,r)
+@jit
+def rot_tensor_r(a,r):
+    b=np.zeros((3,3))
     for i in xrange(3):
         for j in xrange(3):
             for k in xrange(3):
@@ -148,9 +158,19 @@ def convert_6sig_princ(s6):
         i,j = ijv[:,k]
         sig33[i,j] = s6[k]
         if i!=j: sig33[j,i]=s6[k]
+    w,rot = np.linalg.eig(sig33)
 
-    w,v = np.linalg.eig(sig33)
-    return w,v
+    ## w, and rot might not be ordered.
+    ## Add ordering below
+
+    # v1 = rot[:,0]
+    # v2 = rot[:,1]
+    # v3 = rot[:,2]
+    # vs = [v1,v2,v3]
+    # w, vs = ssort(w, vs)
+    # for i in xrange(3):
+    #      rot[:,i] = vs[i]
+    return w,rot
 
 @jit
 def convert_sig33_sig6(sig33):
