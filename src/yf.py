@@ -1,6 +1,9 @@
 """
 Yield functions
 """
+import matplotlib as mpl
+mpl.use('Agg') ## In case X-window is not available.
+
 import numpy as np
 from scipy import optimize
 from mpl_toolkits.mplot3d import Axes3D
@@ -18,7 +21,6 @@ ijv=voigt.ijv
 vij=voigt.vij
 
 ## load lib_dat for template
-p_home = os.getcwd()
 
 try:
     import vpscyld
