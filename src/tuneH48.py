@@ -1,22 +1,28 @@
 """
 Tune-up parameters of Hill48 using Hill Quad
-
 """
 from for_lib import vm
 from yf2 import HillQuad,Hill48
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
-
 from vpscyld.lib_dat import xy2rt
 
-
-pi=np.pi
-sin=np.sin
-cos=np.cos
+pi  = np.pi
+sin = np.sin
+cos = np.cos
 nth = 800
 
 def main(r0=1.,r90=1.):
+    """
+    Tune Hill48 using Hill Quadratic plane-strss yield locus
+    that is characterized by two r-values (r0 and r90)
+
+    Arguments
+    ---------
+    r0
+    r90
+    """
     th=np.linspace(-pi,+pi,nth)
     x=cos(th); y=sin(th)
     z=np.zeros(len(th))
@@ -29,11 +35,12 @@ def main(r0=1.,r90=1.):
         X.append(ys[0])
         Y.append(ys[1])
 
-    ysHQ=np.array([X,Y])
-    objf = returnObj(ysHQ)
+    ysHQ = np.array([X,Y])
+    objf = returnObjYS(ysHQ)
 
-    res = minimize(fun=objf, x0=[0.5,0.5,0.5,1],method='BFGS',
-                   jac=False,tol=1e-20,options=dict(maxiter=400))
+    res = minimize(
+        fun=objf, x0=[0.5,0.5,0.5,1],method='BFGS',
+        jac=False,tol=1e-20,options=dict(maxiter=400))
     popt = res.x
     n_it = res.nit
     fopt = res.fun
@@ -45,7 +52,10 @@ def main(r0=1.,r90=1.):
     print ('%6.3f'*4)%(f,g,h,n)
     return f,g,h,n
 
-def returnObj(ref):
+
+## Generate objective function that compares yield locus
+## in the plane-stress space.
+def returnObjYS(ref):
     def objfH48(xs):
         th=np.linspace(-pi,+pi,nth)
         x=cos(th); y=sin(th)
@@ -71,3 +81,4 @@ def returnObj(ref):
         diff = ((r-R)**2).sum()/(len(th)-1)
         return diff
     return objfH48
+

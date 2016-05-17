@@ -6,10 +6,16 @@ from lib import c6p, s62c, rot_6d,rot_tensor_r, c2s6, rotPrincOrig ## cauchy str
 import numpy as np
 
 def VonMises(s):
+    """
+    Wrapper of Von Mises yield function
+    """
     snew,phi,dphi,d2phi = vm(s)
     return snew,phi,dphi,d2phi
 
 def wrapHill48(r0,r90):
+    """
+    Wrapper of Hill48 yield function
+    """
     import tuneH48
     Hill48params = tuneH48.main(r0=r0,r90=r90)
     f,g,h,n = Hill48params
@@ -22,6 +28,7 @@ def Hill48(s,f,g,h,n):
     Arguments
     ---------
     s    :6d-stress
+    f,g,h,n: Hill parameters for the case of plane-stress space
     """
     snew,phi,dphi,d2phi = hill48(s,f,g,h,n)
     return snew, phi, dphi, d2phi
@@ -35,7 +42,8 @@ def HillQuad(s=None,r0=2.0,r90=2.3):
     """
     Arguments
     ---------
-    s    : 6d stress   (it should be referenced by material axes) axis1//RD, axi2//TD
+    s    : 6d stress    (it should be referenced in the material axes)
+                               axis1//RD, axi2//TD
     r0   : r-value along 0
     r90  : r-value along 90
     """
@@ -76,37 +84,36 @@ def test2(r0=2.1,r90=2.7):
     from mpl_toolkits.mplot3d import Axes3D
     from lib import rot
     import numpy as np
-
+    from mechtests import inplaneTension
     h48 = wrapHill48(r0=r0,r90=r90)
 
     psis = np.linspace(0,+np.pi/2.,100)
     ## uniaxial tension stress state in the laboratory axes
     sUniaxial=np.zeros(6)
     sUniaxial[0]=1.
-    phis=[];x=[];y=[];z=[];rvs=[]
 
     print '%6s %6s %6s %6s %6s %6s %6s %6s'%(
         'th','phi','s11','s22','s12','s1','s2','s3')
+    psis, rvs, phis = inplaneTension(fYLD=h48)
 
-    for i in xrange(len(psis)):
-        ## rotate uniaxial stress in the lab axes to material axes
-        sMaterial                     = rot_6d(sUniaxial,psis[i])
-        ysMat, Phi, dPhi, d2Phi       = h48(s=sMaterial)
-        ysLab = rot_6d(ysMat, -psis[i])
-        dpLab = rot_6d(dPhi,  -psis[i])
-        # print '%6f %6f'%(psis[i],Phi)
-        phis.append(Phi)
+    # for i in xrange(len(psis)):
+    #     ## rotate uniaxial stress in the lab axes to material axes
+    #     sMaterial                     = rot_6d(sUniaxial,psis[i])
+    #     ysMat, Phi, dPhi, d2Phi       = h48(s=sMaterial)
+    #     ysLab = rot_6d(ysMat, -psis[i])
+    #     dpLab = rot_6d(dPhi,  -psis[i])
+    #     # print '%6f %6f'%(psis[i],Phi)
+    #     phis.append(Phi)
 
-        et = -dpLab[0]-dpLab[1]
-        r  = dpLab[1] / et
-        rvs.append(r)
+    #     et = -dpLab[0]-dpLab[1]
+    #     r  = dpLab[1] / et
+    #     rvs.append(r)
 
-        # sMaterial, phi, dphi, d2phi = HillQuad(s=sMaterial,r0=r0,r90=r90)
-        # sLab = rot_6d(sMaterial, -psis[i])
-        # print 'sLab:',sLab
-        # dum1, phi, dum2, dum3 = HillQuad(s=sLab)
-        # print 'phi:',phi
-
+    #     # sMaterial, phi, dphi, d2phi = HillQuad(s=sMaterial,r0=r0,r90=r90)
+    #     # sLab = rot_6d(sMaterial, -psis[i])
+    #     # print 'sLab:',sLab
+    #     # dum1, phi, dum2, dum3 = HillQuad(s=sLab)
+    #     # print 'phi:',phi
 
     fig = plt.figure(figsize=(12,3))
     ax1  = fig.add_subplot(141,projection='3d')

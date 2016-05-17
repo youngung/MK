@@ -1,6 +1,9 @@
 """
 Adapted from FB's yld2000-2d subroutines for forming limit diagram predictions
 """
+import matplotlib as mpl
+mpl.use('Agg') ## In case X-window is not available.
+
 from numba import jit
 from for_lib import vm
 import numpy as np
