@@ -9,6 +9,28 @@ def VonMises(s):
     snew,phi,dphi,d2phi = vm(s)
     return snew,phi,dphi,d2phi
 
+def wrapHill48(r0,r90):
+    import tuneH48
+    Hill48params = tuneH48.main(r0=r0,r90=r90)
+    f,g,h,n = Hill48params
+    def func(s):
+        return Hill48(s,f,g,h,n)
+    return func
+
+def Hill48(s,f,g,h,n):
+    """
+    Arguments
+    ---------
+    s    :6d-stress
+    """
+    snew,phi,dphi,d2phi = hill48(s,f,g,h,n)
+    return snew, phi, dphi, d2phi
+
+def wrapHillQuad(r0,r90):
+    def func(s):
+        return HillQuad(s,r0,r90)
+    return func
+
 def HillQuad(s=None,r0=2.0,r90=2.3):
     """
     Arguments
@@ -19,12 +41,10 @@ def HillQuad(s=None,r0=2.0,r90=2.3):
     """
     ## incomplete here - axis1 // rd, it should be such that axis 2 // td
     ## This, in the current form, may not enforce axis 1 to e aligned with RD
-
     ##
     srd = s[0]; std = s[1]
     if srd>=std: pdir = 'rd'
     elif srd<std: pdir='td'
-
 
     princStress,rotMatrix = c6p(s)
     sPrinc,phi,dphi,d2phi = hqe(s=princStress,r0=r0,r90=r90) ## principal values
@@ -37,26 +57,18 @@ def HillQuad(s=None,r0=2.0,r90=2.3):
     # d2phi = np.dot(rotMatrix,dphi)  - need to define d2phi in 'for.f' first.
     return snew,phi,dphi,d2phi
 
-def Hill48(s,f,g,h,n):
-    """
-    Arguments
-    ---------
-    s    :6d-stress
-    """
-    snew,phi,dphi,d2phi = hill48(s,f,g,h,n)
-    return snew, phi, dphi, d2phi
-
 def test3():
     """
     """
     import vm_check
     vm_check.main()
 
-def test2():
+def test2(r0=2.1,r90=2.5):
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     from lib import rot
     import numpy as np
+
     psis = np.linspace(0,+np.pi/2.,100)
     sUniaxial=np.zeros(6)
     sUniaxial[0]=1.
@@ -67,7 +79,7 @@ def test2():
     for i in xrange(len(psis)):
         ## rotate uniaxial stress in the lab to material axes
         sMaterial                   = rot_6d(sUniaxial,psis[i])
-        sMaterial, phi, dphi, d2phi = HillQuad(s=sMaterial,r0=1.,r90=1.0)
+        sMaterial, phi, dphi, d2phi = HillQuad(s=sMaterial,r0=r0,r90=r90)
         sLab = rot_6d(sMaterial, -psis[i])
         # print 'sLab:',sLab
         dum1, phi, dum2, dum3 = HillQuad(s=sLab)
@@ -90,7 +102,6 @@ def test2():
     ax1.set_ylabel(r'$\sigma_{22}$')
     ax1.set_zlabel(r'$\sigma_{12}$')
     ax1.set_aspect('equal')
-
     fig.tight_layout()
 
     fn = 'yf2_test2.pdf'
