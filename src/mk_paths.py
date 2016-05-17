@@ -194,8 +194,15 @@ def findCorrectPsi(epsAng):
     """
     Recommend the most required (relevnt) psi anges
     for the given strain paths <epsAng>
+
+    Arguments
+    ---------
+    epsAng in [degree]
     """
     path = findCorrectPath(epsAng)[0]
+
+    print 'path name:',path.__name__
+
     rst = path()
     ang1,ang2,anginc = rst[0]
 

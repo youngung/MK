@@ -133,10 +133,8 @@ if __name__=='__main__':
 
     ## rho to theta? ( should be later passed as arguments)
     f0 = 0.996
-    rhos = np.linspace(-0.6,1.,17)
-    ths  = rhos2ths(rhos)
-
-    ths=[0] ## to debug
+    rhos = np.linspace(-0.6,2.6,17)
+    ths = rhos2ths(rhos) ## return radians
 
     logFileNames=[]
     k=0
@@ -144,10 +142,10 @@ if __name__=='__main__':
     p0s=[]
     print '---'
     for i in xrange(len(ths)): ## each rho
-        _psi0s_=findCorrectPsi(ths[i])
+        _psi0s_=findCorrectPsi(ths[i]*180/np.pi)
         p0s.append(_psi0s_)
         logFileNames.append([])
-        for j in xrange(len(_psi0s_)):
+        for j in xrange(len(_psi0s_)): ## each psi
             psi0 = _psi0s_[j]
             logFileName = gen_tempfile(
                 prefix='mk-f0%3.3i-psi%+6.3f-th%+6.3f'%(

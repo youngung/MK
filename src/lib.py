@@ -584,11 +584,16 @@ def gen_tempfile(prefix='',affix='',ext='txt',i=0):
 def rho2th(rho):
     """
     convert rho prime to thetas
+
+    Return
+    ------
+    th <radian>
     """
     from numpy import arctan2
     if rho<=1:
         th = arctan2(rho,1.)
     else:
+        rho = -rho + 2
         th = arctan2(1.,rho)
     return th
 
