@@ -148,6 +148,8 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
     rad2deg   = 180./np.pi
     deg2rad   =   1./rad2deg
     f_yld = vm
+
+
     stressA_off, dum1, dum2 = constructBC(epsAng=th, f_yld=f_yld,verbose=False)
     stressA, phi, dphi, d2phi = f_yld(stressA_off) ## put the stress on the locus
     np.set_printoptions(precision=3)
