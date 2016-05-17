@@ -2,19 +2,46 @@
 Tune-up parameters of Hill48 using Hill Quad
 """
 from for_lib import vm
-from yf2 import HillQuad,Hill48
+from yf2 import HillQuad,Hill48, wrapHill48Gen
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from vpscyld.lib_dat import xy2rt
+from scipy import interpolate
+from mechtests import inplaneTension
 
 pi  = np.pi
 sin = np.sin
 cos = np.cos
 nth = 800
 
+def tuneGenR(r=[2.2,2.0,2.9]):
+    """
+    Tune based on r-values
 
-def main(r0=1.,r90=1.):
+    Arguments
+    ---------
+    r    - r value list
+    fYLD - yield function
+    """
+
+    objf = returnObjRV(rv=r,fYLD=Hill48)
+    res = minimize(fun=objf, x0=[0.5,0.5,0.5,1],method='BFGS',
+                   jac=False,tol=1e-20,options=dict(maxiter=400))
+    popt = res.x
+    n_it = res.nit
+    fopt = res.fun
+
+    print 'popt:',popt
+    print 'fopt:',fopt
+    f,g,h,n=popt
+
+    print ('%6s'*4)%('f','g','h','n')
+    print ('%6.3f'*4)%(f,g,h,n)
+
+    return f,g,h,n
+
+def tuneR2(r0=1.,r90=1.):
     """
     Tune Hill48 using Hill Quadratic plane-strss yield locus
     that is characterized by two r-values (r0 and r90)
@@ -54,10 +81,17 @@ def main(r0=1.,r90=1.):
     print ('%6.3f'*4)%(f,g,h,n)
     return f,g,h,n
 
+
 ## Generate objective function that compares yield locus
 ## in the plane-stress space.
 def returnObjYS(ref=None,fYLD=Hill48):
-    def objfH48(xs):
+    """
+    Arguments
+    ---------
+    ref
+    fYLD
+    """
+    def objf(xs):
         th=np.linspace(-pi,+pi,nth)
         x=cos(th); y=sin(th)
         z=np.zeros(len(th))
@@ -79,5 +113,28 @@ def returnObjYS(ref=None,fYLD=Hill48):
         R,TH = xy2rt(ref[0],ref[1])
         diff = ((r-R)**2).sum()/(len(th)-1)
         return diff
-    return objfH48
+    return objf
 
+def returnObjRV(rv,fYLD=Hill48):
+    """
+    Arguments
+    ---------
+    rv
+    fYLD
+    """
+    def objf(xs):
+        nth  = len(rv)
+        psis_ref = np.linspace(0,np.pi/2.,nth)
+        f, g, h, n = xs
+        psis, rvs, phis = inplaneTension(fYLD=fYLD,f=f,g=g,h=h,n=n)
+
+        funcINT = interpolate.interp1d(x=psis,y=rvs)
+        # raise IOError
+        rvs_ref = funcINT(psis_ref)
+
+        # print 'rvs_ref:',rvs_ref
+        # print 'xs:     ',xs
+
+        diff = np.sqrt(((rvs_ref - rv)**2).sum())/(nth-1.)
+        return diff
+    return objf

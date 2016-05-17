@@ -12,16 +12,19 @@ def VonMises(s):
     snew,phi,dphi,d2phi = vm(s)
     return snew,phi,dphi,d2phi
 
+def wrapHill48Gen(f,g,h,n):
+    def func(s):
+        return  Hill48(s,f,g,h,n)
+    return func
+
 def wrapHill48(r0,r90):
     """
-    Wrapper of Hill48 yield function
+    Wrapper of Hill48 yield function that is characterized by two r-values
     """
     import tuneH48
-    Hill48params = tuneH48.main(r0=r0,r90=r90)
-    f,g,h,n = Hill48params
-    def func(s):
-        return Hill48(s,f,g,h,n)
-    return func
+    Hill48params = tuneH48.tuneR2(r0=r0,r90=r90) ## tune based on r0 and r90
+    f, g, h, n = Hill48params
+    return wrapHill48Gen(f,g,h,n)
 
 def Hill48(s,f,g,h,n):
     """
@@ -35,7 +38,7 @@ def Hill48(s,f,g,h,n):
 
 def wrapHillQuad(r0,r90):
     def func(s):
-        return HillQuad(s,r0,r90)
+       return HillQuad(s,r0,r90)
     return func
 
 def HillQuad(s=None,r0=2.0,r90=2.3):
