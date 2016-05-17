@@ -35,6 +35,10 @@ def tuneGenR(r=[2.2,2.0,2.9]):
     print 'popt:',popt
     print 'fopt:',fopt
     f,g,h,n=popt
+    y=(g+h)
+    params = np.array([f,g,h,n])
+    params = params / y
+    f,g,h,n = params
 
     print ('%6s'*4)%('f','g','h','n')
     print ('%6.3f'*4)%(f,g,h,n)
@@ -67,8 +71,15 @@ def tuneR2(r0=1.,r90=1.):
     objf = returnObjYS(ref=ysHQ,fYLD=Hill48)
 
     res = minimize(
-        fun=objf, x0=[0.5,0.5,0.5,1],method='BFGS',
-        jac=False,tol=1e-20,options=dict(maxiter=400))
+        fun=objf,
+        x0=[0.277,0.357,0.749,1.464],
+        bounds=((0.2,0.8),(0.2,0.8),(0.2,2),(0.5,1.5)),
+
+        # method='BFGS',
+        method='Nelder-Mead',
+
+        jac=False,tol=1e-20,
+        options=dict(maxiter=400))
 
     popt = res.x
     n_it = res.nit
@@ -77,10 +88,14 @@ def tuneR2(r0=1.,r90=1.):
     print 'popt:',popt
     f,g,h,n=popt
 
+    y=(g+h)
+    params = np.array([f,g,h,n])
+    params = params / y
+    f,g,h,n = params
+
     print ('%6s'*4)%('f','g','h','n')
     print ('%6.3f'*4)%(f,g,h,n)
     return f,g,h,n
-
 
 ## Generate objective function that compares yield locus
 ## in the plane-stress space.

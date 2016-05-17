@@ -1,7 +1,7 @@
 import matplotlib as mpl
 mpl.use('Agg') ## In case X-window is not available.
 from for_lib import vm
-from yf2 import wrapHill48, wrapHillQuad
+from yf2 import wrapHill48, wrapHill48R, wrapHillQuad
 import numpy as np
 import matplotlib.pyplot as plt
 pi=np.pi
@@ -31,13 +31,16 @@ def main(ax=None):
 
     ## two parameters from Jeong et al. Acta Mat 112, 2016
     ## for the interstitial-free steel
-    r0  = 2.1; r90 = 2.7
-    hq = wrapHillQuad(r0=r0,r90=r90)
-    h48= wrapHill48(r0=r0,r90=r90) ## tune f,g,h by HillQuad
+    r0   = 2.20
+    r45  = 2.0
+    r90  = 2.9
+    hq   = wrapHillQuad(r0=r0,r90=r90)
+    # h48  = wrapHill48(r0=r0,r90=r90) ## tune f,g,h by HillQuad
+    h48g = wrapHill48R([r0,r45,r90])
 
-    funcs = vm, hq, h48
-    labs  = ['von Mises','Hill Quad','Hill48']
-    ls    = ['-','--',':']
+    funcs =   h48g,        hq,        vm
+    labs  = ['Hill48R','Hill Quad','von Mises']
+    ls    = ['-','--','-.',':']
     for i in xrange(len(funcs)):
         x,y = locus(funcs[i])
         ax.plot(x,y,label=labs[i],ls=ls[i])
