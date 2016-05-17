@@ -13,6 +13,7 @@ sin = np.sin
 cos = np.cos
 nth = 800
 
+
 def main(r0=1.,r90=1.):
     """
     Tune Hill48 using Hill Quadratic plane-strss yield locus
@@ -36,11 +37,12 @@ def main(r0=1.,r90=1.):
         Y.append(ys[1])
 
     ysHQ = np.array([X,Y])
-    objf = returnObjYS(ysHQ)
+    objf = returnObjYS(ref=ysHQ,fYLD=Hill48)
 
     res = minimize(
         fun=objf, x0=[0.5,0.5,0.5,1],method='BFGS',
         jac=False,tol=1e-20,options=dict(maxiter=400))
+
     popt = res.x
     n_it = res.nit
     fopt = res.fun
@@ -52,10 +54,9 @@ def main(r0=1.,r90=1.):
     print ('%6.3f'*4)%(f,g,h,n)
     return f,g,h,n
 
-
 ## Generate objective function that compares yield locus
 ## in the plane-stress space.
-def returnObjYS(ref):
+def returnObjYS(ref=None,fYLD=Hill48):
     def objfH48(xs):
         th=np.linspace(-pi,+pi,nth)
         x=cos(th); y=sin(th)
@@ -65,7 +66,7 @@ def returnObjYS(ref):
 
         X=[]; Y=[]
         for i in xrange(len(s)):
-            rst=Hill48(s[i],f,g,h,n)
+            rst=fYLD(s[i],f,g,h,n)
             ys = rst[0]
             X.append(ys[0])
             Y.append(ys[1])
@@ -75,9 +76,7 @@ def returnObjYS(ref):
 
         ## rst to th-r coordinate
         r,th = xy2rt(X,Y)
-
         R,TH = xy2rt(ref[0],ref[1])
-
         diff = ((r-R)**2).sum()/(len(th)-1)
         return diff
     return objfH48
