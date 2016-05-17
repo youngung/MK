@@ -132,8 +132,8 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
     """
     Assumed proportional loadings
 
-    Argument
-    --------
+    Arguments
+    ---------
     f0
     psi0         in degree
     th  (epsAng) in degree
@@ -145,10 +145,11 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
     from mk_lib   import findStressOnYS
     from lib      import gen_tempfile
     from mk_paths import constructBC,findCorrectPath
+    from yf2 import wrapHill48
     rad2deg   = 180./np.pi
     deg2rad   =   1./rad2deg
-    f_yld = vm
-
+    # f_yld     = vm
+    f_yld     = wrapHill48(r0=2.1,r90=2.7)
 
     stressA_off, dum1, dum2 = constructBC(epsAng=th, f_yld=f_yld,verbose=False)
     stressA, phi, dphi, d2phi = f_yld(stressA_off) ## put the stress on the locus
@@ -455,7 +456,7 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
             deltt = deltat*1.0
 
         t0=time.time()
-        dydx, ynew, xbb, siga, SA = syst(            
+        dydx, ynew, xbb, siga, SA = syst(
             deltt,t,f0,dydx,xbb,S,yancien,f_hard,f_yld,verbose)
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
         k1     = deltt * dydx ## Y increments
