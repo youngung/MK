@@ -22,11 +22,9 @@ def test4():
     print 'TEST4 in test.py for estimating the compute time'
     from MP import progress_bar
     uet=progress_bar.update_elapsed_time
-
     t0 = time.time()
     mk.main(f0=0.995, psi0=0, th=0,logFileName='/tmp/mk-test4.log')
     dt = time.time() - t0
-
     uet(dt,'Total elapsed time');print
 
 def test5():
@@ -35,6 +33,15 @@ def test5():
     from lib import rho2th
     th = rho2th(-0.6)*180./np.pi
     mk.main(f0=0.996,psi0=3, th=th,logFileName='/tmp/dum.log')
+
+def test6():
+    """
+    a short FLD calcultion
+    """
+    cmd = 'python mk_run.py --f0 0.995 --r0 -0.5 --r1 1. --nr 4'
+    import os
+    print 'cmd:',cmd
+    os.system(cmd)
 
 if __name__=='__main__':
     import argparse
@@ -56,6 +63,7 @@ if __name__=='__main__':
         test4()
     elif ind==5:
         test5()
+    elif ind==6: ## FLD actual calculations
+        test6()
     else:
         raise IOError, 'Could not find the test'
-

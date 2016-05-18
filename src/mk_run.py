@@ -83,8 +83,8 @@ def postAnalysis(masterFileName):
     ax1.plot(dat[1],dat[0],'o')
     dat=np.loadtxt(fileFLDall.name).T
     ax2.plot(dat[1],dat[0],'o')
-    ax1.draw_guide(ax1,r_line=[-0.5,0,1,2,2.5],max_r=2)
-    ax2.draw_guide(ax1,r_line=[-0.5,0,1,2,2.5],max_r=2)
+    draw_guide(ax1,r_line=[-0.5,0,1,2,2.5],max_r=2)
+    draw_guide(ax1,r_line=[-0.5,0,1,2,2.5],max_r=2)
     fig.savefig('mk_fld_pp.pdf')
 
 def test_pp(fn='/local_scratch/MK-6e59e6-results.txt'):
@@ -129,13 +129,28 @@ if __name__=='__main__':
     import os,multiprocessing,time
     from MP import progress_bar
     from mk_paths import findCorrectPsi
-    uet = progress_bar.update_elapsed_time
+    import argparse
+
+    ## Arguments parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--f0',type=float,help='f0 value')
+    parser.add_argument(
+        '--r0',type=float,help='rho start')
+    parser.add_argument(
+        '--r1',type=float,help='rho end')
+    parser.add_argument(
+        '--nr',type=int,help='number of rhos')
 
     ## rho to theta? ( should be later passed as arguments)
-    f0 = 0.996
-    rhos = np.linspace(-0.6,2.6,17)
-    ths = rhos2ths(rhos) ## return radians
+    args        = parser.parse_args()
+    f0   = args.f0
+    rhos = np.linspace(args.r0,args.r1,args.nr)
 
+    print 'rhos:', rhos
+
+    ths  = rhos2ths(rhos)
+    uet  = progress_bar.update_elapsed_time
     logFileNames=[]
     k=0
     print '%3s %6s %5s %5s %60s'%('k','rho','th','psi0','logFileName')

@@ -25,110 +25,6 @@ log=np.log
 atan2=np.arctan2
 sqrt=np.sqrt
 
-def main_deprecated(f0=0.996,fGenPath=None):
-    """
-    This function is now deprecated...
-
-    Assumed proportional loadings
-
-    Argument
-    --------
-    f0
-    fGenPath (None or function or kwargs)
-    """
-    import os
-    from mk_lib   import findStressOnYS
-    from lib      import gen_tempfile
-    f_yld = vm
-
-    if type(fGenPath).__name__=='NoneType':
-        from mk_paths import PSRD
-        angs,npt,pth,stressLeft,stressRight = PSRD()
-    elif type(fGenPath).__name__=='function':
-        angs,npt,pth,stressLeft,stressRight = fGenPath()
-    else:
-        print type(fGenPath).__name__
-        raise IOError, 'unexpected type of fGenPath given'
-
-    ang1,ang2,anginc = angs
-
-    logFileName = gen_tempfile(prefix='log',affix='mk')
-    logFile     = open(logFileName,'w')
-
-    tTime = 0.
-    for npth in xrange(npt):
-        s,dphi = findStressOnYS(
-            f_yld,stressLeft.copy(),stressRight.copy(),
-            pth=pth,verbose=True)
-
-        ## integrate for each path.
-        ntotAngle = ((ang2-ang1)/anginc)+1
-        rad2deg   = 180./np.pi
-        deg2rad   =   1./rad2deg
-        psi0s     = np.linspace(ang1,ang2,ntotAngle)*deg2rad
-
-        absciss  = 1e3
-        absciss0 = 1e3
-        print 'Iteration over the given psi angle'
-        head = ('%8s'*9)%('epsRD','epsTD','psi0','psif','sigRD',
-                          'sigTD','sigA','T','cmpTime\n')
-        logFile.write(head)
-
-        for psi0_at_each in psi0s:
-            print 'PSI: %5.1f'%(psi0_at_each*rad2deg)
-            t0   = time.time()
-            ynew, Ahist, Bhist, absciss,xbb,siga,sx = onepath(
-                f_yld=f_yld,sa=s,psi0=psi0_at_each,f0=f0,T=absciss)
-            dTime = time.time() - t0
-            tTime = tTime+dTime
-
-            psif1=xbb[0]
-            # print ('%8s'*6)%('s1','s2','psi0','psif','siga','absciss')
-            print 'ynew:',ynew
-            cnt = ('%8.3f'*8+'%8i')%(
-                ynew[1],ynew[2],
-                psi0_at_each*rad2deg,
-                psif1*rad2deg,
-                sx[0],sx[1],
-                siga,
-                absciss,dTime)
-            print cnt
-            logFile.write(cnt+'\n')
-
-            if absciss<absciss0: ## when a smaller total strain is found update the smallest.
-                absciss0=absciss
-                psi0_min=psi0_at_each
-                psif_min=psif1
-                y2      =ynew[1]
-                y3      =ynew[2]
-                ss1     =sx[0]
-                ss2     =sx[1]
-                siga_fin=siga
-
-            print 'sigma:',siga
-            print '*'*50,'\n'
-            pass ## end of each path
-
-        # ## exit
-        # logFile.close(); os._exit(1)
-
-        # uet(dt,'elapsed time:')
-        # print
-
-        print 'ynew:'
-        print(ynew)
-
-        print 'RD strain', 'TD strain', 'Angle psi0', 'angle psif','RD stress','TD stress'
-        print ynew[1],ynew[2]
-        pass ## end of each path
-
-    uet(tTime,'total time spent')
-
-    # ## exit
-    # os._exit(1)
-    logFile.close()
-    return logFileName,tTime
-
 def main(f0=0.996,psi0=0,th=0,logFileName=None):
     """
     Assumed proportional loadings
@@ -207,6 +103,9 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
 
 def onepath(f_yld,sa,psi0,f0,T):
     """
+    Run under the given condition that is
+    characterized by the passed arguments
+
     Arguments
     ---------
     f_yld
@@ -219,6 +118,8 @@ def onepath(f_yld,sa,psi0,f0,T):
     from lib import rot_6d
     from func_hard_for import return_swift
     # from for_lib import swift
+
+    ## seems abundant when proportional loading is applied in the case of 'isotropic' hardening
     sa,phia,fa,f2a=f_yld(sa)
 
     # ## debug
@@ -231,18 +132,18 @@ def onepath(f_yld,sa,psi0,f0,T):
     # print (3*'%6.3f ')%(sx[0],sx[1],sx[5])
     # return
 
+    ## strain hardening can be passed independently as the was f_yld is passed.
     na = 0.28985			# n        5e-1
     ks = 518.968			# K       500
     ma = 5e-2                           # strain rate sensitivity
     e0 = 0.0007648 		        # eps_0   1e-5
     qq = 1000. ##Strain rate ratio (E_a.dot / E_0.dot)
-
     f_hard = return_swift(na,ma,ks,e0,qq)
 
     # print ks,ma,e0
     na,ma,siga,dsiga,dma,qq = f_hard(0.)
-    print('siga,dsiga,ma,dma')
-    print(siga,dsiga,ma,dma)
+    # print('siga,dsiga,ma,dma')
+    # print(siga,dsiga,ma,dma)
     # os._exit(1)
 
     ## initial_conditions
@@ -257,9 +158,9 @@ def onepath(f_yld,sa,psi0,f0,T):
     b[5] = sx[5]/sx[0]
 
     xzero = np.array([1,1,0,0])
-    for i in xrange(6):
-        print 'B%i'%(i+1),'%7.2f'%b[i]
-        pass
+    # for i in xrange(6):
+    #     print 'B%i'%(i+1),'%7.2f'%b[i]
+    #     pass
 
     ## determine the initial states
     xfinal, fb=new_raph_fld(
@@ -270,15 +171,15 @@ def onepath(f_yld,sa,psi0,f0,T):
 
     #np.set_printoptions(precision=3)
     #print 'xfinal:', xfinal
-    fmt='%5s          %12.4e'
-    print fmt%('e0_b', xfinal[3])
-    print fmt%('x_b', xfinal[0])
-    print fmt%('y_b', xfinal[1])
-    print fmt%('z_b', xfinal[2])
+    # fmt='%5s          %12.4e'
+    # print fmt%('e0_b', xfinal[3])
+    # print fmt%('x_b', xfinal[0])
+    # print fmt%('y_b', xfinal[1])
+    # print fmt%('z_b', xfinal[2])
 
     ## Initial values
     tzero = xfinal[3]
-    print 'tzero:',tzero
+    # print 'tzero:',tzero
 
     yzero = np.zeros(5)
     yzero[0] = 0.
@@ -287,10 +188,10 @@ def onepath(f_yld,sa,psi0,f0,T):
     yzero[3] = tzero*fb[0] ## fb: first derivative in region B
     yzero[4] = tzero*fb[1]
 
-    print ('%7s'+'%11.3f'*6)%('fb   :',fb[0],fb[1],fb[2],
-                              fb[3],fb[4],fb[5])
-    print ('%7s'+'%20.12e'*5)%('yzero:',yzero[0],yzero[1],yzero[2],
-                               yzero[3],yzero[4])
+    # print ('%7s'+'%11.3f'*6)%('fb   :',fb[0],fb[1],fb[2],
+    #                           fb[3],fb[4],fb[5])
+    # print ('%7s'+'%20.12e'*5)%('yzero:',yzero[0],yzero[1],yzero[2],
+    #                            yzero[3],yzero[4])
 
     ndds    = 5 ## dimension differential system
     dydx    = np.zeros(ndds)
@@ -302,10 +203,10 @@ def onepath(f_yld,sa,psi0,f0,T):
     xbb[2] = sx[1]
     xbb[6] = sx[5]
 
-    print 'xbb:'
-    np.set_printoptions(precision=3)
-    print ('%10.6f'*7)%(xbb[0],xbb[1],xbb[2],
-                        xbb[3],xbb[4],xbb[5],xbb[6])
+    # print 'xbb:'
+    # np.set_printoptions(precision=3)
+    # print ('%10.6f'*7)%(xbb[0],xbb[1],xbb[2],
+    #                     xbb[3],xbb[4],xbb[5],xbb[6])
 
     t0=time.time()
 
@@ -420,18 +321,18 @@ def hist_plot(f_yld,Ahist,Bhist):
 
 def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
     """
-    step by step integration
+    Step by step integration
 
-    f0  : initial inhomgeneity factor
-    S   : stress state of region A
+    f0     : initial inhomgeneity factor
+    S      : stress state of region A
     tzero
     yzero
-    ndds: dimension differential system
-    dydx:
-    xbb :
+    ndds   : dimension differential system
+    dydx   :
+    xbb    :
     f_hard : strain hardening function
     f_yld  : yield function
-    verbose
+    verbose: flag to be or not to be verbose
 
     Returns
     -------
@@ -635,3 +536,113 @@ if __name__=='__main__':
     th   = args.t
     fn   = args.fn
     main(f0=f0,psi0=psi0,th=th,logFileName=fn)
+    pass
+
+
+
+
+# """
+# def main_deprecated(f0=0.996,fGenPath=None):
+#     """
+#     This function is now deprecated...
+
+#     Assumed proportional loadings
+
+#     Argument
+#     --------
+#     f0
+#     fGenPath (None or function or kwargs)
+#     """
+#     import os
+#     from mk_lib   import findStressOnYS
+#     from lib      import gen_tempfile
+#     f_yld = vm
+
+#     if type(fGenPath).__name__=='NoneType':
+#         from mk_paths import PSRD
+#         angs,npt,pth,stressLeft,stressRight = PSRD()
+#     elif type(fGenPath).__name__=='function':
+#         angs,npt,pth,stressLeft,stressRight = fGenPath()
+#     else:
+#         print type(fGenPath).__name__
+#         raise IOError, 'unexpected type of fGenPath given'
+
+#     ang1,ang2,anginc = angs
+
+#     logFileName = gen_tempfile(prefix='log',affix='mk')
+#     logFile     = open(logFileName,'w')
+
+#     tTime = 0.
+#     for npth in xrange(npt):
+#         s,dphi = findStressOnYS(
+#             f_yld,stressLeft.copy(),stressRight.copy(),
+#             pth=pth,verbose=True)
+
+#         ## integrate for each path.
+#         ntotAngle = ((ang2-ang1)/anginc)+1
+#         rad2deg   = 180./np.pi
+#         deg2rad   =   1./rad2deg
+#         psi0s     = np.linspace(ang1,ang2,ntotAngle)*deg2rad
+
+#         absciss  = 1e3
+#         absciss0 = 1e3
+#         print 'Iteration over the given psi angle'
+#         head = ('%8s'*9)%('epsRD','epsTD','psi0','psif','sigRD',
+#                           'sigTD','sigA','T','cmpTime\n')
+#         logFile.write(head)
+
+#         for psi0_at_each in psi0s:
+#             print 'PSI: %5.1f'%(psi0_at_each*rad2deg)
+#             t0   = time.time()
+#             ynew, Ahist, Bhist, absciss,xbb,siga,sx = onepath(
+#                 f_yld=f_yld,sa=s,psi0=psi0_at_each,f0=f0,T=absciss)
+#             dTime = time.time() - t0
+#             tTime = tTime+dTime
+
+#             psif1=xbb[0]
+#             # print ('%8s'*6)%('s1','s2','psi0','psif','siga','absciss')
+#             print 'ynew:',ynew
+#             cnt = ('%8.3f'*8+'%8i')%(
+#                 ynew[1],ynew[2],
+#                 psi0_at_each*rad2deg,
+#                 psif1*rad2deg,
+#                 sx[0],sx[1],
+#                 siga,
+#                 absciss,dTime)
+#             print cnt
+#             logFile.write(cnt+'\n')
+
+#             if absciss<absciss0: ## when a smaller total strain is found update the smallest.
+#                 absciss0=absciss
+#                 psi0_min=psi0_at_each
+#                 psif_min=psif1
+#                 y2      =ynew[1]
+#                 y3      =ynew[2]
+#                 ss1     =sx[0]
+#                 ss2     =sx[1]
+#                 siga_fin=siga
+
+#             print 'sigma:',siga
+#             print '*'*50,'\n'
+#             pass ## end of each path
+
+#         # ## exit
+#         # logFile.close(); os._exit(1)
+
+#         # uet(dt,'elapsed time:')
+#         # print
+
+#         print 'ynew:'
+#         print(ynew)
+
+#         print 'RD strain', 'TD strain', 'Angle psi0', 'angle psif','RD stress','TD stress'
+#         print ynew[1],ynew[2]
+#         pass ## end of each path
+
+#     uet(tTime,'total time spent')
+
+#     # ## exit
+#     # os._exit(1)
+#     logFile.close()
+#     return logFileName,tTime
+# """

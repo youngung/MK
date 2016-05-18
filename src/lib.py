@@ -599,7 +599,6 @@ def gen_tempfile(prefix='',affix='',ext='txt',i=0):
             ' an overlapped file name')
     return filename
 
-@jit
 def rho2th(rho):
     """
     convert rho prime to thetas
@@ -616,34 +615,34 @@ def rho2th(rho):
         th = arctan2(1.,rho)
     return th
 
-@jit
 def rhos2ths(rhos):
-    ths=[]
-    for rho in rhos:
-        ths.append(rho2th(rho))
+    ths=np.zeros(len(rhos))
+    # for rho in rhos:
+    for i in xrange(len(rhos)):
+        ths[i]=rho2th(rhos[i])
     return ths
 
 if __name__=='__main__':
     from lib import convert_6sig_princ as c6p
     ## uniaxial S1
-    s1    = np.zeros(6);
+    s1    = np.zeros(6)
     s1[0] = 1.
 
     ## uniaxial S1
-    s2    = np.zeros(6);
+    s2    = np.zeros(6)
     s2[1] = 1.
 
     ## biaxial
-    s3    = np.zeros(6);
+    s3    = np.zeros(6)
     s3[0] = 1.
     s3[1] = 1.
 
     ## shear
-    s4    = np.zeros(6):
+    s4    = np.zeros(6)
     s4[5] = 1.
 
     ## shear + S1
-    s5    = np.zeros(6):
+    s5    = np.zeros(6)
     s5[0] = 1.
     s5[5] = 1.
 
