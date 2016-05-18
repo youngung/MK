@@ -1,5 +1,5 @@
 """
-Common libraries
+Collection of libraries
 """
 from numba import jit
 import os
@@ -95,6 +95,11 @@ def rotPrincOrig(rotMatrix, v):
     """
     Rotate from principal space (3D)
     to original space (3x3) matrix form
+
+    Arguments
+    ---------
+    rotMatrix
+    v
     """
     ## v1, v2, v3 - vectors
     v1 = rotMatrix[:,0] * v[0]
@@ -125,8 +130,8 @@ def th_planestress(th,yfunc,**kwargs):
     Return stress tensors that gives the same
     size (value) of phi
 
-    Argument
-    --------
+    Arguments
+    ---------
     th
     yfunc
     **kwargs for the given yfunc
@@ -209,6 +214,20 @@ def proj_sig33_nt(sig33,n,t):
     snn = np.dot(n,np.dot(sig33,n))
     return snn, snt
 
+@jit
+def calcAlphaRho(s,e):
+    """
+    Based on the given stress <s>
+    and strain <e>, calculate alpha and rho
+    by determining the major component
+    """
+    if e[0]>e[1]: ## RD
+        rho = e[1]/e[0]
+        alpha = s[1]/s[0]
+    else: ## TD
+        rho = e[0]/e[1]
+        alpha = s[0]/s[1]
+    return rho, alpha
 
 ## alias
 c6p  = convert_6sig_princ
@@ -580,7 +599,7 @@ def gen_tempfile(prefix='',affix='',ext='txt',i=0):
             ' an overlapped file name')
     return filename
 
-
+@jit
 def rho2th(rho):
     """
     convert rho prime to thetas
@@ -597,6 +616,7 @@ def rho2th(rho):
         th = arctan2(1.,rho)
     return th
 
+@jit
 def rhos2ths(rhos):
     ths=[]
     for rho in rhos:
@@ -605,11 +625,27 @@ def rhos2ths(rhos):
 
 if __name__=='__main__':
     from lib import convert_6sig_princ as c6p
-    s1=[1.,0.,0.,0.,0.,0.] ## uniaxial S1
-    s2=[0.,2.,0.,0.,0.,0.] ## uniaxial S2
-    s3=[1.2,1.1,0.,0.,0.,0.] ## biaxial
-    s4=[0.,0.,0.,0.,0.,1.] ## shear
-    s5=[1.,0.,0.,0.,0.,1.] ## shear + S1
+    ## uniaxial S1
+    s1    = np.zeros(6);
+    s1[0] = 1.
+
+    ## uniaxial S1
+    s2    = np.zeros(6);
+    s2[1] = 1.
+
+    ## biaxial
+    s3    = np.zeros(6);
+    s3[0] = 1.
+    s3[1] = 1.
+
+    ## shear
+    s4    = np.zeros(6):
+    s4[5] = 1.
+
+    ## shear + S1
+    s5    = np.zeros(6):
+    s5[0] = 1.
+    s5[5] = 1.
 
     ss=[s1,s2,s3,s4,s5]
     for i in xrange(len(ss)):

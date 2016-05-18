@@ -1,9 +1,17 @@
 """
-Adapted from FB's yld2000-2d subroutines for forming limit diagram predictions
+Adapted from FB's forming limit calculation subroutine
+
+
+Youngung Jeong
+--------------
+youngung.jeong@gmail.com
+younguj@clemson.edu
+--------------------------------------------
+International Center for Automotive Research
+Clemson University, Greenville, SC
 """
 import matplotlib as mpl
-mpl.use('Agg') ## In case X-window is not available.
-
+mpl.use('Agg')            ## In case X-window is not available.
 from numba import jit
 from for_lib import vm
 import numpy as np
@@ -17,8 +25,10 @@ log=np.log
 atan2=np.arctan2
 sqrt=np.sqrt
 
-def main_deprecated(f0=0.996,fGenPath=None,**kwargs):
+def main_deprecated(f0=0.996,fGenPath=None):
     """
+    This function is now deprecated...
+
     Assumed proportional loadings
 
     Argument
@@ -119,34 +129,23 @@ def main_deprecated(f0=0.996,fGenPath=None,**kwargs):
     logFile.close()
     return logFileName,tTime
 
-@jit
-def calcAlphaRho(s,e):
-    """
-    """
-    if e[0]>e[1]: ## RD
-        rho = e[1]/e[0]
-        alpha = s[1]/s[0]
-    else: ## TD
-        rho = e[0]/e[1]
-        alpha = s[0]/s[1]
-    return rho, alpha
-
 def main(f0=0.996,psi0=0,th=0,logFileName=None):
     """
     Assumed proportional loadings
 
     Arguments
     ---------
-    f0
-    psi0         in degree
-    th  (epsAng) in degree
+    f0           initial inhomogeneity factor
+    psi0         [degree]
+    th  (epsAng) [degree]
+    logFileName = none
     """
     # np.seterr(all='raise')
     # np.seterr(all='ignore')
 
     import os
     from mk_lib   import findStressOnYS
-    from lib      import gen_tempfile
+    from lib      import gen_tempfile, calcAlphaRho
     from mk_paths import constructBC,findCorrectPath
     from yf2 import wrapHill48
     rad2deg   = 180./np.pi
@@ -154,15 +153,14 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
     # f_yld     = vm
     f_yld     = wrapHill48(r0=2.1,r90=2.7)
 
-    stressA_off, dum1, dum2 = constructBC(epsAng=th, f_yld=f_yld,verbose=False)
+    stressA_off,  dum1, dum2 = constructBC(epsAng=th, f_yld=f_yld,verbose=False)
     stressA, phi, dphi, d2phi = f_yld(stressA_off) ## put the stress on the locus
     np.set_printoptions(precision=3)
     alpha,rho = calcAlphaRho(stressA,dphi)
     print('stressA:'+('%7.3f'*6)%(
-        stressA[0],stressA[1],stressA[2],stressA[3],stressA[4],stressA[5]))
+            stressA[0],stressA[1],stressA[2],stressA[3],stressA[4],stressA[5]))
     print('strainA:'+('%7.3f'*6)%(
-        dphi[0],dphi[1],dphi[2],dphi[3],dphi[4],dphi[5]))
-
+            dphi[0],dphi[1],dphi[2],dphi[3],dphi[4],dphi[5]))
     print('alpha: %7.4f'%alpha)
     print('rho  : %7.4f'%rho)
 
@@ -260,10 +258,12 @@ def onepath(f_yld,sa,psi0,f0,T):
         print 'B%i'%(i+1),'%7.2f'%b[i]
         pass
 
-    xfinal,fb=new_raph_fld(
+    ## determine the initial states
+    xfinal, fb=new_raph_fld(
         ndim=ndim,ncase=1,
         xzero=xzero,b=b,f_hard=f_hard,f_yld=f_yld,
         verbose=False)
+
     #np.set_printoptions(precision=3)
     #print 'xfinal:', xfinal
     fmt='%5s          %12.4e'
@@ -282,7 +282,6 @@ def onepath(f_yld,sa,psi0,f0,T):
     yzero[2] = 0.
     yzero[3] = tzero*fb[0] ## fb: first derivative in region B
     yzero[4] = tzero*fb[1]
-
 
     print ('%7s'+'%11.3f'*6)%('fb   :',fb[0],fb[1],fb[2],
                               fb[3],fb[4],fb[5])
@@ -551,7 +550,6 @@ def new_raph_fld(
     import os
     from for_lib import gauss,norme
     from func_fld import func_fld1, func_fld2
-    # from func_fld_cy import func_fld1, func_fld2 -- cython was not impressive...
 
     residu  = 1.0
     xn      = xzero[::]
