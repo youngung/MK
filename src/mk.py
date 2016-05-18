@@ -185,10 +185,10 @@ def onepath(matA,matB,psi0,f0,T):
     xfinal, fb=new_raph_fld(
         ndim=ndim,ncase=1,
         xzero=xzero,b=b,
-        # f_hard=f_hard,
-        # f_yld=f_yld,
-        f_hard = matA.f_hrd,
-        f_yld  = matA.f_yld,
+        # f_hard = matA.f_hrd,
+        # f_yld  = matA.f_yld,
+        matA=matA,
+        matB=matB,
 
         verbose=False)
 
@@ -238,7 +238,8 @@ def onepath(matA,matB,psi0,f0,T):
         f0,matA.stress,
         tzero,yzero,ndds,
         dydx,xbb,
-        matA.f_hrd,matA.f_yld,
+        matA,matB,
+        # matA.f_hrd,matA.f_yld,
         verbose=False)
     psif = xbb[0]
     print ('%8.3f'*5)%(ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
@@ -345,7 +346,11 @@ def hist_plot(f_yld,Ahist,Bhist):
     fig.savefig(fn,bbox_inches='tight')
     print '%s has been saved'%fn
 
-def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
+def pasapas(
+        f0,S,tzero,yzero,ndds,dydx,xbb,
+        # f_hard,f_yld,
+        matA,matB,
+        verbose):
     """
     Step by step integration
 
@@ -356,8 +361,8 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
     ndds   : dimension differential system
     dydx   :
     xbb    :
-    f_hard : strain hardening function
-    f_yld  : yield function
+    matA
+    matB
     verbose: flag to be or not to be verbose
 
     Returns
@@ -397,7 +402,9 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
 
         t0=time.time()
         dydx, ynew, xbb, siga, SA = syst(
-            deltt,t,f0,dydx,xbb,S,yancien,f_hard,f_yld,verbose)
+            deltt,t,f0,dydx,xbb,S,yancien,
+            matA, matB, # f_hard,f_yld,
+            verbose)
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
         k1     = deltt * dydx ## Y increments
         ynew   = yancien + k1
@@ -410,7 +417,10 @@ def pasapas(f0,S,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose):
     return ynew,absciss,xbb,siga, SA
 
 ## differential system
-def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
+def syst(deltt,t,f0,dydx,xbb,sa,y,
+         # f_hard,f_yld,
+         matA,matB,
+         verbose):
     """
     Arguments
     ---------
@@ -421,8 +431,8 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
     xbb     : [psi0,s1,s2,s3,s4,s5,s6] -- psi0 and stress state of region b
     sa      : stress in region A
     y       : yancien defined in pasapas
-    f_hard  : strain (and strain rate) hardening function
-    f_yld   : yield function
+    matA
+    matB
     verbose
 
     Returns
@@ -450,7 +460,12 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
     xfinal, fa, fb, bn, siga, sa\
         = new_raph_fld(
             T=t,ndim=ndim,ncase=2,xzero=xzero,y=y,
-            b=bn,f_hard=f_hard,f_yld=f_yld,sa=sa,
+            b=bn,
+            matA=matA,
+            matB=matB,
+            # f_hard=f_hard,
+            # f_yld=f_yld,
+            sa=sa,
             verbose=verbose)
 
     xbb[0] = bn[9]+bn[10]
@@ -469,7 +484,8 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
 
 def new_raph_fld(
         T=None,ndim=None,ncase=None,
-        xzero=None,y=None,b=None,f_hard=None,f_yld=None,
+        xzero=None,y=None,b=None,#f_hard=None,f_yld=None,
+        matA=None,matB=None,
         sa=None,verbose=True):
     """
     Arguments
@@ -480,8 +496,8 @@ def new_raph_fld(
     xzero
     y
     b
-    f_hard
-    f_yld
+    matA
+    matB
     verbose=True
 
     Return
@@ -510,7 +526,13 @@ def new_raph_fld(
                 print '%i ITERATION over func_fld1 in NR'%it
                 print 'xn:'
                 print xn
-            F, J, fb        = func_fld1(ndim,b,xn,f_hard,f_yld,verbose)
+            F, J, fb        = func_fld1(
+                ndim,b,xn,
+                matA,
+                matB,
+                # matA.f_hrd,
+                # matA.f_yld,
+                verbose)
             dt = time.time() - t0
         if ncase==2:
             if verbose:
@@ -518,7 +540,7 @@ def new_raph_fld(
                 print '%i ITERATION over func_fld2 in NR'%it
 
             F, J, fa, fb, b,siga, sa \
-                = func_fld2(ndim,T,sa,b,xn,y,f_hard,f_yld,verbose)
+                = func_fld2(ndim,T,sa,b,xn,y,matA.f_hrd,matA.f_yld,verbose)
             dt = time.time() - t0
 
         totalTimeFunc = totalTimeFunc + dt

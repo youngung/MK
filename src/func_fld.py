@@ -132,62 +132,79 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     J[3,3] = deltat*(d2fb[0,5]*s2+d2fb[1,5]*c2-2*d2fb[5,5]*sc)
     return F,J,fa,fb,b,siga,s
 
-def func_fld1(ndim,b,x,f_hard,f_yld,verbose):
+def func_fld1(
+        ndim,b,x,
+        # f_hard,f_yld,
+        matA, matB,
+        verbose):
     """
     Arguments
-    ---------
+    =========
     ndim
+    ----
+
     b
+    -
+    an array determined in the onepath
+      that is initially set as:
+      [ psi0, f0, matA.sig, matA.m, matA.qq, sx[5]/sx[0] ]
+      sx is initially the stress of A that is rotated by psi
+    b is *NOT* iteratively changing within the Newton Raphson
+      as func_fld1 is to find the initial state of region B
+      that corresponding to the initial state of region A
+
     x
-    f_hard
-    f_yld
+    -
+    initially given as [1,1,0,0] but should be iteratively determined
+    x[0] = s11; x[1] == s22 and x[2] == s12 for the region B
+    x[3] is unknown yet, but seems related with some kind of
+          incremental step size (?)
+
+    matA
+    ----
+    Material description of region A (including the evolved state varaiables)
+
+    matB
+    ----
+    Material description of region B (including the evolved state varaiables)
+
     verbose
+
+    Returns
+    -------
+    F
+    J
+    fb
     """
     import os
     from lib import rot_6d
     psi0, f0, siga, ma, qq, b6 = b[:6]
-    # psi0=15*np.pi/180.
-    # x[0]=1.
-    # x[1]=2.
-    # x[3]=0.
 
+    ### currently (guessed) stress states of region B in band axes
     s11,s22,s12 = x[:3]
-    s  = np.array([s11,s22,0.,0.,0.,s12])
-    sb = rot_6d(s, psi0)
+    s = np.array([s11,s22,0.,0.,0.,s12])
 
-    if verbose:
-        print 'psi0:',psi0
-        print 'x:'
-        print x[:4]
-        print 'sb:'
-        print sb
-        pass
+    ## rotate it back to 'RD/TD/ND' axes
+    ## This is primarily due to the fact that yield functions are usually
+    ## written in the frame of rolled sheet metals. The stress (as the argument)
+    ## to the yield function should be referred in the proper material axes.
+    sb = rot_6d(s, psi0) 
+    sb, phib, fb, f2b = matB.f_yld(sb)
 
-    sb,phib,fb,f2b=f_yld(sb)
-    #if verbose:
-    if True:
-        print 'phib:',phib
-        print 'fb:', fb
-        print 'f2b:'
-        for i in xrange(6):
-            for j in xrange(6):
-                print '%6.2f'%f2b[i,j],
-            print
-            pass
-        pass
+    b[6]=x[3]*fb[0] ##?  unknown yet.
+    b[7]=x[3]*fb[1] ##?
 
-    b[6]=x[3]*fb[0]
-    b[7]=x[3]*fb[1]
-
-    db = rot_6d(fb,-psi0)
+    db = rot_6d(fb,-psi0) ## Region B's strain rate in the band axes
     if verbose: print 'db:',db
 
-    f2xb = np.zeros((6,6))
+    ## Seems to rotate the second derivative of yield function
+    ## into the band axes
     cp = cos(psi0)
     sp = sin(psi0)
     c2 = cp*cp
     s2 = sp*sp
     sc = sp*cp
+    f2xb = np.zeros((6,6))
     f2xb[0,0] = f2b[0,0]*c2 + f2b[0,1]*s2 + f2b[0,5]*sc
     f2xb[1,0] = f2b[1,0]*c2 + f2b[1,1]*s2 + f2b[1,5]*sc
     f2xb[5,0] =(f2b[5,0]*c2 + f2b[5,1]*s2 + f2b[5,5]*sc)/2
@@ -198,37 +215,13 @@ def func_fld1(ndim,b,x,f_hard,f_yld,verbose):
     f2xb[1,5] = 2*(f2b[1,1]-f2b[1,0])*sc + f2b[1,5]*(c2-s2)
     f2xb[5,5] =(2*(f2b[5,1]-f2b[5,0])*sc + f2b[5,5]*(c2-s2))/2
 
-    if verbose:
-        print 'f2xb:'
-        for i in xrange(6):
-            for j in xrange(6):
-                print '%6.2f'%f2xb[i,j],
-                pass
-            print
-            pass
-
-    nb,mb,sigb,dsigb,dmb,qq=f_hard(x[3])
+    nb,mb,sigb,dsigb,dmb,qq=matB.f_hrd(x[3])
     if verbose:print 'x(4):',x[3]
     f=np.zeros(4)
     f[0] = db[1]
     f[1] = x[2] - x[0]*b[5]
     f[2] = phib - 1.
     f[3] =-log(b[1]*sigb/b[2])+(b[3]-mb)*log(b[4])-x[3]*db[0]
-    if verbose:
-        print '--'
-        print 'F in func_fld1:'
-        print f
-        print 'b[:5]'
-        print b[:5]
-        np.set_printoptions(precision=3)
-        print 'db:'
-        print db
-        # os._exit(1)
-        # print '-log(b[1]*sigb/b[2])',-log(b[1]*sigb/b[2])
-        # raise IOError
-        # print '(b[3]-mb)*log(b[4])-x[3]*db[0]',(b[3]-mb)*log(b[4])-x[3]*db[0]
-        pass
-
 
     J=np.zeros((4,4))
     J      = np.zeros((4,4))
@@ -241,20 +234,5 @@ def func_fld1(ndim,b,x,f_hard,f_yld,verbose):
     J[2,1] = db[1]
     J[2,2] = 2*db[5]
     J[3,3] = -dsigb / sigb - dmb*log(b[4]) - db[0]
-    if verbose:
-        print 'dmb:',dmb
-        print 'dsigb:',dsigb
-        print 'sigb:',sigb
-        print 'b(5):',b[4]
-        print 'ennb:',db[0]
-        print "J:"
-        for i in xrange(4):
-            for j in xrange(4):
-                print '%12.2f '%J[i,j],
-                pass
-            print
-            pass
-        #print 'in func_fld1'
-        #os._exit(1)
 
     return f, J, fb
