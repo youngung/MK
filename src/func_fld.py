@@ -25,24 +25,29 @@ def calcD2FB(psi,f2b):
     d2fb[5,5] = 2*sc*(f2b[5,1]-f2b[5,0])+f2b[5,5]*(c2-s2)/2
     return d2fb
 
-# @jit
-# def calcD2FB(psi,f2b):
-#     """
-#     """
-#     d2fb = np.zeros((6,6))
-#     d2fb=np.zeros((6,6))
-#     cp = cos(psi);  sp = sin(psi)
-#     c2 = cp*cp; s2 = sp*sp; sc = sp*cp
-#     d2fb[0,0] = f2b[0,0]*c2+f2b[0,1]*s2+f2b[0,5]*sc/2
-#     d2fb[1,0] = f2b[1,0]*c2+f2b[1,1]*s2+f2b[1,5]*sc/2
-#     d2fb[5,0] =(f2b[5,0]*c2+f2b[5,1]*s2+f2b[5,5]*sc)/2
-#     d2fb[0,1] = f2b[0,0]*s2+f2b[0,1]*c2-f2b[0,5]*sc/2
-#     d2fb[1,1] = f2b[1,0]*s2+f2b[1,1]*c2-f2b[1,5]*sc/2
-#     d2fb[5,1] =(f2b[5,0]*s2+f2b[5,1]*c2-f2b[5,5]*sc)/2
-#     d2fb[0,5] = 2*sc*(f2b[0,1]-f2b[0,0])+f2b[0,5]*(c2-s2)/2
-#     d2fb[1,5] = 2*sc*(f2b[1,1]-f2b[1,0])+f2b[1,5]*(c2-s2)/2
-#     d2fb[5,5] =(2*sc*(f2b[5,1]-f2b[5,0])+f2b[5,5]*(c2-s2))/2
-#     return d2fb
+@jit
+def calcF2XB(psi0,f2b):
+    """
+    Originally in func_fld1 function
+    Its role is to rotate the second derivative of
+    yield function (i.e., <f2b>) into the band axes
+    """
+    cp = cos(psi0)
+    sp = sin(psi0)
+    c2 = cp*cp
+    s2 = sp*sp
+    sc = sp*cp
+    f2xb = np.zeros((6,6))
+    f2xb[0,0] = f2b[0,0]*c2 + f2b[0,1]*s2 + f2b[0,5]*sc
+    f2xb[1,0] = f2b[1,0]*c2 + f2b[1,1]*s2 + f2b[1,5]*sc
+    f2xb[5,0] =(f2b[5,0]*c2 + f2b[5,1]*s2 + f2b[5,5]*sc)/2
+    f2xb[0,1] = f2b[0,0]*s2 + f2b[0,1]*c2 - f2b[0,5]*sc
+    f2xb[1,1] = f2b[1,0]*s2 + f2b[1,1]*c2 - f2b[1,5]*sc
+    f2xb[5,1] =(f2b[5,0]*s2 + f2b[5,1]*c2 - f2b[5,5]*sc)/2
+    f2xb[0,5] = 2*(f2b[0,1]-f2b[0,0])*sc + f2b[0,5]*(c2-s2)
+    f2xb[1,5] = 2*(f2b[1,1]-f2b[1,0])*sc + f2b[1,5]*(c2-s2)
+    f2xb[5,5] =(2*(f2b[5,1]-f2b[5,0])*sc + f2b[5,5]*(c2-s2))/2
+    return f2xb
 
 def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     """
@@ -153,22 +158,30 @@ def func_fld1(
       as func_fld1 is to find the initial state of region B
       that corresponding to the initial state of region A
 
+
     x
     -
     initially given as [1,1,0,0] but should be iteratively determined
     x[0] = s11; x[1] == s22 and x[2] == s12 for the region B
     x[3] is unknown yet, but seems related with some kind of
           incremental step size (?)
+        ## May be the equivalent accumulative strain
+        (or the first incremental equivalent strain)
 
     matA
     ----
-    Material description of region A (including the evolved state varaiables)
+    Material description of region A
+    (including the evolved state varaiables)
+
 
     matB
     ----
-    Material description of region B (including the evolved state varaiables)
+    Material description of region B
+    (including the evolved state varaiables)
+
 
     verbose
+
 
     Returns
     -------
@@ -185,43 +198,36 @@ def func_fld1(
     s = np.array([s11,s22,0.,0.,0.,s12])
 
     ## rotate it back to 'RD/TD/ND' axes
-    ## This is primarily due to the fact that yield functions are usually
-    ## written in the frame of rolled sheet metals. The stress (as the argument)
-    ## to the yield function should be referred in the proper material axes.
-    sb = rot_6d(s, psi0) 
+    ## This is primarily due to the fact that yield functions
+    ## are usually written in the frame of rolled sheet metals.
+    ## The stress (as the argument) to the yield function should
+    ## be referred in the proper material axes.
+    sb = rot_6d(s, psi0)
     sb, phib, fb, f2b = matB.f_yld(sb)
 
-    b[6]=x[3]*fb[0] ##?  unknown yet.
-    b[7]=x[3]*fb[1] ##?
+    b[6]=x[3]*fb[0]
+    b[7]=x[3]*fb[1] ## equivalent accumulative strain x (or the first incremental equivalent strain)
 
     db = rot_6d(fb,-psi0) ## Region B's strain rate in the band axes
     if verbose: print 'db:',db
 
     ## Seems to rotate the second derivative of yield function
     ## into the band axes
-    cp = cos(psi0)
-    sp = sin(psi0)
-    c2 = cp*cp
-    s2 = sp*sp
-    sc = sp*cp
-    f2xb = np.zeros((6,6))
-    f2xb[0,0] = f2b[0,0]*c2 + f2b[0,1]*s2 + f2b[0,5]*sc
-    f2xb[1,0] = f2b[1,0]*c2 + f2b[1,1]*s2 + f2b[1,5]*sc
-    f2xb[5,0] =(f2b[5,0]*c2 + f2b[5,1]*s2 + f2b[5,5]*sc)/2
-    f2xb[0,1] = f2b[0,0]*s2 + f2b[0,1]*c2 - f2b[0,5]*sc
-    f2xb[1,1] = f2b[1,0]*s2 + f2b[1,1]*c2 - f2b[1,5]*sc
-    f2xb[5,1] =(f2b[5,0]*s2 + f2b[5,1]*c2 - f2b[5,5]*sc)/2
-    f2xb[0,5] = 2*(f2b[0,1]-f2b[0,0])*sc + f2b[0,5]*(c2-s2)
-    f2xb[1,5] = 2*(f2b[1,1]-f2b[1,0])*sc + f2b[1,5]*(c2-s2)
-    f2xb[5,5] =(2*(f2b[5,1]-f2b[5,0])*sc + f2b[5,5]*(c2-s2))/2
+    ## May not be required when psi0 = 0,
+    ## which is often the case in forming limit simulations
+    f2xb = calcF2XB(psi0,f2b)
 
     nb,mb,sigb,dsigb,dmb,qq=matB.f_hrd(x[3])
     if verbose:print 'x(4):',x[3]
     f=np.zeros(4)
-    f[0] = db[1]
-    f[1] = x[2] - x[0]*b[5]
-    f[2] = phib - 1.
+    f[0] = db[1]              ## ettb (transverse strain rate or region B, should it be ettb - etta???)
+    f[1] = x[2] - x[0]*b[5]   ## s12b - s11b * s12a/s11a ( all in band axes)
+    f[2] = phib - 1.          ## determine if the stress is on the yield locus (consistency condition?)
     f[3] =-log(b[1]*sigb/b[2])+(b[3]-mb)*log(b[4])-x[3]*db[0]
+
+
+    cp = cos(psi0);  sp = sin(psi0)
+    c2 = cp*cp; s2 = sp*sp; sc = sp*cp
 
     J=np.zeros((4,4))
     J      = np.zeros((4,4))
