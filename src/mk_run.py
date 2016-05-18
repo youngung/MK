@@ -84,7 +84,7 @@ def postAnalysis(masterFileName):
     dat=np.loadtxt(fileFLDall.name).T
     ax2.plot(dat[1],dat[0],'o')
     draw_guide(ax1,r_line=[-0.5,0,1,2,2.5],max_r=2)
-    draw_guide(ax1,r_line=[-0.5,0,1,2,2.5],max_r=2)
+    draw_guide(ax2,r_line=[-0.5,0,1,2,2.5],max_r=2)
     fig.savefig('mk_fld_pp.pdf')
 
 def test_pp(fn='/local_scratch/MK-6e59e6-results.txt'):

@@ -289,6 +289,7 @@ def constructBC(epsAng,f_yld,verbose=False):
     Arguments
     ---------
     epsAng
+    f_yld
     verbose
     """
     stress, stressLowerAngle, stressUpperAngle = \

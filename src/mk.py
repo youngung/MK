@@ -25,7 +25,9 @@ log=np.log
 atan2=np.arctan2
 sqrt=np.sqrt
 
-def main(f0=0.996,psi0=0,th=0,logFileName=None):
+def main(f0=0.996,psi0=0,
+         th=0,material=None,
+         logFileName=None):
     """
     Assumed proportional loadings
 
@@ -34,32 +36,43 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
     f0           initial inhomogeneity factor
     psi0         [degree]
     th  (epsAng) [degree]
-    logFileName = none
+    material    = None
+    logFileName = None
     """
     # np.seterr(all='raise')
     # np.seterr(all='ignore')
-
     import os
     from mk_lib   import findStressOnYS
     from lib      import gen_tempfile, calcAlphaRho
     from mk_paths import constructBC,findCorrectPath
-    from yf2 import wrapHill48
-    rad2deg   = 180./np.pi
-    deg2rad   =   1./rad2deg
-    # f_yld     = vm
-    f_yld     = wrapHill48(r0=2.1,r90=2.7)
+    # from yf2 import wrapHill48
 
-    stressA_off,  dum1, dum2 = constructBC(
-        epsAng=th, f_yld=f_yld,verbose=False)
+    if type(material).__name__=='NoneType':
+        from materials import IsoMat
+        matA = IsoMat()
+        matB = IsoMat()
+    else:
+        matA = material()
+        matB = material()
+
+    rad2deg  = 180./np.pi
+    deg2rad  =   1./rad2deg
+
+    stressA_off, dum1, dum2 = constructBC(
+        epsAng  = th,
+        f_yld   = matA.f_yld,
+        verbose = False)
+
     ## put the stress on the locus
-    stressA, phi, dphi, d2phi = f_yld(stressA_off)
+    matA.update_yld(stressA_off)
     np.set_printoptions(precision=3)
-    alpha,rho = calcAlphaRho(stressA,dphi)
     print('stressA:'+('%7.3f'*6)%(
-            stressA[0],stressA[1],stressA[2],stressA[3],
-            stressA[4],stressA[5]))
+        matA.stress[0],matA.stress[1],matA.stress[2],
+        matA.stress[3],matA.stress[4],matA.stress[5]))
     print('strainA:'+('%7.3f'*6)%(
-            dphi[0],dphi[1],dphi[2],dphi[3],dphi[4],dphi[5]))
+        matA.dphi[0],matA.dphi[1],matA.dphi[2],
+        matA.dphi[3],matA.dphi[4],matA.dphi[5]))
+    alpha,rho = calcAlphaRho(matA.stress,matA.dphi)
     print('alpha: %7.4f'%alpha)
     print('rho  : %7.4f'%rho)
 
@@ -81,7 +94,8 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
 
     # ynew, Ahist, Bhist, absciss,xbb,siga,sx = onepath(
     ynew, absciss,xbb,siga,sx = onepath(
-        f_yld=f_yld,sa=stressA,
+        matA=matA,matB=matB,
+        # f_yld=f_yld,sa=stressA,
         psi0=psi0*deg2rad,f0=f0,T=absciss)
 
     dTime = time.time() - t0
@@ -101,15 +115,15 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
     print('%s has been saved'%logFileName)
     return logFileName,dTime
 
-def onepath(f_yld,sa,psi0,f0,T):
+def onepath(matA,matB,psi0,f0,T):
     """
     Run under the given condition that is
     characterized by the passed arguments
 
     Arguments
     ---------
-    f_yld
-    sa
+    matA
+    matB
     psi0
     f0
     T
@@ -120,28 +134,32 @@ def onepath(f_yld,sa,psi0,f0,T):
     # from for_lib import swift
 
     ## seems abundant when proportional loading is applied in the case of 'isotropic' hardening
-    sa,phia,fa,f2a=f_yld(sa)
+    # sa,phia,fa,f2a=f_yld(sa)
 
     # ## debug
     # sa=np.array([1,2,0,0,0,0])
     # psi0=15.*np.pi/180.
 
-    sx = rot_6d(sa,-psi0)
+
+    # sx = rot_6d(sa,-psi0)
+    sx = rot_6d(matA.stress,-psi0) ## stress state within band
+
     # print 'sa:,',sa
     # print 'xa0,ya0,za0'
     # print (3*'%6.3f ')%(sx[0],sx[1],sx[5])
     # return
 
-    ## strain hardening can be passed independently as the was f_yld is passed.
-    na = 0.28985			# n        5e-1
-    ks = 518.968			# K       500
-    ma = 5e-2                           # strain rate sensitivity
-    e0 = 0.0007648 		        # eps_0   1e-5
-    qq = 1000. ##Strain rate ratio (E_a.dot / E_0.dot)
-    f_hard = return_swift(na,ma,ks,e0,qq)
+    # ## strain hardening can be passed independently as the was f_yld is passed.
+    # na = 0.28985			# n        5e-1
+    # ks = 518.968			# K       500
+    # ma = 5e-2                           # strain rate sensitivity
+    # e0 = 0.0007648 		        # eps_0   1e-5
+    # qq = 1000. ##Strain rate ratio (E_a.dot / E_0.dot)
+    # f_hard = return_swift(na,ma,ks,e0,qq)
 
     # print ks,ma,e0
-    na,ma,siga,dsiga,dma,qq = f_hard(0.)
+    # na,ma,siga,dsiga,dma,qq = f_hard(0.)
+    matA.update_hrd(0.) ## initialize hardening parameters
     # print('siga,dsiga,ma,dma')
     # print(siga,dsiga,ma,dma)
     # os._exit(1)
@@ -152,9 +170,10 @@ def onepath(f_yld,sa,psi0,f0,T):
     b    = np.zeros(20)
     b[0] = psi0
     b[1] = f0
-    b[2] = siga
-    b[3] = ma
-    b[4] = qq
+    b[2] = matA.sig
+    b[3] = matA.m
+    b[4] = matA.qq
+    ## stress state ratio within the band from region A stress state
     b[5] = sx[5]/sx[0]
 
     xzero = np.array([1,1,0,0])
@@ -165,8 +184,12 @@ def onepath(f_yld,sa,psi0,f0,T):
     ## determine the initial states
     xfinal, fb=new_raph_fld(
         ndim=ndim,ncase=1,
-        xzero=xzero,b=b,f_hard=f_hard,
-        f_yld=f_yld,
+        xzero=xzero,b=b,
+        # f_hard=f_hard,
+        # f_yld=f_yld,
+        f_hard = matA.f_hrd,
+        f_yld  = matA.f_yld,
+
         verbose=False)
 
     #np.set_printoptions(precision=3)
@@ -199,7 +222,8 @@ def onepath(f_yld,sa,psi0,f0,T):
 
     xbb    = np.zeros(7)
     xbb[0] = psi0
-    xbb[1] = sx[0]
+    ## caution: xbb[1:] corresponds to the stress components
+    xbb[1] = sx[0] 
     xbb[2] = sx[1]
     xbb[6] = sx[5]
 
@@ -207,13 +231,15 @@ def onepath(f_yld,sa,psi0,f0,T):
     # np.set_printoptions(precision=3)
     # print ('%10.6f'*7)%(xbb[0],xbb[1],xbb[2],
     #                     xbb[3],xbb[4],xbb[5],xbb[6])
-
     t0=time.time()
-
     ## integrate function
     # ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin = pasapas(
-    ynew,absciss,xbb,siga, SA_fin = pasapas(
-        f0,sa,tzero,yzero,ndds,dydx,xbb,f_hard,f_yld,verbose=False)
+    ynew,absciss,xbb,siga,SA_fin = pasapas(
+        f0,matA.stress,
+        tzero,yzero,ndds,
+        dydx,xbb,
+        matA.f_hrd,matA.f_yld,
+        verbose=False)
     psif = xbb[0]
     print ('%8.3f'*5)%(ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
     uet(time.time()-t0,'Elapsed time in step by step integration')
@@ -455,6 +481,7 @@ def new_raph_fld(
     y
     b
     f_hard
+    f_yld
     verbose=True
 
     Return
