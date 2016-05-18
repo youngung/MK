@@ -29,11 +29,11 @@ def pp(masterFileName):
     with open(masterFileName) as FO:
         blocks = FO.read().split('--\n')[:-1:]
         dat_min_master=[]
-        print 'number of blocks',len(blocks)
+        # print 'number of blocks',len(blocks)
         for i in xrange(len(blocks)): ## each block
             eachBlock = blocks[i]
             linesInBlock = eachBlock.split('\n')[0:-1:]
-            print linesInBlock
+            # print linesInBlock
 
             ## find the minimum |(E1,E2)|
             min_rad =1.5
@@ -70,10 +70,10 @@ def pp(masterFileName):
 
     fileFLDall.close(); fileFLDmin.close()
 
-    print 'numFail:',numFail
-    print 'FileFail:'
-    for i in xrange(numFail):
-        print fileFail[i]
+    # print 'numFail:',numFail
+    # print 'FileFail:'
+    # for i in xrange(numFail):
+    #     print fileFail[i]
 
     ## iplot?
     import matplotlib.pyplot as plt
