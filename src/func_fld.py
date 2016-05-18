@@ -168,6 +168,9 @@ def func_fld1(
         ## May be the equivalent accumulative strain
         (or the first incremental equivalent strain)
 
+    F_{i} = J_{ij}: x_{j}
+
+
     matA
     ----
     Material description of region A
@@ -221,10 +224,10 @@ def func_fld1(
     if verbose:print 'x(4):',x[3]
     f=np.zeros(4)
     f[0] = db[1]              ## ettb (transverse strain rate or region B, should it be ettb - etta???)
+    ## force equilibrium condition
     f[1] = x[2] - x[0]*b[5]   ## s12b - s11b * s12a/s11a ( all in band axes)
     f[2] = phib - 1.          ## determine if the stress is on the yield locus (consistency condition?)
     f[3] =-log(b[1]*sigb/b[2])+(b[3]-mb)*log(b[4])-x[3]*db[0]
-
 
     cp = cos(psi0);  sp = sin(psi0)
     c2 = cp*cp; s2 = sp*sp; sc = sp*cp
@@ -234,11 +237,11 @@ def func_fld1(
     J[0,0] = s2  * f2xb[0,0] + c2 * f2xb[1,0] - 2*sc*f2xb[5,0]
     J[0,1] = s2  * f2xb[0,1] + c2 * f2xb[1,1] - 2*sc*f2xb[5,1]
     J[0,2] = s2  * f2xb[0,5] + c2 * f2xb[1,5] - 2*sc*f2xb[5,5]
-    J[1,0] = -b[5]
+    J[1,0] = -b[5]   ## sx[5]/sx[0]
     J[1,2] = 1.
-    J[2,0] = db[0]
-    J[2,1] = db[1]
-    J[2,2] = 2*db[5]
-    J[3,3] = -dsigb / sigb - dmb*log(b[4]) - db[0]
+    J[2,0] = db[0]   ## e_nn^B
+    J[2,1] = db[1]   ## e_tt^B
+    J[2,2] = 2*db[5] ## 2e_tn^B
+    J[3,3] = -dsigb / sigb - dmb*log(b[4]) - db[0] ## (dH^B/H^B) - dm^B (qq^A) - enn^B
 
     return f, J, fb

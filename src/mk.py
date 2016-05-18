@@ -530,8 +530,6 @@ def new_raph_fld(
                 ndim,b,xn,
                 matA,
                 matB,
-                # matA.f_hrd,
-                # matA.f_yld,
                 verbose)
             dt = time.time() - t0
         if ncase==2:
@@ -543,7 +541,7 @@ def new_raph_fld(
                 = func_fld2(ndim,T,sa,b,xn,y,matA.f_hrd,matA.f_yld,verbose)
             dt = time.time() - t0
 
-        totalTimeFunc = totalTimeFunc + dt
+        totalTimeFunc = totalTimeFunc + dt ## to estimate compute performance
         F,J,res = gauss(ndim=ndim,a=J,b=F) ## f2py module
         xn1=xn-res ## x^(n+1)
         residu = norme(ndim,res)

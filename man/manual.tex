@@ -112,10 +112,22 @@ In \verb|func_fld.py| module, \verb|func func_fld1| provides an objective functi
 The objective function is multivariate such that
 \begin{eqnarray}
   \label{eq:objf_func_fld1}
-  f_1& =& (\frac{\partial \phi^B}{\partial \boldsymbol{\varepsilon}^B})_{22}|_\text{band}\\
-  f_2& =& \sigma_{12}^B|_\text{band}- \sigma_{11}^B|_\text{band} \frac{\sigma_{12}^A}{\sigma_{11}^A}|_\text{band}\\
-  f_3& =& \phi^B- 1. \\
-  f_4& =& \ln(f_0 \frac{H^B}{H^A}) + (m^A-m^B) \ln(qq^A) - x_3^B \frac{\partial \phi^B}{\partial \varepsilon}_{11}|_\text{band}
+  F_1&=& (\frac{\partial \phi^B}{\partial \boldsymbol{\varepsilon}^B})_{22}|_\text{band}\\
+  F_2&=& \sigma_{12}^B|_\text{band}- \sigma_{11}^B|_\text{band} \frac{\sigma_{12}^A}{\sigma_{11}^A}|_\text{band}\\
+  F_3&=& \phi^B- 1. \\
+  F_4&=& \ln(f_0 \frac{H^B}{H^A}) + (m^A-m^B) \ln(qq^A) - x_3^B \frac{\partial \phi^B}{\partial \varepsilon}_{11}|_\text{band}
+\end{eqnarray}
+
+
+
+\begin{eqnarray}
+  \label{eq:jacob_func_fld1}
+  J_{11}=\frac{\partial(F_1)}{\partial(x_1)}&=&  \\
+  J_{12}=\frac{\partial(F_1)}{\partial(x_2)}&=&   \\
+  J_{13}=\frac{\partial(F_1)}{\partial(x_2)}&=&   \\
+  J_{14}=0.                                 &&    \\
+  J_{3}=\frac{\partial(F_1)}{\partial(x_1)}&=&    \\
+  J_{4}=\frac{\partial(F_1)}{\partial(x_1)}&=&
 \end{eqnarray}
 %
 
