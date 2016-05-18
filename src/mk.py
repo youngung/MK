@@ -153,12 +153,15 @@ def main(f0=0.996,psi0=0,th=0,logFileName=None):
     # f_yld     = vm
     f_yld     = wrapHill48(r0=2.1,r90=2.7)
 
-    stressA_off,  dum1, dum2 = constructBC(epsAng=th, f_yld=f_yld,verbose=False)
-    stressA, phi, dphi, d2phi = f_yld(stressA_off) ## put the stress on the locus
+    stressA_off,  dum1, dum2 = constructBC(
+        epsAng=th, f_yld=f_yld,verbose=False)
+    ## put the stress on the locus
+    stressA, phi, dphi, d2phi = f_yld(stressA_off)
     np.set_printoptions(precision=3)
     alpha,rho = calcAlphaRho(stressA,dphi)
     print('stressA:'+('%7.3f'*6)%(
-            stressA[0],stressA[1],stressA[2],stressA[3],stressA[4],stressA[5]))
+            stressA[0],stressA[1],stressA[2],stressA[3],
+            stressA[4],stressA[5]))
     print('strainA:'+('%7.3f'*6)%(
             dphi[0],dphi[1],dphi[2],dphi[3],dphi[4],dphi[5]))
     print('alpha: %7.4f'%alpha)
@@ -261,7 +264,8 @@ def onepath(f_yld,sa,psi0,f0,T):
     ## determine the initial states
     xfinal, fb=new_raph_fld(
         ndim=ndim,ncase=1,
-        xzero=xzero,b=b,f_hard=f_hard,f_yld=f_yld,
+        xzero=xzero,b=b,f_hard=f_hard,
+        f_yld=f_yld,
         verbose=False)
 
     #np.set_printoptions(precision=3)
@@ -376,11 +380,14 @@ def hist_plot(f_yld,Ahist,Bhist):
     Y=np.array(Y)
     ax2.plot(X,Y,label='Yield locus')
     ## initial location of region A stress state
-    ax2.plot(S6A[0][0],S6A[0][1],'r.',mfc='None',mec='r',label='A initial')
+    ax2.plot(S6A[0][0],S6A[0][1],'r.',mfc='None',
+             mec='r',label='A initial')
     ## final location of region A stress state
-    ax2.plot(S6A[-1][0],S6A[-1][1],'rx',mfc='None',mec='r',label='A final')
+    ax2.plot(S6A[-1][0],S6A[-1][1],'rx',mfc='None',
+             mec='r',label='A final')
     ## initial location of region B stress state
-    ax2.plot(S6B[0][0],S6B[0][1],'g.',mfc='None',mec='g',label='B initial')
+    ax2.plot(S6B[0][0],S6B[0][1],'g.',mfc='None',
+             mec='g',label='B initial')
     ## final location of region B stress state
     ax2.plot(S6B[-1][0],S6B[-1][1],'gx',label='B final')
 
@@ -393,13 +400,17 @@ def hist_plot(f_yld,Ahist,Bhist):
     # print 'B1'
     # print(B1)
     ## initial location of region A stress state
-    ax3.plot(S6A[0][0]*SA[0],S6A[0][1]*SA[0],'r.',mfc='None',mec='r',label='A initial')
+    ax3.plot(S6A[0][0]*SA[0],S6A[0][1]*SA[0],
+             'r.',mfc='None',mec='r',label='A initial')
     ## final location of region A stress state
-    ax3.plot(S6A[-1][0]*SA[-1],S6A[-1][1]*SA[-1],'rx',mfc='None',mec='r',label='A final')
+    ax3.plot(S6A[-1][0]*SA[-1],S6A[-1][1]*SA[-1],
+             'rx',mfc='None',mec='r',label='A final')
     ## initial location of region B stress state
-    ax3.plot(S6B[0][0]*SB[0],S6B[0][1]*SB[0],'g.',label='B initial')
+    ax3.plot(S6B[0][0]*SB[0],S6B[0][1]*SB[0],
+             'g.',label='B initial')
     ## final location of region B stress state
-    ax3.plot(S6B[-1][0]*SB[-1],S6B[-1][1]*SB[-1],'gx',label='B final')
+    ax3.plot(S6B[-1][0]*SB[-1],S6B[-1][1]*SB[-1],
+             'gx',label='B final')
     ax2.legend();ax3.legend()
 
     fn='hist_plot.pdf'
@@ -476,10 +487,13 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,f_hard,f_yld,verbose):
     """
     Arguments
     ---------
+    deltt   : delt (adaptively changing incremental size)
     t       : axis along the intergration occurs
+    f0      : initial inhomogeneity
+    dydx    :
+    xbb     : [psi0,s1,s2,s3,s4,s5,s6] -- psi0 and stress state of region b
     sa      : stress in region A
     y       : yancien defined in pasapas
-    xbb     : [psi0,s1,s2,s3,s4,s5,s6] -- psi0 and stress state of region b
     f_hard  : strain (and strain rate) hardening function
     f_yld   : yield function
     verbose
