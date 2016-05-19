@@ -70,6 +70,7 @@
 \newpage
 \setcounter{tocdepth}{1}
 \tableofcontents
+
 \section{Introduction}
 \label{sec:intro}
 
@@ -84,6 +85,7 @@
 %   \varepsilon_{ij} = \int_{t} \dot{\varepsilon}_{ij} dt
 % \end{eqnarray}
 % Assuming isotropic hardening through
+
 \section{hardening}
 Flow stress ($\Sigma^f$) and its rate sensitivity is described such that
 \begin{equation}
@@ -93,6 +95,7 @@ Flow stress ($\Sigma^f$) and its rate sensitivity is described such that
 \section{Yield functions}
 \label{sec:yieldfunctions}
 \subsection{Von Mises yield criterion}
+\label{sec:vm}
 Von Mises yield criterion:
 
 \begin{eqnarray}
@@ -138,7 +141,7 @@ The second order derivative is obtained as follows.
   &=& 0.5  \frac{\partial(h^{-\frac{1}{2}})}{\partial\sigma_{kl}} \frac{\partial h}{\partial \sigma_{ij}}   + 0.5 h^{-\frac{1}{2}}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\\
   &=& 0.5  (-1/2)h^{-3/2} \frac{\partial h}{\partial\sigma_{kl}}  + 0.5 h^{-\frac{1}{2}}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\\
   &=& (-1/4) (h^{-1/2})^3 \frac{\partial h}{\partial\sigma_{kl}}  + 0.5 h^{-\frac{1}{2}}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\\
-  \frac{\partial^2\phi}{\partial\sigma^2}_{ij,kl}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{kl}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}    
+  \frac{\partial^2\phi}{\partial\sigma^2}_{ij,kl}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{kl}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}
 \end{eqnarray}
 
 The above is implemented in \verb|for.f| as \verb|subroutine vm|.
@@ -149,7 +152,7 @@ Hill's quadratic yield criterion under the plane-stress condition is a function 
 It is written as
 \begin{eqnarray}
   \label{eq:hillquad}
-  \sigma_{1}^2 + \frac{R_0 (1 + R_{90})}{R_{90}(1+R_0)}\sigma_s^2-\frac{2R_0}{1+R_0}\sigma_1\sigma_2=(\sigma_1^y)^2.  
+  \sigma_{1}^2 + \frac{R_0 (1 + R_{90})}{R_{90}(1+R_0)}\sigma_s^2-\frac{2R_0}{1+R_0}\sigma_1\sigma_2=(\sigma_1^y)^2.
 \end{eqnarray}
 where $\sigma^y_1$ refers to the yield stress along axis 1 (i.e., the rolling direction of the material).
 
@@ -158,17 +161,52 @@ Hill's generalized quadratic yield criterion is such that
 \begin{equation}
   \label{eq:hillgenquad}
   \begin{aligned}
-    \phi =& F(\sigma_{22}-\sigma_{33})^2+G(\sigma_{33}-\sigma_{11})^2+\\
-          &H(\sigma_{11}-\sigma_{22})^2+2L\sigma_{23}^2+2M\sigma_{31}^2+2N\sigma_{12}^2.
+    \phi =& [F(\sigma_{22}-\sigma_{33})^2+G(\sigma_{33}-\sigma_{11})^2+\\
+          &H(\sigma_{11}-\sigma_{22})^2+2L\sigma_{23}^2+2M\sigma_{31}^2+2N\sigma_{12}^2]^\frac{1}{2}.
   \end{aligned}
 \end{equation}
 In the plane-stress space, the above reduces to
 \begin{equation}
   \label{eq:hillgenquad}
   \begin{aligned}
-    \phi = F\sigma_{22}^2+G\sigma_{11}^2+H(\sigma_{11}-\sigma_{22})^2+2N\sigma_{12}^2.
+    \phi = [F\sigma_{22}^2+G\sigma_{11}^2+H(\sigma_{11}-\sigma_{22})^2+2N\sigma_{12}^2]^\frac{1}{2}.
   \end{aligned}
 \end{equation}
+Likewise in the derivation of von Mises yield function in section \ref{sec:vm}, h is defined as below:
+
+\begin{eqnarray}
+  \label{eq:hill48H}
+  h&=&F\sigma_{22}^2+G\sigma_{11}^2+H(\sigma_{11}-\sigma_{22})^2+2N\sigma_{12}^2\\
+   &=&(G+H)\sigma_{11}^2+(F+H)\sigma_{22}^2-2H\sigma_{11}\sigma_{22}+2N\sigma_{12}^2.
+\end{eqnarray}
+
+Like in Eq. \ref{eq:vonMisesDphi},  $\frac{\partial \phi}{\partial\sigma_{ij}}$ is a function of $\phi$ and $\frac{\partial h}{\partial \sigma_{ij}}$.
+$\frac{\partial h}{\partial \sigma_{ij}}$ for Hill's yield function is expressed as:
+\begin{eqnarray}
+  \label{eq:h_Hill48}
+  \frac{\partial h}{\partial \sigma_{11}}&=&2(G+H)\sigma_{11} -2H\sigma_{22}  \\
+  \frac{\partial h}{\partial \sigma_{22}}&=&2(F+H)\sigma_{22} -2H\sigma_{11}   \\
+  \frac{\partial h}{\partial \sigma_{12}}&=&4N\sigma_{12}
+\end{eqnarray}
+
+As a reminder,
+\begin{eqnarray}
+  \label{eq:vmdphi_gen}
+  \frac{\partial \phi}{\partial\sigma_{ij}}=\frac{1}{2}\phi^{-1} \frac{\partial h}{\partial \sigma_{ij}}.
+\end{eqnarray}
+Thus, following is obtained:
+\begin{eqnarray}
+  \label{eq:vmdphi_components}
+  \frac{\partial \phi}{\partial\sigma_{11}}&=&\frac{1}{2}\phi^{-1} (2(G+H)\sigma_{11} -2H\sigma_{22} )\\
+  \frac{\partial \phi}{\partial\sigma_{22}}&=&\frac{1}{2}\phi^{-1} (2(F+H)\sigma_{22} -2H\sigma_{11} )\\
+  \frac{\partial    h}{\partial\sigma_{12}}&=&\frac{1}{2}\phi^{-1} (4N\sigma_{12}).
+\end{eqnarray}
+
+Since the same relation between $h$ and $\phi$ holds as in Von Mises yield criterio, Eq. \ref{eq:d2phiVM} can be used to obtain the $2^{nd}$ derivatives for Hill 48 yield criterion as well.
+\begin{eqnarray}
+  \label{eq:d2phiHill}
+  \frac{\partial^2\phi}{\partial\sigma^2}_{ij,kl}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{kl}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}
+\end{eqnarray}
 
 \subsection{Functions in FLD module}
 In \verb|func_fld.py| module, \verb|func func_fld1| provides an objective function and jacobian to determine the initial state of region B in response to the given state of region A.
@@ -192,7 +230,7 @@ The objective function is multivariate such that
 \end{eqnarray}
 %
 
-% 
+%
 %
 % \begin{eqnarray}
 %   \label{eq:AFL}
