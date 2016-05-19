@@ -80,7 +80,7 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     sb_dump = np.array([xb,yb,0.,0.,0.,zb])
 
     ## Parameters in region A
-    s,phia,fa,f2a = f_yld(s)
+    s,phia,fa,f2a = f_yld(s) ## this might be abundant
     dpsi     = x[0] * (fa[0]-fa[1])*tan(b[9])/(1+tan(b[9])**2)
     b[10]    = dpsi*1.
     psi_new  = b[9]+dpsi
@@ -157,16 +157,19 @@ def func_fld1(
     b is *NOT* iteratively changing within the Newton Raphson
       as func_fld1 is to find the initial state of region B
       that corresponding to the initial state of region A
+    b[6], b[7] are changing though - they are functions of fb[0], fb[1]
 
 
     x
     -
-    initially given as [1,1,0,0] but should be iteratively determined
+    initially given as [1,1,0,0] but should be
+    iteratively determined
     x[0] = s11; x[1] == s22 and x[2] == s12 for the region B
     x[3] is unknown yet, but seems related with some kind of
-          incremental step size (?)
-        ## May be the equivalent accumulative strain
-        (or the first incremental equivalent strain)
+        incremental step size (?)
+        - potentially x[3] is d\lambda, that is the plastic multiplier.
+        - Usually, d\lambda determines the incremental
+          size of plastic strain rate
 
     F_{i} = J_{ij}: x_{j}
 
@@ -188,9 +191,10 @@ def func_fld1(
 
     Returns
     -------
-    F
-    J
-    fb
+    F   : objective functions
+    J   : jacobian
+    fb  : first derivative of the yield function
+          pertaining to the region B)
     """
     import os
     from lib import rot_6d
@@ -208,8 +212,27 @@ def func_fld1(
     sb = rot_6d(s, psi0)
     sb, phib, fb, f2b = matB.f_yld(sb)
 
+    """
+    For reminding the defintion of b-array:
+    b[0] = psi0
+    b[1] = f0
+    b[2] = matA.sig
+    b[3] = matA.m
+    b[4] = matA.qq
+    ## stress state ratio within the band
+    ## from region A stress state
+    b[5] = sx[5]/sx[0]
+
+    if x[3] is d\lambda(
+       that means, in the context of func_fld1,
+       the first incremental strain.
+    b[6] = $\dot{e}_{RD}^B$
+    b[7] = $\dot{e}_{TD}^B$
+    """
     b[6]=x[3]*fb[0]
-    b[7]=x[3]*fb[1] ## equivalent accumulative strain x (or the first incremental equivalent strain)
+    ## equivalent accumulative strain x
+    ## (or the first incremental equivalent strain)
+    b[7]=x[3]*fb[1]
 
     db = rot_6d(fb,-psi0) ## Region B's strain rate in the band axes
     if verbose: print 'db:',db
@@ -229,8 +252,11 @@ def func_fld1(
     f[2] = phib - 1.          ## determine if the stress is on the yield locus (consistency condition?)
     f[3] =-log(b[1]*sigb/b[2])+(b[3]-mb)*log(b[4])-x[3]*db[0]
 
-    cp = cos(psi0);  sp = sin(psi0)
-    c2 = cp*cp; s2 = sp*sp; sc = sp*cp
+    cp = cos(psi0)
+    sp = sin(psi0)
+    c2 = cp*cp
+    s2 = sp*sp
+    sc = sp*cp
 
     J=np.zeros((4,4))
     J      = np.zeros((4,4))

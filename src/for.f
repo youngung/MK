@@ -14,10 +14,12 @@ Cf2py intent(out) phi,dphi,d2phi
       dphi(1)  = dff*(2*s(1)-s(2))
       dphi(2)  = dff*(2*s(2)-s(1))
       dphi(6)  = dff*6*s(6)
+
       d2h(1,1) = 2d0
       d2h(1,2) =-1d0
       d2h(2,2) = 2d0
       d2h(6,6) = 6d0
+
       d2ff     = -(phi**(-3d0))/4
       d2phi(1,1) = d2ff*dphi(1)*dphi(1) + dff*d2h(1,1)
       d2phi(1,2) = d2ff*dphi(1)*dphi(2) + dff*d2h(1,2)
@@ -107,7 +109,7 @@ Cf2py intent(in) e,ks,n,e0,m,qq
       dsig = n*ks*(e+e0)**(n-1)
       dm = 0.0
 c     m: strain rate sensitivty
-c     qq: ??
+c     qq: ?? (strain rate ratio)
 
 c$$$      write(*,*)'sig:',sig
 c$$$      write(*,*)'dsig:',dsig

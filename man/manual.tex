@@ -209,15 +209,17 @@ Since the same relation between $h$ and $\phi$ holds as in Von Mises yield crite
 \end{eqnarray}
 
 \subsection{Functions in FLD module}
-In \verb|func_fld.py| module, \verb|func func_fld1| provides an objective function and jacobian to determine the initial state of region B in response to the given state of region A.
+In \verb|func_fld.py| module, \verb|func_fld1| provides an objective function and jacobian to determine the initial state of region B in response to the given state of region A.
 The objective function is multivariate such that
 \begin{eqnarray}
   \label{eq:objf_func_fld1}
-  F_1&=& (\frac{\partial \phi^B}{\partial \boldsymbol{\varepsilon}^B})_{22}|_\text{band}\\
+  F_1&=& (\frac{\partial \phi^B}{\partial \boldsymbol{\sigma}^B_{22}})|_\text{band}\\
   F_2&=& \sigma_{12}^B|_\text{band}- \sigma_{11}^B|_\text{band} \frac{\sigma_{12}^A}{\sigma_{11}^A}|_\text{band}\\
   F_3&=& \phi^B- 1. \\
-  F_4&=& \ln(f_0 \frac{H^B}{H^A}) + (m^A-m^B) \ln(qq^A) - x_3^B \frac{\partial \phi^B}{\partial \varepsilon}_{11}|_\text{band}
+  F_4&=& \ln(f_0 \frac{\bar{\sigma}^B}{\bar{\sigma}^A}) + (m^A-m^B) \ln(qq^A) - d\lambda^B \frac{\partial \phi^B}{\partial \sigma^B_{11}}|_\text{band}
 \end{eqnarray}
+
+
 
 \begin{eqnarray}
   \label{eq:jacob_func_fld1}
@@ -228,21 +230,10 @@ The objective function is multivariate such that
   J_{3}=\frac{\partial(F_1)}{\partial(x_1)}&=&    \\
   J_{4}=\frac{\partial(F_1)}{\partial(x_1)}&=&
 \end{eqnarray}
-%
 
-%
-%
-% \begin{eqnarray}
-%   \label{eq:AFL}
-%   \sigma^\mathrm{eq} = K(\varepsilon^\mathrm{eq}+\varepsilon_0)^n (\dot{\varepsilon}^\mathrm{eq})^m
-% \end{eqnarray}
 
-% The associated flow rule is represented by:
-% \begin{eqnarray}
-%   \label{eq:AFL}
-%   d \varepsilon_{ij} = d \lambda \frac{\partial f}{\partial \sigma_{ij}}
-% \end{eqnarray}
-% where $d\lambda = d \varepsilon^\mathrm{eq} / \sigma^\mathrm{eq}$.
+In \verb|func_fld.py| module, another import function is \verb|func_fld2|.
+
 
 \section{examples}
 \end{document}
