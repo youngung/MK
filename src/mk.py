@@ -133,39 +133,12 @@ def onepath(matA,matB,psi0,f0,T):
     from func_hard_for import return_swift
     # from for_lib import swift
 
-    ## seems abundant when proportional loading is applied in the case of 'isotropic' hardening
-    # sa,phia,fa,f2a=f_yld(sa)
-
-    # ## debug
-    # sa=np.array([1,2,0,0,0,0])
-    # psi0=15.*np.pi/180.
-
-
-    # sx = rot_6d(sa,-psi0)
     sx = rot_6d(matA.stress,-psi0) ## stress state within band
-
-    # print 'sa:,',sa
-    # print 'xa0,ya0,za0'
-    # print (3*'%6.3f ')%(sx[0],sx[1],sx[5])
-    # return
-
     # ## strain hardening can be passed independently as the was f_yld is passed.
-    # na = 0.28985			# n        5e-1
-    # ks = 518.968			# K       500
-    # ma = 5e-2                           # strain rate sensitivity
-    # e0 = 0.0007648 		        # eps_0   1e-5
-    # qq = 1000. ##Strain rate ratio (E_a.dot / E_0.dot)
-    # f_hard = return_swift(na,ma,ks,e0,qq)
 
-    # print ks,ma,e0
-    # na,ma,siga,dsiga,dma,qq = f_hard(0.)
     matA.update_hrd(0.) ## initialize hardening parameters
-    # print('siga,dsiga,ma,dma')
-    # print(siga,dsiga,ma,dma)
-    # os._exit(1)
 
     ## initial_conditions
-
     ndim = 4
     b    = np.zeros(20)
     b[0] = psi0
@@ -177,49 +150,31 @@ def onepath(matA,matB,psi0,f0,T):
     b[5] = sx[5]/sx[0]
 
     xzero = np.array([1,1,0,0])
-    # for i in xrange(6):
-    #     print 'B%i'%(i+1),'%7.2f'%b[i]
-    #     pass
 
-    ## determine the initial states
-    xfinal, fb=new_raph_fld(
+    ## Determine the initial states
+    ## x[:3]: stress of region b referred in the band axes
+    ## x[:3] = [s11, s22, s12] of the region B referred in the band axes
+    xfinal, fb = new_raph_fld(
         ndim=ndim,ncase=1,
         xzero=xzero,b=b,
-        # f_hard = matA.f_hrd,
-        # f_yld  = matA.f_yld,
         matA=matA,
         matB=matB,
 
         verbose=False)
 
-    #np.set_printoptions(precision=3)
-    #print 'xfinal:', xfinal
-    # fmt='%5s          %12.4e'
-    # print fmt%('e0_b', xfinal[3])
-    # print fmt%('x_b', xfinal[0])
-    # print fmt%('y_b', xfinal[1])
-    # print fmt%('z_b', xfinal[2])
-
     ## Initial values
-    tzero = xfinal[3]
-    # print 'tzero:',tzero
+    tzero = xfinal[3] ## d\labmda
 
     yzero = np.zeros(5)
-    yzero[0] = 0.
-    yzero[1] = 0.
-    yzero[2] = 0.
-    yzero[3] = tzero*fb[0] ## fb: first derivative in region B
+    ## fb: first derivative in region B
+    yzero[3] = tzero*fb[0]
     yzero[4] = tzero*fb[1]
-
-    # print ('%7s'+'%11.3f'*6)%('fb   :',fb[0],fb[1],fb[2],
-    #                           fb[3],fb[4],fb[5])
-    # print ('%7s'+'%20.12e'*5)%('yzero:',yzero[0],yzero[1],yzero[2],
-    #                            yzero[3],yzero[4])
 
     ndds    = 5 ## dimension differential system
     dydx    = np.zeros(ndds)
     dydx[0] = 1.
 
+    ## xbb = [psi0,s1,s2,s3,s4,s5,s6]
     xbb    = np.zeros(7)
     xbb[0] = psi0
     ## caution: xbb[1:] corresponds to the stress components
@@ -227,19 +182,12 @@ def onepath(matA,matB,psi0,f0,T):
     xbb[2] = sx[1]
     xbb[6] = sx[5]
 
-    # print 'xbb:'
-    # np.set_printoptions(precision=3)
-    # print ('%10.6f'*7)%(xbb[0],xbb[1],xbb[2],
-    #                     xbb[3],xbb[4],xbb[5],xbb[6])
     t0=time.time()
-    ## integrate function
-    # ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin = pasapas(
     ynew,absciss,xbb,siga,SA_fin = pasapas(
         f0,matA.stress,
         tzero,yzero,ndds,
         dydx,xbb,
         matA,matB,
-        # matA.f_hrd,matA.f_yld,
         verbose=False)
     psif = xbb[0]
     print ('%8.3f'*5)%(ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
@@ -248,103 +196,11 @@ def onepath(matA,matB,psi0,f0,T):
 
     print 'After pasapas'
     print 'absciss:',absciss
-    # hist_plot(f_yld,Ahist,Bhist)
 
     ## check the hardening curve?
     # return ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin
     return ynew,absciss,xbb,siga, SA_fin
 
-def hist_plot(f_yld,Ahist,Bhist):
-    """
-    Arguments
-    ---------
-    f_yld (common for both regions)
-    Ahist
-    Bhist
-    """
-    EA=[]; SA=[]; EB=[]; SB=[]
-    if (len(Ahist)!=len(Bhist)):
-        raise IOError, 'Unexpected unbalanced step size'
-
-    sigma_A=[]; sigma_B=[]
-    for i in xrange(len(Ahist)):
-        A = Ahist[i]; B = Bhist[i]
-        ea = A.H.eps; sa = A.H.sig
-        eb = B.H.eps; sb = B.H.sig
-
-        sig_A = A.stress; sig_B = B.stress
-        sigma_A.append(sig_A); sigma_B.append(sig_B)
-
-        EA.append(ea); EB.append(eb)
-        SA.append(sa); SB.append(sb)
-
-    EA=np.array(EA); EB=np.array(EB)
-    SA=np.array(SA); SB=np.array(SB)
-    S6A=np.array(sigma_A); S6B=np.array(sigma_B)
-
-    import matplotlib.pyplot as plt
-    fig=plt.figure(figsize=(10,3.5));
-    ax1=fig.add_subplot(131)
-    ax2=fig.add_subplot(132)
-    ax3=fig.add_subplot(133)
-
-    ax1.plot(EA,SA,label='A',ls='-',zorder=99)
-    ax1.plot(EB,SB,label='B',ls='-',zorder=100,alpha=0.4)
-
-    ## plot yield locus
-    pi = np.pi; sin=np.sin; cos=np.cos
-    th = np.linspace(-pi,pi)
-    x=cos(th);y=sin(th)
-    z=np.zeros(len(th))
-    s=np.array([x,y,z,z,z,z]).T
-    print s.shape
-    X=[]; Y=[]
-    for i in xrange(len(s)):
-        ys, phi, dphi, d2phi = vm(s[i])
-        X.append(ys[0])
-        Y.append(ys[1])
-
-    X=np.array(X)
-    Y=np.array(Y)
-    ax2.plot(X,Y,label='Yield locus')
-    ## initial location of region A stress state
-    ax2.plot(S6A[0][0],S6A[0][1],'r.',mfc='None',
-             mec='r',label='A initial')
-    ## final location of region A stress state
-    ax2.plot(S6A[-1][0],S6A[-1][1],'rx',mfc='None',
-             mec='r',label='A final')
-    ## initial location of region B stress state
-    ax2.plot(S6B[0][0],S6B[0][1],'g.',mfc='None',
-             mec='g',label='B initial')
-    ## final location of region B stress state
-    ax2.plot(S6B[-1][0],S6B[-1][1],'gx',label='B final')
-
-    A1=X*SA[-1];A2=Y*SA[-1]
-    B1=X*SB[-1];B2=Y*SB[-1]
-    ax3.plot(A1,A2,'-',label='Final Yield locus (A)')
-    ax3.plot(B1,B2,'-',label='Final Yield locus (B)')
-    # print 'A1'
-    # print(A1)
-    # print 'B1'
-    # print(B1)
-    ## initial location of region A stress state
-    ax3.plot(S6A[0][0]*SA[0],S6A[0][1]*SA[0],
-             'r.',mfc='None',mec='r',label='A initial')
-    ## final location of region A stress state
-    ax3.plot(S6A[-1][0]*SA[-1],S6A[-1][1]*SA[-1],
-             'rx',mfc='None',mec='r',label='A final')
-    ## initial location of region B stress state
-    ax3.plot(S6B[0][0]*SB[0],S6B[0][1]*SB[0],
-             'g.',label='B initial')
-    ## final location of region B stress state
-    ax3.plot(S6B[-1][0]*SB[-1],S6B[-1][1]*SB[-1],
-             'gx',label='B final')
-    ax2.legend();ax3.legend()
-
-    fn='hist_plot.pdf'
-    fig.tight_layout()
-    fig.savefig(fn,bbox_inches='tight')
-    print '%s has been saved'%fn
 
 def pasapas(
         f0,S,tzero,yzero,ndds,dydx,xbb,
@@ -463,8 +319,6 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,
             b=bn,
             matA=matA,
             matB=matB,
-            # f_hard=f_hard,
-            # f_yld=f_yld,
             sa=sa,
             verbose=verbose)
 
@@ -538,7 +392,16 @@ def new_raph_fld(
                 print '%i ITERATION over func_fld2 in NR'%it
 
             F, J, fa, fb, b,siga, sa \
-                = func_fld2(ndim,T,sa,b,xn,y,matA.f_hrd,matA.f_yld,verbose)
+                = func_fld2(
+                    ndim,
+                    T,
+                    sa,
+                    b,
+                    xn,
+                    y,
+                    matA.f_hrd,
+                    matA.f_yld,
+                    verbose)
             dt = time.time() - t0
 
         totalTimeFunc = totalTimeFunc + dt ## to estimate compute performance
@@ -693,3 +556,5 @@ if __name__=='__main__':
 #     logFile.close()
 #     return logFileName,tTime
 # """
+
+

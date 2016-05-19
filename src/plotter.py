@@ -8,6 +8,100 @@ cos=np.cos
 sin=np.sin
 arctan2=np.arctan2
 
+
+
+def hist_plot(f_yld,Ahist,Bhist):
+    """
+    Arguments
+    ---------
+    f_yld (common for both regions)
+    Ahist
+    Bhist
+    """
+    EA=[]; SA=[]; EB=[]; SB=[]
+    if (len(Ahist)!=len(Bhist)):
+        raise IOError, 'Unexpected unbalanced step size'
+
+    sigma_A=[]; sigma_B=[]
+    for i in xrange(len(Ahist)):
+        A = Ahist[i]; B = Bhist[i]
+        ea = A.H.eps; sa = A.H.sig
+        eb = B.H.eps; sb = B.H.sig
+
+        sig_A = A.stress; sig_B = B.stress
+        sigma_A.append(sig_A); sigma_B.append(sig_B)
+
+        EA.append(ea); EB.append(eb)
+        SA.append(sa); SB.append(sb)
+
+    EA=np.array(EA); EB=np.array(EB)
+    SA=np.array(SA); SB=np.array(SB)
+    S6A=np.array(sigma_A); S6B=np.array(sigma_B)
+
+    import matplotlib.pyplot as plt
+    fig=plt.figure(figsize=(10,3.5));
+    ax1=fig.add_subplot(131)
+    ax2=fig.add_subplot(132)
+    ax3=fig.add_subplot(133)
+
+    ax1.plot(EA,SA,label='A',ls='-',zorder=99)
+    ax1.plot(EB,SB,label='B',ls='-',zorder=100,alpha=0.4)
+
+    ## plot yield locus
+    pi = np.pi; sin=np.sin; cos=np.cos
+    th = np.linspace(-pi,pi)
+    x=cos(th);y=sin(th)
+    z=np.zeros(len(th))
+    s=np.array([x,y,z,z,z,z]).T
+    print s.shape
+    X=[]; Y=[]
+    for i in xrange(len(s)):
+        ys, phi, dphi, d2phi = vm(s[i])
+        X.append(ys[0])
+        Y.append(ys[1])
+
+    X=np.array(X)
+    Y=np.array(Y)
+    ax2.plot(X,Y,label='Yield locus')
+    ## initial location of region A stress state
+    ax2.plot(S6A[0][0],S6A[0][1],'r.',mfc='None',
+             mec='r',label='A initial')
+    ## final location of region A stress state
+    ax2.plot(S6A[-1][0],S6A[-1][1],'rx',mfc='None',
+             mec='r',label='A final')
+    ## initial location of region B stress state
+    ax2.plot(S6B[0][0],S6B[0][1],'g.',mfc='None',
+             mec='g',label='B initial')
+    ## final location of region B stress state
+    ax2.plot(S6B[-1][0],S6B[-1][1],'gx',label='B final')
+
+    A1=X*SA[-1];A2=Y*SA[-1]
+    B1=X*SB[-1];B2=Y*SB[-1]
+    ax3.plot(A1,A2,'-',label='Final Yield locus (A)')
+    ax3.plot(B1,B2,'-',label='Final Yield locus (B)')
+    # print 'A1'
+    # print(A1)
+    # print 'B1'
+    # print(B1)
+    ## initial location of region A stress state
+    ax3.plot(S6A[0][0]*SA[0],S6A[0][1]*SA[0],
+             'r.',mfc='None',mec='r',label='A initial')
+    ## final location of region A stress state
+    ax3.plot(S6A[-1][0]*SA[-1],S6A[-1][1]*SA[-1],
+             'rx',mfc='None',mec='r',label='A final')
+    ## initial location of region B stress state
+    ax3.plot(S6B[0][0]*SB[0],S6B[0][1]*SB[0],
+             'g.',label='B initial')
+    ## final location of region B stress state
+    ax3.plot(S6B[-1][0]*SB[-1],S6B[-1][1]*SB[-1],
+             'gx',label='B final')
+    ax2.legend();ax3.legend()
+
+    fn='hist_plot.pdf'
+    fig.tight_layout()
+    fig.savefig(fn,bbox_inches='tight')
+    print '%s has been saved'%fn
+
 def plot_log2(fn,yfunc):
     """
     Argument
