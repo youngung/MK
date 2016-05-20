@@ -168,7 +168,7 @@ def func_fld2(
     J[3,1] = deltat*(d2fb[0,0]*s2+d2fb[1,0]*c2-2*d2fb[5,0]*sc)
     J[3,2] = deltat*(d2fb[0,1]*s2+d2fb[1,1]*c2-2*d2fb[5,1]*sc)
     J[3,3] = deltat*(d2fb[0,5]*s2+d2fb[1,5]*c2-2*d2fb[5,5]*sc)
-    return F,J,fa,fb,b# ,s
+    return F,J,fa,fb,b,s
 
 def func_fld1(
         ndim,b,x,
