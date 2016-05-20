@@ -115,9 +115,8 @@ The first derivative of the von Mises yield criterion is expressed as:
                                           &=&\frac{1}{2}\frac{\partial h}{\partial \sigma_{ij}} \frac{1}{h^\frac{1}{2}}\\
                                           &=&\frac{1}{2\phi}\frac{\partial h}{\partial \sigma_{ij}}\\
                                           &=&\frac{1}{2}\phi^{-1} \frac{\partial h}{\partial \sigma_{ij}}
-\end{eqnarray}
+                                        \end{eqnarray}
 where only three components of $\frac{\partial h}{\partial \sigma_{ij}}$ are relevant in the plane-stress space, that is
-
 \begin{eqnarray}
   \label{eq:dh}
   \frac{\partial h}{\partial \sigma_{11}}&=&2\sigma_{11}-\sigma_{22} \\
@@ -131,9 +130,7 @@ Therefore, according to Eq \ref{eq:vonMisesDphi}, only three components of $\fra
   \frac{\partial \phi}{\partial\sigma_{22}}&=&\frac{1}{2\phi}\frac{\partial h}{\partial \sigma_{22}}=\frac{1}{2\phi} (2\sigma_{22}-\sigma_{11})\\
   \frac{\partial \phi}{\partial\sigma_{12}}&=&\frac{1}{2\phi}\frac{\partial h}{\partial \sigma_{12}}=\frac{1}{2\phi} (6\sigma_{12})
 \end{eqnarray}
-
 The second order derivative is obtained as follows.
-
 \begin{eqnarray}
   \label{eq:d2phiVM}
   \frac{\partial^2\phi}{\partial\sigma^2}&=&\frac{  \partial{(\frac{\partial \phi}{\partial\sigma_{ij}})  }     }{\partial \sigma_{kl}}\\
@@ -143,8 +140,8 @@ The second order derivative is obtained as follows.
   &=& (-1/4) (h^{-1/2})^3 \frac{\partial h}{\partial\sigma_{kl}}  + 0.5 h^{-\frac{1}{2}}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\\
   \frac{\partial^2\phi}{\partial\sigma^2}_{ij,kl}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{kl}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}
 \end{eqnarray}
-
 The above is implemented in \verb|for.f| as \verb|subroutine vm|.
+
 
 \subsection{Hill yield criterion}
 \subsubsection{Quadratic plane-stress condition}
@@ -173,13 +170,11 @@ In the plane-stress space, the above reduces to
   \end{aligned}
 \end{equation}
 Likewise in the derivation of von Mises yield function in section \ref{sec:vm}, h is defined as below:
-
 \begin{eqnarray}
   \label{eq:hill48H}
   h&=&F\sigma_{22}^2+G\sigma_{11}^2+H(\sigma_{11}-\sigma_{22})^2+2N\sigma_{12}^2\\
    &=&(G+H)\sigma_{11}^2+(F+H)\sigma_{22}^2-2H\sigma_{11}\sigma_{22}+2N\sigma_{12}^2.
 \end{eqnarray}
-
 Like in Eq. \ref{eq:vonMisesDphi},  $\frac{\partial \phi}{\partial\sigma_{ij}}$ is a function of $\phi$ and $\frac{\partial h}{\partial \sigma_{ij}}$.
 $\frac{\partial h}{\partial \sigma_{ij}}$ for Hill's yield function is expressed as:
 \begin{eqnarray}
@@ -188,7 +183,6 @@ $\frac{\partial h}{\partial \sigma_{ij}}$ for Hill's yield function is expressed
   \frac{\partial h}{\partial \sigma_{22}}&=&2(F+H)\sigma_{22} -2H\sigma_{11}   \\
   \frac{\partial h}{\partial \sigma_{12}}&=&4N\sigma_{12}
 \end{eqnarray}
-
 As a reminder,
 \begin{eqnarray}
   \label{eq:vmdphi_gen}
@@ -201,7 +195,6 @@ Thus, following is obtained:
   \frac{\partial \phi}{\partial\sigma_{22}}&=&\frac{1}{2}\phi^{-1} (2(F+H)\sigma_{22} -2H\sigma_{11} )\\
   \frac{\partial    h}{\partial\sigma_{12}}&=&\frac{1}{2}\phi^{-1} (4N\sigma_{12}).
 \end{eqnarray}
-
 Since the same relation between $h$ and $\phi$ holds as in Von Mises yield criterio, Eq. \ref{eq:d2phiVM} can be used to obtain the $2^{nd}$ derivatives for Hill 48 yield criterion as well.
 \begin{eqnarray}
   \label{eq:d2phiHill}
@@ -218,9 +211,6 @@ The objective function is multivariate such that
   F_3&=& \phi^B- 1. \\
   F_4&=& \ln(f_0 \frac{\bar{\sigma}^B}{\bar{\sigma}^A}) + (m^A-m^B) \ln(qq^A) - d\lambda^B \frac{\partial \phi^B}{\partial \sigma^B_{11}}|_\text{band}
 \end{eqnarray}
-
-
-
 \begin{eqnarray}
   \label{eq:jacob_func_fld1}
   J_{11}=\frac{\partial(F_1)}{\partial(x_1)}&=&  \\
@@ -230,10 +220,45 @@ The objective function is multivariate such that
   J_{3}=\frac{\partial(F_1)}{\partial(x_1)}&=&    \\
   J_{4}=\frac{\partial(F_1)}{\partial(x_1)}&=&
 \end{eqnarray}
-
-
 In \verb|func_fld.py| module, another import function is \verb|func_fld2|.
+\begin{eqnarray}
+  \label{eq:dpsi}
+  d\psi=\frac{ (\frac{\partial \phi}{\partial\sigma_{11}}-\frac{\partial \phi}{\partial\sigma_{22}}) \tan(b_9)}    {1+\tan^2(b_9)}\  \dot{t}
+\end{eqnarray}
 
+
+\verb|E| is defined as:
+\begin{eqnarray}
+  \label{eq:yancien}
+  E = -y_3 - y_4 - deltat (\frac{\partial \phi^B}{\partial\sigma^B_{11}}+\frac{\partial \phi^B}{\partial\sigma^B_{22}})+y_1+y_2+x_0(\frac{\partial \phi^A}{\partial\sigma^A_{11}}+\frac{\partial \phi^A}{\partial\sigma^A_{22}})
+\end{eqnarray}
+\begin{equation}
+  \label{eq:dxp}
+  dx^p_1=2\cos\psi^{new}\sin\psi^{new}(\sigma_{22}^B|_{band}-\sigma_{11}^B|_{band}) \\
+  - 2 (\cos^2\psi^{new}-\sin^2\psi^{new}) \sigma_{12}^B|_{band}
+\end{equation}
+
+\begin{equation}
+  \label{eq:dxp}
+  dx^p_2=2\cos\psi^{new}\sin\psi^{new}(\sigma_{22}^B|_{band}-\sigma_{11}^B|_{band}) \\
+  - 2 (\cos^2\psi^{new}-\sin^2\psi^{new}) \sigma_{12}^B|_{band}
+\end{equation}
+
+\begin{equation}
+  \label{eq:dxp}
+  dx^p_6=(cos^2\psi-sin^2\psi^B) (\sigma^B_{11}|_{band}-\sigma^B_{22}|_{band}) - 4 \sin\psi^B \cos\psi^B
+\end{equation}
+\begin{eqnarray}
+  \label{eq:dpe}
+  dpe = (\frac{\partial \phi^A}{\partial\sigma^A_{11}}-\frac{\partial \phi^A}{\partial\sigma^A_{22}}) \tan\psi^{new} \frac{1}{1+\tan^2\psi^{new}}
+\end{eqnarray}
+\begin{eqnarray}
+  \label{eq:func2_Fi}
+  F_1&=&f_0 \bar{\sigma}^B\sigma_{11}^B|_{band}\ \exp(E) - \bar{\sigma}^A \sigma_{11}^A|_{band} (Q^{m^B})qq^{m^A-m^B}\\
+  F_2&=&\sigma_{11}^B|_{band}\ \sigma_{12}^A|_{band}\ -\sigma_{12}^B|_{band}\ \sigma_{11}^A|_{band}\\
+  F_3&=&\phi^B-1.\\
+  F_4&=&deltat (\frac{\partial \phi^B}{\partial\sigma^B_{11}}|_{band}) - x_0 (\frac{\partial \phi^A}{\partial\sigma^A_{11}}_{band})
+\end{eqnarray}
 
 \section{examples}
 \end{document}

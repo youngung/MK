@@ -133,8 +133,10 @@ def onepath(matA,matB,psi0,f0,T):
     from func_hard_for import return_swift
     # from for_lib import swift
 
-    sx = rot_6d(matA.stress,-psi0) ## stress state within band
-    # ## strain hardening can be passed independently as the was f_yld is passed.
+    ## A stress state referred in band axes
+    sx = rot_6d(matA.stress,-psi0) 
+    # ## strain hardening can be passed
+    # independently as the was f_yld is passed.
 
     matA.update_hrd(0.) ## initialize hardening parameters
 
@@ -146,7 +148,8 @@ def onepath(matA,matB,psi0,f0,T):
     b[2] = matA.sig
     b[3] = matA.m
     b[4] = matA.qq
-    ## stress state ratio within the band from region A stress state
+    ## stress state ratio within the band from
+    ## region A stress state
     b[5] = sx[5]/sx[0]
 
     xzero = np.array([1,1,0,0])
@@ -154,21 +157,22 @@ def onepath(matA,matB,psi0,f0,T):
     ## Determine the initial states
     ## x[:3]: stress of region b referred in the band axes
     ## x[:3] = [s11, s22, s12] of the region B referred in the band axes
+
     xfinal, fb = new_raph_fld(
         ndim=ndim,ncase=1,
         xzero=xzero,b=b,
         matA=matA,
         matB=matB,
-
         verbose=False)
+    ## fb is the first derivative of region B yield function
+    ## that gives the 'directions' of strain rate according to the AFR
 
     ## Initial values
     tzero = xfinal[3] ## d\labmda
-
     yzero = np.zeros(5)
     ## fb: first derivative in region B
-    yzero[3] = tzero*fb[0]
-    yzero[4] = tzero*fb[1]
+    yzero[3] = tzero*fb[0] ## B strain 'increment' along RD
+    yzero[4] = tzero*fb[1] ## B strain 'increment' along TD
 
     ndds    = 5 ## dimension differential system
     dydx    = np.zeros(ndds)
@@ -178,17 +182,23 @@ def onepath(matA,matB,psi0,f0,T):
     xbb    = np.zeros(7)
     xbb[0] = psi0
     ## caution: xbb[1:] corresponds to the stress components
-    xbb[1] = sx[0] 
+    ## sx: A stress state referred in band axes
+    xbb[1] = sx[0]
     xbb[2] = sx[1]
     xbb[6] = sx[5]
 
     t0=time.time()
-    ynew,absciss,xbb,siga,SA_fin = pasapas(
-        f0,matA.stress,
-        tzero,yzero,ndds,
-        dydx,xbb,
-        matA,matB,
-        verbose=False)
+    ynew,absciss,xbb,siga,SA_fin\
+        = pasapas(
+            f0,
+            tzero,
+            yzero,
+            ndds,
+            dydx,
+            xbb,
+            matA,
+            matB,
+            verbose=False)
     psif = xbb[0]
     print ('%8.3f'*5)%(ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
     uet(time.time()-t0,'Elapsed time in step by step integration')
@@ -199,13 +209,17 @@ def onepath(matA,matB,psi0,f0,T):
 
     ## check the hardening curve?
     # return ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin
-    return ynew,absciss,xbb,siga, SA_fin
-
+    return ynew,absciss,xbb,siga,SA_fin
 
 def pasapas(
-        f0,S,tzero,yzero,ndds,dydx,xbb,
-        # f_hard,f_yld,
-        matA,matB,
+        f0,
+        tzero,
+        yzero,
+        ndds,
+        dydx,
+        xbb,
+        matA,
+        matB,
         verbose):
     """
     Step by step integration
@@ -216,7 +230,7 @@ def pasapas(
     yzero
     ndds   : dimension differential system
     dydx   :
-    xbb    :
+    xbb    : [psi0, s1, s2, s3, s4, s5, s6]
     matA
     matB
     verbose: flag to be or not to be verbose
@@ -224,14 +238,14 @@ def pasapas(
     Returns
     -------
     ynew
-    Ahist
-    Bhist
     absciss (T)
     xbb
     siga
     sa
     """
     import os
+    S = matA.stress
+
     absciss = tzero ## xcoordinate in the intergration
     yancien = np.zeros(ndds) ## y_old
     yancien = yzero[:]
@@ -239,12 +253,11 @@ def pasapas(
     ## integration values
     nbpas  = 200000
     freq   = 100      # frequency of output (probably not needed for this)
-    deltat = 0.001    # (stepsize)
+    deltat = 1e-3     # (incremental stepsize)
     tmax   = 1.5      # (maximum effective strain upper limit (2.0?))
 
     k =-1
     t = tzero
-    Ahist=[]; Bhist=[]
     time_used_in_syst=0.
     while(k<=nbpas and absciss<tmax and dydx[0]>=1e-1):
         k=k+1
@@ -255,36 +268,50 @@ def pasapas(
                 deltt = deltat/100.
         else:
             deltt = deltat*1.0
-
-        t0=time.time()
-        dydx, ynew, xbb, siga, SA = syst(
-            deltt,t,f0,dydx,xbb,S,yancien,
-            matA, matB, # f_hard,f_yld,
+        t0 = time.time()
+        dydx,ynew,xbb,siga,SA = syst(
+            deltt,
+            t,
+            f0,
+            dydx,
+            xbb,
+            S,
+            yancien,
+            matA,
+            matB, # f_hard,f_yld,
             verbose)
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
-        k1     = deltt * dydx ## Y increments
-        ynew   = yancien + k1
-        t      = t +deltt
-        absciss=t*1.
-        yancien[::] = ynew[::]
-        pass
+        k1      = deltt * dydx ## Y increments
+        ynew    = yancien + k1
+        t       = t +deltt
+        absciss = t*1.
+        yancien[::]=ynew[::]
 
     uet(time_used_in_syst,'Total time used for iteration in syst')
     return ynew,absciss,xbb,siga, SA
 
 ## differential system
-def syst(deltt,t,f0,dydx,xbb,sa,y,
-         # f_hard,f_yld,
-         matA,matB,
-         verbose):
+def syst(
+        deltt,
+        t,
+        f0,
+        dydx,
+        xbb,
+        sa,
+        y,
+        # f_hard,f_yld,
+        matA,
+        matB,
+        verbose):
     """
     Arguments
     ---------
-    deltt   : delt (adaptively changing incremental size)
+    deltt   : incremental size (adaptively changing)
     t       : axis along the intergration occurs
     f0      : initial inhomogeneity
     dydx    :
-    xbb     : [psi0,s1,s2,s3,s4,s5,s6] -- psi0 and stress state of region b
+    xbb     : [psi0,s1,s2,s3,s4,s5,s6]
+              -- psi0 and stress state of region b
     sa      : stress in region A
     y       : yancien defined in pasapas
     matA
@@ -301,9 +328,9 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,
     import os
     xzero    = np.zeros(4)
     xzero[0] = dydx[0]*deltt
-    xzero[1] = xbb[1]
-    xzero[2] = xbb[2]
-    xzero[3] = xbb[6]
+    xzero[1] = xbb[1] ## s1
+    xzero[2] = xbb[2] ## s2
+    xzero[3] = xbb[6] ## s6 of region B (stress referred in... )
 
     ndim  = 4
     ncase = 2
@@ -311,11 +338,15 @@ def syst(deltt,t,f0,dydx,xbb,sa,y,
     bn    = np.zeros(20)
     bn[1] = f0
     bn[8] = deltt
-    bn[9] = xbb[0]
+    bn[9] = xbb[0] ## psi0
 
     xfinal, fa, fb, bn, siga, sa\
         = new_raph_fld(
-            T=t,ndim=ndim,ncase=2,xzero=xzero,y=y,
+            T=t,
+            ndim=ndim,
+            ncase=2,
+            xzero=xzero,
+            y=y,
             b=bn,
             matA=matA,
             matB=matB,
@@ -381,17 +412,13 @@ def new_raph_fld(
                 print 'xn:'
                 print xn
             F, J, fb        = func_fld1(
-                ndim,b,xn,
-                matA,
-                matB,
-                verbose)
+                ndim,b,xn,matA,matB,verbose)
             dt = time.time() - t0
         if ncase==2:
             if verbose:
                 print '-'*40
                 print '%i ITERATION over func_fld2 in NR'%it
-
-            F, J, fa, fb, b,siga, sa \
+            F, J, fa, fb, b, sa \
                 = func_fld2(
                     ndim,
                     T,
@@ -399,11 +426,10 @@ def new_raph_fld(
                     b,
                     xn,
                     y,
-                    matA.f_hrd,
-                    matA.f_yld,
+                    matA,
+                    matB,
                     verbose)
             dt = time.time() - t0
-
         totalTimeFunc = totalTimeFunc + dt ## to estimate compute performance
         F,J,res = gauss(ndim=ndim,a=J,b=F) ## f2py module
         xn1=xn-res ## x^(n+1)
@@ -416,7 +442,7 @@ def new_raph_fld(
         return
 
     if ncase==1: return xn1,fb
-    if ncase==2: return xn1,fa,fb,b,siga,sa
+    if ncase==2: return xn1,fa,fb,b,matA.sig,sa
 
 ## command line usage (may be called in mk_run for multi-threaded run)
 if __name__=='__main__':
@@ -447,114 +473,3 @@ if __name__=='__main__':
     fn   = args.fn
     main(f0=f0,psi0=psi0,th=th,logFileName=fn)
     pass
-
-
-
-
-# """
-# def main_deprecated(f0=0.996,fGenPath=None):
-#     """
-#     This function is now deprecated...
-
-#     Assumed proportional loadings
-
-#     Argument
-#     --------
-#     f0
-#     fGenPath (None or function or kwargs)
-#     """
-#     import os
-#     from mk_lib   import findStressOnYS
-#     from lib      import gen_tempfile
-#     f_yld = vm
-
-#     if type(fGenPath).__name__=='NoneType':
-#         from mk_paths import PSRD
-#         angs,npt,pth,stressLeft,stressRight = PSRD()
-#     elif type(fGenPath).__name__=='function':
-#         angs,npt,pth,stressLeft,stressRight = fGenPath()
-#     else:
-#         print type(fGenPath).__name__
-#         raise IOError, 'unexpected type of fGenPath given'
-
-#     ang1,ang2,anginc = angs
-
-#     logFileName = gen_tempfile(prefix='log',affix='mk')
-#     logFile     = open(logFileName,'w')
-
-#     tTime = 0.
-#     for npth in xrange(npt):
-#         s,dphi = findStressOnYS(
-#             f_yld,stressLeft.copy(),stressRight.copy(),
-#             pth=pth,verbose=True)
-
-#         ## integrate for each path.
-#         ntotAngle = ((ang2-ang1)/anginc)+1
-#         rad2deg   = 180./np.pi
-#         deg2rad   =   1./rad2deg
-#         psi0s     = np.linspace(ang1,ang2,ntotAngle)*deg2rad
-
-#         absciss  = 1e3
-#         absciss0 = 1e3
-#         print 'Iteration over the given psi angle'
-#         head = ('%8s'*9)%('epsRD','epsTD','psi0','psif','sigRD',
-#                           'sigTD','sigA','T','cmpTime\n')
-#         logFile.write(head)
-
-#         for psi0_at_each in psi0s:
-#             print 'PSI: %5.1f'%(psi0_at_each*rad2deg)
-#             t0   = time.time()
-#             ynew, Ahist, Bhist, absciss,xbb,siga,sx = onepath(
-#                 f_yld=f_yld,sa=s,psi0=psi0_at_each,f0=f0,T=absciss)
-#             dTime = time.time() - t0
-#             tTime = tTime+dTime
-
-#             psif1=xbb[0]
-#             # print ('%8s'*6)%('s1','s2','psi0','psif','siga','absciss')
-#             print 'ynew:',ynew
-#             cnt = ('%8.3f'*8+'%8i')%(
-#                 ynew[1],ynew[2],
-#                 psi0_at_each*rad2deg,
-#                 psif1*rad2deg,
-#                 sx[0],sx[1],
-#                 siga,
-#                 absciss,dTime)
-#             print cnt
-#             logFile.write(cnt+'\n')
-
-#             if absciss<absciss0: ## when a smaller total strain is found update the smallest.
-#                 absciss0=absciss
-#                 psi0_min=psi0_at_each
-#                 psif_min=psif1
-#                 y2      =ynew[1]
-#                 y3      =ynew[2]
-#                 ss1     =sx[0]
-#                 ss2     =sx[1]
-#                 siga_fin=siga
-
-#             print 'sigma:',siga
-#             print '*'*50,'\n'
-#             pass ## end of each path
-
-#         # ## exit
-#         # logFile.close(); os._exit(1)
-
-#         # uet(dt,'elapsed time:')
-#         # print
-
-#         print 'ynew:'
-#         print(ynew)
-
-#         print 'RD strain', 'TD strain', 'Angle psi0', 'angle psif','RD stress','TD stress'
-#         print ynew[1],ynew[2]
-#         pass ## end of each path
-
-#     uet(tTime,'total time spent')
-
-#     # ## exit
-#     # os._exit(1)
-#     logFile.close()
-#     return logFileName,tTime
-# """
-
-

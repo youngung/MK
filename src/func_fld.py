@@ -1,3 +1,6 @@
+"""
+Functions used in forming limit diagrams
+"""
 import numpy as np
 from numba import jit
 cos = np.cos
@@ -49,7 +52,16 @@ def calcF2XB(psi0,f2b):
     f2xb[5,5] =(2*(f2b[5,1]-f2b[5,0])*sc + f2b[5,5]*(c2-s2))/2
     return f2xb
 
-def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
+def func_fld2(
+        ndim,
+        T,
+        s,
+        b,
+        x,
+        yancien,
+        matA,
+        matB,
+        verbose):
     """
     Arguments
     ---------
@@ -57,11 +69,22 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     T      : axis along integration occurs
     s      : stress of region A
     b      : variables?               [?,f0,?,?,?,?,?,?,deltat]
-    x      : the unknowns passed to func_fld [psi,s11,s22,s12]
+    x      : the unknowns passed to func_fld [??,s11,s22,s12] - stress initially for region B
     yancien: yancien defined in pasapas [deps,]
-    f_hard : hardening function
-    f_yld  : yield function
+    matA   : A material
+    matB   : B material
     verbose
+
+    ** yancien
+    Initially, it is determined:
+    [0,0,0,tzero*fb[0],tzero*fb[1]]
+
+
+    ** bn
+    b[1]  = f0
+    b[8]  = deltt
+    b[9]  = psi_old
+    b[10] = delta_psi
 
     Returns
     -------
@@ -77,27 +100,33 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     xb      = x[1]
     yb      = x[2]
     zb      = x[3]
+    ## (guessed) stress referred in band
     sb_dump = np.array([xb,yb,0.,0.,0.,zb])
 
     ## Parameters in region A
-    s,phia,fa,f2a = f_yld(s) ## this might be abundant
-    dpsi     = x[0] * (fa[0]-fa[1])*tan(b[9])/(1+tan(b[9])**2)
-    b[10]    = dpsi*1.
-    psi_new  = b[9]+dpsi
-    sa_rot   = rot_6d(s,-psi_new)
+    matA.update_yld(s) ## may be abundant
+    s,phia,fa,f2a = matA.o_yld
+
+    ## psi0 * ()
+    delta_psi= x[0] * (fa[0]-fa[1])*tan(b[9])/(1+tan(b[9])**2)
+    b[10]    = delta_psi*1.
+    psi_new  = b[9] + delta_psi
+    sa_rot   = rot_6d(s,-psi_new) ## A stress referred in the band axes
     xa,ya,za = sa_rot[0], sa_rot[1],sa_rot[5]
-    da_rot   = rot_6d(fa,-psi_new)
-    na,ma,siga,dsiga,dma,qqa=f_hard(x[0]+yancien[0])
+    da_rot   = rot_6d(fa,-psi_new) ## A's dphi/dsig referred in the band axes
+    matA.update_hrd(x[0] + yancien[0]) ## may be abundant
+    na,ma,siga,dsiga,dma,qqa = matA.o_hrd
 
     ## parameters in region B
-    sb             = rot_6d(sb_dump,psi_new)
-    sb,phib,fb,f2b = f_yld(sb)
+    sb      = rot_6d(sb_dump,psi_new) ## use updated (tilde) psi
+    matB.update_yld(sb)
+    sb,phib,fb,f2b = matB.o_yld
     db_rot         = rot_6d(fb,-psi_new)
-    nb,mb,sigb,dsigb,dmb,qqb = f_hard(T+deltat)
+    matB.update_hrd(T+deltat)
+    nb,mb,sigb,dsigb,dmb,qqb = matB.o_hrd
 
-    E = -yancien[3] - yancien[4]-deltat* (fb[0]+fb[1])\
-        + yancien[1]+yancien[2]\
-        + x[0] * (fa[0]+fa[1])
+    E = -yancien[3]-yancien[4]-deltat*(fb[0]+fb[1])\
+        +yancien[1]+yancien[2]+  x[0]*(fa[0]+fa[1])
 
     cp = cos(psi_new);  sp = sin(psi_new)
     c2 = cp*cp; s2 = sp*sp; sc = sp*cp
@@ -108,9 +137,9 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     dxp[1] = -dxp[0]
     dxp[5] = (c2-s2)*(xb-yb)-4*sc*zb
     dpe = (fa[0]-fa[1])*tan(psi_new)/(1+tan(psi_new)**2)
-    Q=x[0]/deltat # x[0]: psi
+    Q   = x[0]/deltat # x[0]: psi
 
-    F=np.zeros(4)
+    F = np.zeros(4)
     ## conditions to satisfy
     F[0] = f0*np.exp(E)*sigb*xb - xa*siga*(Q**mb)*qqb**(ma-mb)
     F[1] = xb*za - zb*xa
@@ -118,7 +147,11 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     F[3] = deltat*db_rot[1] - x[0]*da_rot[1]
 
     J=np.zeros((4,4))
-    J[0,0] = (fa[0]+fa[1])*f0*np.exp(E)*sigb*xb-xa*dsiga*(Q**mb)*qqb**(ma-mb)-xa*siga*((mb/deltat)*(Q**(mb-1.))*qqb**(ma-mb)+(dma/x[0])*np.log(qqb)*qqb*(ma-mb))
+    J[0,0] =  (fa[0]+fa[1])*f0*np.exp(E)*sigb*xb\
+             -xa*dsiga*(Q**mb)*qqb**(ma-mb)\
+             -xa*siga*(
+                 (mb/deltat)*(Q**(mb-1.))*qqb**(ma-mb)\
+                 +(dma/x[0])*np.log(qqb)*qqb*(ma-mb))
     J[0,1] =-deltat*(d2fb[0,0]+d2fb[1,0])*f0*np.exp(E)*sigb*xb\
         +f0*np.exp(E)*sigb
     J[0,2] =-deltat*(d2fb[0,1]+d2fb[1,1])*f0*np.exp(E)*sigb*xb
@@ -135,7 +168,7 @@ def func_fld2(ndim,T,s,b,x,yancien,f_hard,f_yld,verbose):
     J[3,1] = deltat*(d2fb[0,0]*s2+d2fb[1,0]*c2-2*d2fb[5,0]*sc)
     J[3,2] = deltat*(d2fb[0,1]*s2+d2fb[1,1]*c2-2*d2fb[5,1]*sc)
     J[3,3] = deltat*(d2fb[0,5]*s2+d2fb[1,5]*c2-2*d2fb[5,5]*sc)
-    return F,J,fa,fb,b,siga,s
+    return F,J,fa,fb,b# ,s
 
 def func_fld1(
         ndim,b,x,
@@ -210,6 +243,7 @@ def func_fld1(
     ## The stress (as the argument) to the yield function should
     ## be referred in the proper material axes.
     sb = rot_6d(s, psi0)
+    ## stress of region B in the rd-td-nd axes
     sb, phib, fb, f2b = matB.f_yld(sb)
 
     """
