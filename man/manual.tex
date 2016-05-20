@@ -112,9 +112,9 @@ The first derivative of the von Mises yield criterion is expressed as:
 \begin{eqnarray}
   \label{eq:vonMisesDphi}
   \frac{\partial \phi}{\partial\sigma_{ij}}&=& \frac{1}{2}\frac{\partial h}{\partial \sigma_{ij}} h^{-\frac{1}{2}}\\
-                                          &=&\frac{1}{2}\frac{\partial h}{\partial \sigma_{ij}} \frac{1}{h^\frac{1}{2}}\\
-                                          &=&\frac{1}{2\phi}\frac{\partial h}{\partial \sigma_{ij}}\\
-                                          &=&\frac{1}{2}\phi^{-1} \frac{\partial h}{\partial \sigma_{ij}}
+                                          &=&\frac{1}{2}\frac{\partial h}{\partial \sigma_{ij}} \frac{1}{h^\frac{1}{2}}\nonumber\\
+                                          &=&\frac{1}{2\phi}\frac{\partial h}{\partial \sigma_{ij}}\nonumber\\
+                                          &=&\frac{1}{2}\phi^{-1} \frac{\partial h}{\partial \sigma_{ij}}\nonumber
                                         \end{eqnarray}
 where only three components of $\frac{\partial h}{\partial \sigma_{ij}}$ are relevant in the plane-stress space, that is
 \begin{eqnarray}
@@ -134,11 +134,34 @@ The second order derivative is obtained as follows.
 \begin{eqnarray}
   \label{eq:d2phiVM}
   \frac{\partial^2\phi}{\partial\sigma^2}&=&\frac{  \partial{(\frac{\partial \phi}{\partial\sigma_{ij}})  }     }{\partial \sigma_{kl}}\\
-  &=&\frac{ \frac{1}{2}  \partial{(  h^{-\frac{1}{2}}\frac{\partial h}{\partial \sigma_{ij}}   )}}{\partial \sigma_{kl}}\\
-  &=& 0.5  \frac{\partial(h^{-\frac{1}{2}})}{\partial\sigma_{kl}} \frac{\partial h}{\partial \sigma_{ij}}   + 0.5 h^{-\frac{1}{2}}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\\
-  &=& 0.5  (-1/2)h^{-3/2} \frac{\partial h}{\partial\sigma_{kl}}  + 0.5 h^{-\frac{1}{2}}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\\
-  &=& (-1/4) (h^{-1/2})^3 \frac{\partial h}{\partial\sigma_{kl}}  + 0.5 h^{-\frac{1}{2}}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\\
-  \frac{\partial^2\phi}{\partial\sigma^2}_{ij,kl}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{kl}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}
+  &=&\frac{ \frac{1}{2}  \partial{(  h^{-\frac{1}{2}}\frac{\partial h}{\partial \sigma_{ij}}   )}}{\partial \sigma_{kl}} \nonumber \\
+  &=& 0.5  \frac{\partial(h^{-\frac{1}{2}})}{\partial\sigma_{kl}} \frac{\partial h}{\partial \sigma_{ij}}   + 0.5 h^{-\frac{1}{2}}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\nonumber  \\
+  &=& 0.5  (-1/2)h^{-3/2} \frac{\partial h}{\partial\sigma_{kl}}  + 0.5 h^{-\frac{1}{2}}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\nonumber  \\
+  &=& (-1/4) (h^{-1/2})^3 \frac{\partial h}{\partial\sigma_{kl}}  + 0.5 h^{-\frac{1}{2}}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\nonumber  \\
+   \frac{\partial^2\phi}{\partial\sigma^2}_{ij,kl} &=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{kl}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{ij}}   )}{\partial\sigma_{kl}}\nonumber
+\end{eqnarray}
+Each component is expressed as
+
+\begin{eqnarray}
+  \label{eq:d2phi_vm}
+  \frac{\partial^2\phi}{\partial\sigma^2}_{11,11}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{11}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{11}}   )}{\partial\sigma_{11}} \\
+                                                &=& - \frac{1}{4\phi^3} (2\sigma_{11}-\sigma_{22})              + \frac{1}{\phi}  \nonumber\\
+  \frac{\partial^2\phi}{\partial\sigma^2}_{11,22}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{22}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{11}}   )}{\partial\sigma_{22}} \\
+                                                &=& - \frac{1}{4\phi^3} (-\sigma_{11}+2\sigma_{22})             - \frac{1}{2\phi}    \nonumber \\
+  \frac{\partial^2\phi}{\partial\sigma^2}_{11,12}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{12}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{11}}   )}{\partial\sigma_{12}} \\
+                                                &=& - \frac{1}{4\phi^3} (6\sigma_{12}) \nonumber\\
+  \frac{\partial^2\phi}{\partial\sigma^2}_{22,11}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{11}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{22}}   )}{\partial\sigma_{11}} \\
+                                                &=& - \frac{1}{4\phi^3} (2\sigma_{11}-\sigma_{22})              -  \frac{1}{2\phi}\nonumber \\
+  \frac{\partial^2\phi}{\partial\sigma^2}_{22,22}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{22}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{22}}   )}{\partial\sigma_{22}} \\
+                                                &=& - \frac{1}{4\phi^3} (-\sigma_{11}+2 \sigma_{22})            + \frac{1}{\phi}  \nonumber \\
+  \frac{\partial^2\phi}{\partial\sigma^2}_{22,12}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{12}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{22}}   )}{\partial\sigma_{12}} \\
+                                                &=& - \frac{1}{4\phi^3} 6\sigma_{12}  \nonumber\\
+  \frac{\partial^2\phi}{\partial\sigma^2}_{12,11}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{11}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{12}}   )}{\partial\sigma_{11}} \\
+                                                &=& - \frac{1}{4\phi^3} (2\sigma_{11}-\sigma_{22})  \nonumber\\
+  \frac{\partial^2\phi}{\partial\sigma^2}_{12,22}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{22}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{12}}   )}{\partial\sigma_{22}} \\
+                                                &=& - \frac{1}{4\phi^3} (-\sigma_{11}+2\sigma_{22}) \nonumber\\
+  \frac{\partial^2\phi}{\partial\sigma^2}_{12,12}&=& - \frac{1}{4\phi^3} \frac{\partial h}{\partial\sigma_{12}}  + \frac{1}{2\phi}  \frac{\partial(  \frac{\partial h}{\partial \sigma_{12}}   )}{\partial\sigma_{12}} \\
+                                                &=& - \frac{1}{4\phi^3} (6\sigma_{12})                          + \frac{1}{2\phi}  6 \nonumber
 \end{eqnarray}
 The above is implemented in \verb|for.f| as \verb|subroutine vm|.
 
@@ -225,8 +248,6 @@ In \verb|func_fld.py| module, another import function is \verb|func_fld2|.
   \label{eq:dpsi}
   d\psi=\frac{ (\frac{\partial \phi}{\partial\sigma_{11}}-\frac{\partial \phi}{\partial\sigma_{22}}) \tan(b_9)}    {1+\tan^2(b_9)}\  \dot{t}
 \end{eqnarray}
-
-
 \verb|E| is defined as:
 \begin{eqnarray}
   \label{eq:yancien}
