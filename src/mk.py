@@ -26,17 +26,19 @@ atan2=np.arctan2
 sqrt=np.sqrt
 
 def main(f0=0.996,psi0=0,
-         th=0,material=None,
+         th=0,
+         material=None,
          logFileName=None):
     """
-    Assumed proportional loadings
+    Run forming limit test for the given path
+    using the given material (if none given, assume isotropic material)
 
     Arguments
     ---------
     f0           initial inhomogeneity factor
     psi0         [degree]
     th  (epsAng) [degree]
-    material    = None
+    material    = None (a material data from constitutive.Constitutive)
     logFileName = None
     """
     # np.seterr(all='raise')
@@ -86,9 +88,11 @@ def main(f0=0.996,psi0=0,
     ## integrate for each path.
     absciss  = 1e3
     absciss0 = 1e3
+    nind = max([len(matA.logfn),len(matB.logfn)])+3
     print('Iteration over the given psi angle')
-    head = ('%8s'*9)%('epsRD','epsTD','psi0','psif','sigRD',
-                      'sigTD','sigA','T','cmpt')
+    head = ('%8s'*9+('%'+'%is'%nind)*2)%(
+        'epsRD','epsTD','psi0','psif','sigRD',
+        'sigTD','sigA','T','cmpt','aLogFN','bLogFN')
     head = '%s\n'%head
     logFile.write(head)
     t0   = time.time()
@@ -97,21 +101,24 @@ def main(f0=0.996,psi0=0,
         matA=matA,matB=matB,
         psi0=psi0*deg2rad,f0=f0,T=absciss)
 
-    dTime = time.time() - t0
+    matA.recordCurrentStat()
+    matB.recordCurrentStat()
 
+    dTime = time.time() - t0
     psif1 = xbb[0]
-    cnt = ('%8.3f'*8+'%8i')%(
+
+    cnt = ('%8.3f'*8+'%8i'+('%'+'%is'%nind)*2)%(
         ynew[1],ynew[2],psi0,
         psif1*rad2deg,
         matA.stress[0],matA.stress[1],
         matA.sig, ## hardening (effective stress)
-        absciss,dTime)
+        absciss,dTime,matA.logfn,matB.logfn)
     print(cnt)
     logFile.write(cnt+'\n')
     uet(dTime,'total time spent');print('')
     logFile.close()
     print('%s has been saved'%logFileName)
-    return logFileName,dTime
+    return logFileName,dTime, matA, matB
 
 def onepath(matA,matB,psi0,f0,T):
     """
@@ -187,8 +194,9 @@ def onepath(matA,matB,psi0,f0,T):
     xbb[6] = sx[5]
 
     t0=time.time()
+    ## integrate through monotonic loading
     ynew,absciss,xbb\
-        = pasapas(
+        = integrateMono(
             f0,
             tzero,
             yzero,
@@ -202,15 +210,13 @@ def onepath(matA,matB,psi0,f0,T):
     psif = xbb[0]
     print ('%8.3f'*5)%(ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
     uet(time.time()-t0,'Elapsed time in step by step integration')
-    print
-
-    print 'After pasapas'
+    print '\nAfter integrateMono'
     print 'absciss:',absciss
 
     ## check the hardening curve?
     return ynew,absciss,xbb
 
-def pasapas(
+def integrateMono(
         f0,
         tzero,
         yzero,
@@ -265,6 +271,8 @@ def pasapas(
         else:
             deltt = deltat*1.0
         t0 = time.time()
+
+        ## find solution at current deformation increment
         dydx,ynew,xbb=syst(
             deltt,
             t,
@@ -275,6 +283,12 @@ def pasapas(
             matA,
             matB,
             verbose)
+
+        ## record current status of the two regions
+        ## might need to reduce the writing frequency
+        if np.mod(k,100)==0: ## every 10 steps
+            matA.recordCurrentStat()
+            matB.recordCurrentStat()
 
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
         k1      = deltt * dydx ## Y increments
@@ -294,7 +308,6 @@ def syst(
         dydx,
         xbb,
         y,
-        # f_hard,f_yld,
         matA,
         matB,
         verbose):
@@ -307,7 +320,7 @@ def syst(
     dydx    :
     xbb     : [psi0,s1,s2,s3,s4,s5,s6]
               -- psi0 and stress state of region b
-    y       : yancien defined in pasapas
+    y       : yancien defined in integrateMono
     matA
     matB
     verbose
@@ -433,7 +446,7 @@ def new_raph_fld(
         return
 
     if ncase==1: return xn1,fb
-    if ncase==2: return xn1,fa,fb,b#,matA#,matA.sig,sa
+    if ncase==2: return xn1,fa,fb,b
 
 ## command line usage (may be called in mk_run for multi-threaded run)
 if __name__=='__main__':

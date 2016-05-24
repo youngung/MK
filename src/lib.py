@@ -575,6 +575,7 @@ def gen_tempfile(prefix='',affix='',ext='txt',i=0):
     prefix = ''
     affix  = ''
     ext    = 'txt'  (extension, defualt: txt)
+    i      : an integer to avoid duplicated name
     """
     import os
     _tmp_ = find_tmp(verbose=False)

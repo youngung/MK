@@ -11,7 +11,9 @@ def read(fn):
     with open(fn) as FO:
         data_line = FO.readlines()[1]
         elements = data_line.split()
-    return map(float, elements),f,psi0,th, data_line
+        matA_FN=elements[9]
+        matB_FN=elements[10]
+    return map(float, elements[:9]),f,psi0,th, data_line, matA_FN,matB_FN
 
 def postAnalysis(masterFileName):
     """
@@ -39,7 +41,7 @@ def postAnalysis(masterFileName):
             # print linesInBlock
 
             ## find the minimum |(E1,E2)|
-            min_rad =1.5
+            min_rad = 1.5
             dat_min = None
             data_min_line = None
             # print linesInBlock
@@ -48,7 +50,7 @@ def postAnalysis(masterFileName):
                 line = linesInBlock[j]
                 ind, fn = line.split()
                 try:
-                    data, f, psi0, th, data_line = read(fn)
+                    data, f, psi0, th, data_line, matA_FN, matB_FN = read(fn)
                 except:
                     pass
                 else:
@@ -79,9 +81,12 @@ def postAnalysis(masterFileName):
     fig = plt.figure(figsize=(7,3))
     ax1=fig.add_subplot(121)
     ax2=fig.add_subplot(122)
-    dat=np.loadtxt(fileFLDmin.name).T
+    dat=np.loadtxt(fileFLDmin.name,dtype='str').T
+    dat=dat[:9]
+
     ax1.plot(dat[1],dat[0],'o')
-    dat=np.loadtxt(fileFLDall.name).T
+    dat=np.loadtxt(fileFLDall.name,dtype='str').T
+    dat=dat[:9]    
     ax2.plot(dat[1],dat[0],'o')
     draw_guide(ax1,r_line=[-0.5,0,1,2,2.5],max_r=2)
     draw_guide(ax2,r_line=[-0.5,0,1,2,2.5],max_r=2)
@@ -124,7 +129,7 @@ def prepRun(*args):
 
 if __name__=='__main__':
     import numpy as np
-    from mk import main as mk_main
+    # from mk import main as mk_main
     from lib import gen_tempfile, rhos2ths
     import os,multiprocessing,time
     from MP import progress_bar
