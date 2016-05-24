@@ -162,6 +162,7 @@ def onepath(matA,matB,psi0,f0,T):
         matA=matA,
         matB=matB,
         verbose=False)
+
     ## fb is the first derivative of region B yield function
     ## that gives the 'directions' of strain rate according to the AFR
 
@@ -207,7 +208,6 @@ def onepath(matA,matB,psi0,f0,T):
     print 'absciss:',absciss
 
     ## check the hardening curve?
-    # return ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin
     return ynew,absciss,xbb
 
 def pasapas(
@@ -239,12 +239,9 @@ def pasapas(
     ynew
     absciss (T)
     xbb
-    siga
-    sa
     """
     import os
-    S       = matA.stress
-
+    # S       = matA.stress
     absciss = tzero ## xcoordinate in the intergration
     yancien = np.zeros(ndds) ## y_old
     yancien = yzero[:]
@@ -274,13 +271,10 @@ def pasapas(
             f0,
             dydx,
             xbb,
-            S,
             yancien,
             matA,
             matB,
             verbose)
-
-        # siga,SA, = matA.sig, matA.stress
 
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
         k1      = deltt * dydx ## Y increments
@@ -290,7 +284,7 @@ def pasapas(
         yancien[::]=ynew[::]
 
     uet(time_used_in_syst,'Total time used for iteration in syst')
-    return ynew,absciss,xbb# ,siga, SA
+    return ynew,absciss,xbb
 
 ## differential system
 def syst(
@@ -299,7 +293,6 @@ def syst(
         f0,
         dydx,
         xbb,
-        sa,
         y,
         # f_hard,f_yld,
         matA,
@@ -314,7 +307,6 @@ def syst(
     dydx    :
     xbb     : [psi0,s1,s2,s3,s4,s5,s6]
               -- psi0 and stress state of region b
-    sa      : stress in region A
     y       : yancien defined in pasapas
     matA
     matB
@@ -325,7 +317,6 @@ def syst(
     dydx
     yancien
     siga     strain hardening flow stress, sig = hard(E)
-    sa        stress of region a
     """
     import os
     xzero    = np.zeros(4)
@@ -352,7 +343,6 @@ def syst(
             b=bn,
             matA=matA,
             matB=matB,
-            sa=sa,
             verbose=verbose)
 
     xbb[0] = bn[9]+bn[10]
@@ -372,7 +362,7 @@ def new_raph_fld(
         T=None,ndim=None,ncase=None,
         xzero=None,y=None,b=None,#f_hard=None,f_yld=None,
         matA=None,matB=None,
-        sa=None,verbose=True):
+        verbose=True):
     """
     Arguments
     ---------
@@ -389,7 +379,7 @@ def new_raph_fld(
     Return
     ------
     xn1, fb (case 1)
-    xn1, fa, fb, b, siga, sa (case 2)
+    xn1, fa, fb, b
     """
     import os
     from for_lib import gauss,norme
@@ -429,7 +419,6 @@ def new_raph_fld(
                     matA,
                     matB,
                     verbose)
-            matA.update_yld(sa)
 
             dt = time.time() - t0
         totalTimeFunc = totalTimeFunc + dt ## to estimate compute performance
