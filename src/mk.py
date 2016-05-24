@@ -40,7 +40,7 @@ def main(f0=0.996,psi0=0,
     logFileName = None
     """
     # np.seterr(all='raise')
-    # np.seterr(all='ignore')
+    np.seterr(all='ignore')
     import os
     from mk_lib   import findStressOnYS
     from lib      import gen_tempfile, calcAlphaRho
@@ -88,25 +88,23 @@ def main(f0=0.996,psi0=0,
     absciss0 = 1e3
     print('Iteration over the given psi angle')
     head = ('%8s'*9)%('epsRD','epsTD','psi0','psif','sigRD',
-                      'sigTD','sigA','T','cmpT[s]\n')
+                      'sigTD','sigA','T','cmpt')
+    head = '%s\n'%head
     logFile.write(head)
     t0   = time.time()
 
-    # ynew, Ahist, Bhist, absciss,xbb,siga,sx = onepath(
-    ynew, absciss,xbb,siga,sx = onepath(
+    ynew, absciss, xbb= onepath(
         matA=matA,matB=matB,
-        # f_yld=f_yld,sa=stressA,
         psi0=psi0*deg2rad,f0=f0,T=absciss)
 
     dTime = time.time() - t0
 
-    psif1=xbb[0]
+    psif1 = xbb[0]
     cnt = ('%8.3f'*8+'%8i')%(
-        ynew[1],ynew[2],
-        psi0,
+        ynew[1],ynew[2],psi0,
         psif1*rad2deg,
-        sx[0],sx[1],
-        siga,
+        matA.stress[0],matA.stress[1],
+        matA.sig, ## hardening (effective stress)
         absciss,dTime)
     print(cnt)
     logFile.write(cnt+'\n')
@@ -134,7 +132,7 @@ def onepath(matA,matB,psi0,f0,T):
     # from for_lib import swift
 
     ## A stress state referred in band axes
-    sx = rot_6d(matA.stress,-psi0) 
+    sx = rot_6d(matA.stress,-psi0)
     # ## strain hardening can be passed
     # independently as the was f_yld is passed.
 
@@ -188,7 +186,7 @@ def onepath(matA,matB,psi0,f0,T):
     xbb[6] = sx[5]
 
     t0=time.time()
-    ynew,absciss,xbb,siga,SA_fin\
+    ynew,absciss,xbb\
         = pasapas(
             f0,
             tzero,
@@ -199,6 +197,7 @@ def onepath(matA,matB,psi0,f0,T):
             matA,
             matB,
             verbose=False)
+
     psif = xbb[0]
     print ('%8.3f'*5)%(ynew[0],ynew[1],ynew[2],ynew[3],ynew[4])
     uet(time.time()-t0,'Elapsed time in step by step integration')
@@ -209,7 +208,7 @@ def onepath(matA,matB,psi0,f0,T):
 
     ## check the hardening curve?
     # return ynew,Ahist,Bhist,absciss,xbb,siga, SA_fin
-    return ynew,absciss,xbb,siga,SA_fin
+    return ynew,absciss,xbb
 
 def pasapas(
         f0,
@@ -244,7 +243,7 @@ def pasapas(
     sa
     """
     import os
-    S = matA.stress
+    S       = matA.stress
 
     absciss = tzero ## xcoordinate in the intergration
     yancien = np.zeros(ndds) ## y_old
@@ -269,7 +268,7 @@ def pasapas(
         else:
             deltt = deltat*1.0
         t0 = time.time()
-        dydx,ynew,xbb,siga,SA = syst(
+        dydx,ynew,xbb=syst(
             deltt,
             t,
             f0,
@@ -278,8 +277,11 @@ def pasapas(
             S,
             yancien,
             matA,
-            matB, # f_hard,f_yld,
+            matB,
             verbose)
+
+        # siga,SA, = matA.sig, matA.stress
+
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
         k1      = deltt * dydx ## Y increments
         ynew    = yancien + k1
@@ -288,7 +290,7 @@ def pasapas(
         yancien[::]=ynew[::]
 
     uet(time_used_in_syst,'Total time used for iteration in syst')
-    return ynew,absciss,xbb,siga, SA
+    return ynew,absciss,xbb# ,siga, SA
 
 ## differential system
 def syst(
@@ -340,7 +342,7 @@ def syst(
     bn[8] = deltt
     bn[9] = xbb[0] ## psi0
 
-    xfinal, fa, fb, bn, siga, sa\
+    xfinal, fa, fb, bn\
         = new_raph_fld(
             T=t,
             ndim=ndim,
@@ -364,8 +366,7 @@ def syst(
     dydx[3] = fb[0]
     dydx[4] = fb[1]
 
-    # return dydx, y, xbb, regionA[-1],regionB[-1], siga, sa
-    return dydx, y, xbb, siga, sa
+    return dydx, y, xbb#, matA.sig, matA.stress
 
 def new_raph_fld(
         T=None,ndim=None,ncase=None,
@@ -418,12 +419,10 @@ def new_raph_fld(
             if verbose:
                 print '-'*40
                 print '%i ITERATION over func_fld2 in NR'%it
-                #, sa \
             F, J, fa, fb, b\
                 = func_fld2(
                     ndim,
                     T,
-                    # sa,
                     b,
                     xn,
                     y,
@@ -445,7 +444,7 @@ def new_raph_fld(
         return
 
     if ncase==1: return xn1,fb
-    if ncase==2: return xn1,fa,fb,b,matA.sig,sa
+    if ncase==2: return xn1,fa,fb,b#,matA#,matA.sig,sa
 
 ## command line usage (may be called in mk_run for multi-threaded run)
 if __name__=='__main__':
