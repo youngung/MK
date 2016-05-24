@@ -55,7 +55,7 @@ def calcF2XB(psi0,f2b):
 def func_fld2(
         ndim,
         T,
-        s,
+        # s,
         b,
         x,
         yancien,
@@ -104,7 +104,7 @@ def func_fld2(
     sb_dump = np.array([xb,yb,0.,0.,0.,zb])
 
     ## Parameters in region A
-    matA.update_yld(s) ## may be abundant
+    matA.update_yld(matA.stress) ## may be abundant
     s,phia,fa,f2a = matA.o_yld
 
     ## psi0 * ()
@@ -114,7 +114,7 @@ def func_fld2(
     sa_rot   = rot_6d(s,-psi_new) ## A stress referred in the band axes
     xa,ya,za = sa_rot[0], sa_rot[1],sa_rot[5]
     da_rot   = rot_6d(fa,-psi_new) ## A's dphi/dsig referred in the band axes
-    matA.update_hrd(x[0] + yancien[0]) ## may be abundant
+    matA.update_hrd(x[0] + yancien[0])
     na,ma,siga,dsiga,dma,qqa = matA.o_hrd
 
     ## parameters in region B
@@ -168,7 +168,7 @@ def func_fld2(
     J[3,1] = deltat*(d2fb[0,0]*s2+d2fb[1,0]*c2-2*d2fb[5,0]*sc)
     J[3,2] = deltat*(d2fb[0,1]*s2+d2fb[1,1]*c2-2*d2fb[5,1]*sc)
     J[3,3] = deltat*(d2fb[0,5]*s2+d2fb[1,5]*c2-2*d2fb[5,5]*sc)
-    return F,J,fa,fb,b,s
+    return F,J,fa,fb,b# ,s
 
 def func_fld1(
         ndim,b,x,

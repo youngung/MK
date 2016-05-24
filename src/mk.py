@@ -418,17 +418,20 @@ def new_raph_fld(
             if verbose:
                 print '-'*40
                 print '%i ITERATION over func_fld2 in NR'%it
-            F, J, fa, fb, b, sa \
+                #, sa \
+            F, J, fa, fb, b\
                 = func_fld2(
                     ndim,
                     T,
-                    sa,
+                    # sa,
                     b,
                     xn,
                     y,
                     matA,
                     matB,
                     verbose)
+            matA.update_yld(sa)
+
             dt = time.time() - t0
         totalTimeFunc = totalTimeFunc + dt ## to estimate compute performance
         F,J,res = gauss(ndim=ndim,a=J,b=F) ## f2py module
