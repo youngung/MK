@@ -16,16 +16,22 @@ def test3():
 
 def test4():
     """
-    MK module compute time benchmakr
+    MK module compute time benchmark
+    for the below condition:
+    f0    = 0.995 (initial inhomogeneity factor)
+    psi0  = 0     (orientation of the groove)
+    th    = 0 (plane-strain tension RD condition)
     """
     import mk, time
+    ## isotropic material that follows von Mises constitutive law
+    from materials import IsoMat
     print 'TEST4 in test.py for estimating the compute time'
     from MP import progress_bar
-    uet=progress_bar.update_elapsed_time
+    uet = progress_bar.update_elapsed_time
     t0 = time.time()
     mk.main(f0=0.995, psi0=0, th=0,logFileName='/tmp/mk-test4.log')
     dt = time.time() - t0
-    uet(dt,'Total elapsed time');print
+    uet(dt,'Total elapsed time for benchmark (test4)');print
 
 def test5():
     import numpy as np

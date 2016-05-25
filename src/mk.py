@@ -25,10 +25,12 @@ log=np.log
 atan2=np.arctan2
 sqrt=np.sqrt
 
-def main(f0=0.996,psi0=0,
-         th=0,
-         material=None,
-         logFileName=None):
+def main(
+        f0=0.996,
+        psi0=0,
+        th=0,
+        material=None,
+        logFileName=None):
     """
     Run forming limit test for the given path
     using the given material (if none given, assume isotropic material)
@@ -377,6 +379,13 @@ def new_raph_fld(
         matA=None,matB=None,
         verbose=True):
     """
+    Find numerical solution using Newton-Raphson method.
+    The relevant jacobian and objective functions are defined
+    in func_fld.py.
+
+    Iterative determination is done
+    using the subroutine gauss in for.f
+
     Arguments
     ---------
     T
