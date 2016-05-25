@@ -29,7 +29,7 @@ def plotMat(fn,ax,**kwargs):
         
         ## may be just ticks instead of arrows
         # ax.arrow(y,x,dy,dx,**kwargs)
-        ax.plot([x,x+dx],[y,y+dy],**kwargs)
+        ax.plot([y,y+dy],[x,x+dx],**kwargs)
 
 def readMatFile(fn):
     """
