@@ -234,7 +234,6 @@ The objective function is multivariate such that
   F_3&=& \phi^B- 1. \nonumber\\
   F_4&=& -\ln(f_0 \frac{\bar{\sigma}^B}{\bar{\sigma}^A}) + (m^A-m^B) \ln(qq) - d\lambda^B \frac{\partial \phi^B}{\partial \sigma^B_{11}}|_\text{band}\nonumber
 \end{eqnarray}
-
 The \verb|f2xb| calculated in \verb|calcF2XB| is defined as:
 \begin{eqnarray}
   \label{eq:f2xb}
@@ -248,8 +247,8 @@ The \verb|f2xb| calculated in \verb|calcF2XB| is defined as:
   f_{22,12}^B &=& 2\cos\psi\sin\psi(\frac{\partial^2 \phi^B}{\partial \sigma^B_{22}\partial \sigma^B_{22}}-\frac{\partial^2 \phi^B}{\partial \sigma^B_{22}\partial \sigma^B_{11}})+(\cos^2\psi-\sin^2\psi)\frac{\partial^2 \phi^B}{\partial \sigma^B_{22}\partial \sigma^B_{12}}\nonumber\\
   f_{12,12}^B &=& \frac{1}{2}(2\cos\psi\sin\psi(\frac{\partial^2 \phi^B}{\partial \sigma^B_{12}\partial \sigma^B_{22}}-\frac{\partial^2 \phi^B}{\partial \sigma^B_{12}\partial \sigma^B_{11}})+(\cos^2\psi-\sin^2\psi)\frac{\partial^2 \phi^B}{(\partial \sigma^B_{12})^2})\nonumber
 \end{eqnarray}
-To me, the above looks \emph{horribly} complex but it may be reduced to 3 by 3 matrix form by using \emph{vectorial} notation with $x \boldsymbol{e}_{1}=\sigma_{11}$, $y\boldsymbol{e}_2=\sigma_{22}$, $z\boldsymbol{e}_3=\sigma_{33}$
-According to this notation, the second derivative ($\frac{\partial^2\phi^B}{\partial\sigma_{ij}\partial\sigma_{kl}}$) can be simply written as $A_{mn}$ with m=1,3 and n=1,3
+To me, the above looks \emph{horribly} complex but it may be reduced to a 3-by-3 matrix form by using \emph{vectorial} notation such that $x \boldsymbol{e}_{1}=\sigma_{11}$, $y\boldsymbol{e}_2=\sigma_{22}$, $z\boldsymbol{e}_3=\sigma_{33}$
+According to this notation, the second derivative ($\frac{\partial^2\phi^B}{\partial\sigma_{ij}\partial\sigma_{kl}}$) can be simply written as $A_{mn}$ with each index (either m or n) points to $\sigma_{11},\sigma_{22}$, and $\sigma_{12}$
 Eq \ref{eq:f2xb} is then expressed as:
 \begin{eqnarray}
   \label{eq:f2xb_2}
@@ -266,7 +265,7 @@ Eq \ref{eq:f2xb} is then expressed as:
 The Jacobian is obtained as:
 \begin{eqnarray}
   \label{eq:jacob_func_fld1}
-  J_{11}&=&\frac{\partial(F_1)}{\partial(x_1)}=  ?\\
+  J_{11}&=&\frac{\partial(F_1)}{\partial(x_1)}= \sin^2\psi f^B_{11}+\cos^2\psi f^B_{21}-2\cos\psi\sin\psi f^B_{31}\\
   J_{12}&=&\frac{\partial(F_1)}{\partial(x_2)}= ?\nonumber \\
   J_{13}&=&\frac{\partial(F_1)}{\partial(x_3)}= ?\nonumber\\
   J_{14}&=&\frac{\partial(F_1)}{\partial(x_4)}=0  \nonumber\\
