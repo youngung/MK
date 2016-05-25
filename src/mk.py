@@ -251,8 +251,8 @@ def integrateMono(
     import os
     # S       = matA.stress
     absciss = tzero ## xcoordinate in the intergration
-    yancien = np.zeros(ndds) ## y_old
-    yancien = yzero[:]
+    yold = np.zeros(ndds) ## y_old
+    yold = yzero[:]
 
     ## integration values
     nbpas  = 200000
@@ -281,7 +281,7 @@ def integrateMono(
             f0,
             dydx,
             xbb,
-            yancien,
+            yold,
             matA,
             matB,
             verbose)
@@ -294,10 +294,10 @@ def integrateMono(
 
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
         k1      = deltt * dydx ## Y increments
-        ynew    = yancien + k1
+        ynew    = yold + k1
         t       = t +deltt
         absciss = t*1.
-        yancien[::]=ynew[::]
+        yold[::]=ynew[::]
 
     uet(time_used_in_syst,'Total time used for iteration in syst')
     return ynew,absciss,xbb
@@ -322,7 +322,7 @@ def syst(
     dydx    :
     xbb     : [psi0,s1,s2,s3,s4,s5,s6]
               -- psi0 and stress state of region b
-    y       : yancien defined in integrateMono
+    y       : yold defined in integrateMono
     matA
     matB
     verbose
@@ -330,7 +330,7 @@ def syst(
     Returns
     -------
     dydx
-    yancien
+    yold
     siga     strain hardening flow stress, sig = hard(E)
     """
     import os

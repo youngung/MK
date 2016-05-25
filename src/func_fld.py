@@ -58,7 +58,7 @@ def func_fld2(
         # s,
         b,
         x,
-        yancien,
+        yold,
         matA,
         matB,
         verbose):
@@ -70,12 +70,12 @@ def func_fld2(
     s      : stress of region A
     b      : variables?               [?,f0,?,?,?,?,?,?,deltat]
     x      : the unknowns passed to func_fld [??,s11,s22,s12] - stress initially for region B
-    yancien: yancien defined in pasapas [deps,]
+    yold: yold defined in pasapas [deps,]
     matA   : A material
     matB   : B material
     verbose
 
-    ** yancien
+    ** yold
     Initially, it is determined:
     [0,0,0,tzero*fb[0],tzero*fb[1]]
 
@@ -114,7 +114,7 @@ def func_fld2(
     sa_rot   = rot_6d(s,-psi_new) ## A stress referred in the band axes
     xa,ya,za = sa_rot[0], sa_rot[1],sa_rot[5]
     da_rot   = rot_6d(fa,-psi_new) ## A's dphi/dsig referred in the band axes
-    matA.update_hrd(x[0] + yancien[0])
+    matA.update_hrd(x[0] + yold[0])
     na,ma,siga,dsiga,dma,qqa = matA.o_hrd
 
     ## parameters in region B
@@ -125,8 +125,8 @@ def func_fld2(
     matB.update_hrd(T+deltat)
     nb,mb,sigb,dsigb,dmb,qqb = matB.o_hrd
 
-    E = -yancien[3]-yancien[4]-deltat*(fb[0]+fb[1])\
-        +yancien[1]+yancien[2]+  x[0]*(fa[0]+fa[1])
+    E = -yold[3]-yold[4]-deltat*(fb[0]+fb[1])\
+        +yold[1]+yold[2]+  x[0]*(fa[0]+fa[1])
 
     cp = cos(psi_new);  sp = sin(psi_new)
     c2 = cp*cp; s2 = sp*sp; sc = sp*cp
