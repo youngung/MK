@@ -58,7 +58,7 @@ class Constitutive:
         Record the current status of
         this material to self.logfn
         """
-        fmt1 = '%8.4f'*2 ## Effective strain-stress (hardening)
+        fmt1 = '%8.4f %8.1f' ## Effective strain-stress (hardening)
         fmt2 = '%8.3f' ## 6D stress
         fmt3 = '%8.3f' ## 6D strain
 

@@ -25,6 +25,7 @@ def postAnalysis(masterFileName):
     masterFileName
     """
     import numpy as np
+    import parser
     numFail=0
     fileFail=[]
 
@@ -41,16 +42,16 @@ def postAnalysis(masterFileName):
             # print linesInBlock
 
             ## find the minimum |(E1,E2)|
-            min_rad = 1.5
-            dat_min = None
+            min_rad       = 2.0
+            dat_min       = None
+            ind_min       = None
             data_min_line = None
-            # print linesInBlock
-
             for j in xrange(len(linesInBlock)):
-                line = linesInBlock[j]
+                line    = linesInBlock[j]
                 ind, fn = line.split()
                 try:
-                    data, f, psi0, th, data_line, matA_FN, matB_FN = read(fn)
+                    data, f, psi0, th, data_line,\
+                        matA_FN, matB_FN = read(fn)
                 except:
                     pass
                 else:
@@ -61,15 +62,15 @@ def postAnalysis(masterFileName):
                     if np.isnan(epsRD) or np.isnan(epsTD):
                         fileFail.append(fn)
                         numFail=numFail+1
-                        pass
                     else:
                         rad = np.sqrt(epsRD**2+epsTD**2)
                         if rad<min_rad:
-                            data_min = data[::]
+                            dat_min = data[::]
                             min_rad = rad
+                            ind_min = j
                             data_min_line = data_line
 
-            dat_min_master.append(dat_min)
+            dat_min_master.append([dat_min,matA_FN,matB_FN])
             if type(data_min_line).__name__!='NoneType':
                 fileFLDmin.write('%s'%data_min_line)
 
@@ -78,18 +79,27 @@ def postAnalysis(masterFileName):
     ## iplot?
     import matplotlib.pyplot as plt
     from lib import draw_guide
-    fig = plt.figure(figsize=(7,3))
-    ax1=fig.add_subplot(121)
-    ax2=fig.add_subplot(122)
+    fig = plt.figure(figsize=(7,6))
+    ax1=fig.add_subplot(221);ax2=fig.add_subplot(222)
+    ax3=fig.add_subplot(223);ax4=fig.add_subplot(224)
     dat=np.loadtxt(fileFLDmin.name,dtype='str').T
     dat=dat[:9]
 
     ax1.plot(dat[1],dat[0],'o')
     dat=np.loadtxt(fileFLDall.name,dtype='str').T
-    dat=dat[:9]    
+    dat=dat[:9]
     ax2.plot(dat[1],dat[0],'o')
     draw_guide(ax1,r_line=[-0.5,0,1,2,2.5],max_r=2)
     draw_guide(ax2,r_line=[-0.5,0,1,2,2.5],max_r=2)
+    ax1.set_aspect('equal');ax2.set_aspect('equal')
+
+    ##
+    for i in xrange(len(dat_min_master)):
+        dat_min, matA_FN, matB_FN = dat_min_master[i]
+        parser.plotMat(matA_FN,ax=ax3,
+                       color='red',linestyle='-')
+        parser.plotMat(matB_FN,ax=ax3,
+                       color='blue',linestyle='--')
     fig.savefig('mk_fld_pp.pdf')
 
 def test_pp(fn='/local_scratch/MK-6e59e6-results.txt'):
