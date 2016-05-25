@@ -230,18 +230,57 @@ The objective function is multivariate such that
 \begin{eqnarray}
   \label{eq:objf_func_fld1}
   F_1&=& (\frac{\partial \phi^B}{\partial \boldsymbol{\sigma}^B_{22}})|_\text{band}\\
-  F_2&=& \sigma_{12}^B|_\text{band}- \sigma_{11}^B|_\text{band} \frac{\sigma_{12}^A}{\sigma_{11}^A}|_\text{band}\\
-  F_3&=& \phi^B- 1. \\
-  F_4&=& \ln(f_0 \frac{\bar{\sigma}^B}{\bar{\sigma}^A}) + (m^A-m^B) \ln(qq^A) - d\lambda^B \frac{\partial \phi^B}{\partial \sigma^B_{11}}|_\text{band}
+  F_2&=& \sigma_{12}^B|_\text{band}- \sigma_{11}^B|_\text{band} \frac{\sigma_{12}^A}{\sigma_{11}^A}|_\text{band}\nonumber\\
+  F_3&=& \phi^B- 1. \nonumber\\
+  F_4&=& -\ln(f_0 \frac{\bar{\sigma}^B}{\bar{\sigma}^A}) + (m^A-m^B) \ln(qq) - d\lambda^B \frac{\partial \phi^B}{\partial \sigma^B_{11}}|_\text{band}\nonumber
 \end{eqnarray}
+
+The \verb|f2xb| calculated in \verb|calcF2XB| is defined as:
+\begin{eqnarray}
+  \label{eq:f2xb}
+  f_{11,11}^B &=&            \cos^2\psi \frac{\partial^2 \phi^B}{(\partial \sigma^B_{11})^2}                   + \sin^2\psi\frac{\partial^2 \phi^B}{\partial\sigma^B_{11} \partial\sigma^B_{22}} + \sin\psi\cos\psi \frac{\partial^2 \phi^B}{\partial\sigma^B_{11} \partial\sigma^B_{12}}\\
+  f_{22,11}^B &=&            \cos^2\psi \frac{\partial^2 \phi^B}{\partial \sigma^B_{22}\partial \sigma^B_{11}} + \sin^2\psi\frac{\partial^2 \phi^B}{(\partial\sigma^B_{22})^2}                   + \sin\psi\cos\psi \frac{\partial^2 \phi^B}{\partial\sigma^B_{22} \partial\sigma^B_{12}}\nonumber\\
+  f_{12,11}^B &=&\frac{1}{2} (\cos^2\psi \frac{\partial^2 \phi^B}{\partial \sigma^B_{12}\partial \sigma^B_{11}} + \sin^2\psi\frac{\partial^2 \phi^B}{\partial\sigma^B_{12} \partial\sigma^B_{22}} + \sin\psi\cos\psi \frac{\partial^2 \phi^B}{(\partial\sigma^B_{12})^2})\nonumber\\
+  f_{11,22}^B &=&            \sin^2\psi \frac{\partial^2 \phi^B}{(\partial \sigma^B_{11})^2}                   + \cos^2\psi\frac{\partial^2 \phi^B}{\partial\sigma^B_{11} \partial\sigma^B_{22}} - \sin\psi\cos\psi \frac{\partial^2 \phi^B}{\partial\sigma^B_{11} \partial\sigma^B_{12}}\nonumber\\
+  f_{22,22}^B &=&            \sin^2\psi \frac{\partial^2 \phi^B}{\partial \sigma^B_{22}\partial \sigma^B_{11}} + \cos^2\psi\frac{\partial^2 \phi^B}{(\partial\sigma^B_{22})^2}                   - \sin\psi\cos\psi \frac{\partial^2 \phi^B}{\partial\sigma^B_{22} \partial\sigma^B_{12}}\nonumber\\
+  f_{12,22}^B &=&\frac{1}{2} (\sin^2\psi \frac{\partial^2 \phi^B}{\partial \sigma^B_{12}\partial \sigma^B_{11}} + \cos^2\psi\frac{\partial^2 \phi^B}{\partial\sigma^B_{12} \partial\sigma^B_{22}} - \sin\psi\cos\psi \frac{\partial^2 \phi^B}{(\partial\sigma^B_{12})^2})\nonumber\\
+  f_{11,12}^B &=& 2\cos\psi\sin\psi(\frac{\partial^2 \phi^B}{\partial \sigma^B_{11}\partial \sigma^B_{22}}-\frac{\partial^2 \phi^B}{(\partial \sigma^B_{11})^2})+(\cos^2\psi-\sin^2\psi)\frac{\partial^2 \phi^B}{\partial \sigma^B_{11}\partial \sigma^B_{12}}\nonumber\\
+  f_{22,12}^B &=& 2\cos\psi\sin\psi(\frac{\partial^2 \phi^B}{\partial \sigma^B_{22}\partial \sigma^B_{22}}-\frac{\partial^2 \phi^B}{\partial \sigma^B_{22}\partial \sigma^B_{11}})+(\cos^2\psi-\sin^2\psi)\frac{\partial^2 \phi^B}{\partial \sigma^B_{22}\partial \sigma^B_{12}}\nonumber\\
+  f_{12,12}^B &=& \frac{1}{2}(2\cos\psi\sin\psi(\frac{\partial^2 \phi^B}{\partial \sigma^B_{12}\partial \sigma^B_{22}}-\frac{\partial^2 \phi^B}{\partial \sigma^B_{12}\partial \sigma^B_{11}})+(\cos^2\psi-\sin^2\psi)\frac{\partial^2 \phi^B}{(\partial \sigma^B_{12})^2})\nonumber
+\end{eqnarray}
+To me, the above looks \emph{horribly} complex but it may be reduced to 3 by 3 matrix form by using \emph{vectorial} notation with $x \boldsymbol{e}_{1}=\sigma_{11}$, $y\boldsymbol{e}_2=\sigma_{22}$, $z\boldsymbol{e}_3=\sigma_{33}$
+According to this notation, the second derivative ($\frac{\partial^2\phi^B}{\partial\sigma_{ij}\partial\sigma_{kl}}$) can be simply written as $A_{mn}$ with m=1,3 and n=1,3
+Eq \ref{eq:f2xb} is then expressed as:
+\begin{eqnarray}
+  \label{eq:f2xb_2}
+  f^B_{11} &=&            \cos^2\psi A_{11} + \sin^2\psi A_{12} + \sin\psi\cos\psi A_{13}\\
+  f^B_{21} &=&            \cos^2\psi A_{21} + \sin^2\psi A_{22} + \sin\psi\cos\psi A_{23}\nonumber\\
+  f^B_{31} &=&\frac{1}{2}(\cos^2\psi A_{31} + \sin^2\psi A_{32} + \sin\psi\cos\psi A_{33})\nonumber\\
+  f^B_{12} &=&            \sin^2\psi A_{11} + \cos^2\psi A_{12} - \sin\psi\cos\psi A_{13}\nonumber\\
+  f^B_{22} &=&            \sin^2\psi A_{21} + \cos^2\psi A_{22} - \sin\psi\cos\psi A_{23}\nonumber\\
+  f^B_{32} &=&\frac{1}{2}(\sin^2\psi A_{31} + \sin^2\psi A_{32} - \sin\psi\cos\psi A_{33})\nonumber\\
+  f^B_{13} &=&2\cos\psi\sin\psi(A_{12}-A_{11})+(\cos^2\psi-\sin^2\psi) A_{13}\nonumber\\
+  f^B_{23} &=&2\cos\psi\sin\psi(A_{22}-A_{21})+(\cos^2\psi-\sin^2\psi) A_{23}\nonumber\\
+  f^B_{33} &=& \frac{1}{2}(2\cos\psi\sin\psi(A_{32}-A_{31})+(\cos^2\psi-\sin^2\psi)A_{33}\nonumber
+\end{eqnarray}
+The Jacobian is obtained as:
 \begin{eqnarray}
   \label{eq:jacob_func_fld1}
-  J_{11}=\frac{\partial(F_1)}{\partial(x_1)}&=&  \\
-  J_{12}=\frac{\partial(F_1)}{\partial(x_2)}&=&   \\
-  J_{13}=\frac{\partial(F_1)}{\partial(x_2)}&=&   \\
-  J_{14}=0.                                 &&    \\
-  J_{3}=\frac{\partial(F_1)}{\partial(x_1)}&=&    \\
-  J_{4}=\frac{\partial(F_1)}{\partial(x_1)}&=&
+  J_{11}&=&\frac{\partial(F_1)}{\partial(x_1)}=  ?\\
+  J_{12}&=&\frac{\partial(F_1)}{\partial(x_2)}= ?\nonumber \\
+  J_{13}&=&\frac{\partial(F_1)}{\partial(x_3)}= ?\nonumber\\
+  J_{14}&=&\frac{\partial(F_1)}{\partial(x_4)}=0  \nonumber\\
+  J_{21}&=&\frac{\partial(F_2)}{\partial(x_1)}=-\sigma_{11}^B|_\text{band} \frac{\sigma_{12}^A}{\sigma_{11}^A}|_\text{band}  \nonumber\\
+  J_{22}&=&\frac{\partial(F_2)}{\partial(x_2)}=0  \nonumber\\
+  J_{23}&=&\frac{\partial(F_2)}{\partial(x_3)}=1  \nonumber\\
+  J_{24}&=&\frac{\partial(F_2)}{\partial(x_3)}=0  \nonumber\\
+  J_{31}&=&\frac{\partial(F_3)}{\partial(x_1)}=\frac{\partial \phi^B}{\partial \sigma^B_{11}}|_\text{band}    \nonumber\\
+  J_{32}&=&\frac{\partial(F_3)}{\partial(x_2)}=0  \nonumber\\
+  J_{33}&=&\frac{\partial(F_3)}{\partial(x_3)}=2 \frac{\partial \phi^B}{\partial \sigma^B_{12}}|_\text{band}  \nonumber\\
+  J_{41}&=&\frac{\partial(F_4)}{\partial(x_4)}=0 \nonumber\\
+  J_{42}&=&\frac{\partial(F_4)}{\partial(x_4)}=0\nonumber\\
+  J_{43}&=&\frac{\partial(F_4)}{\partial(x_4)}=0\nonumber\\
+  J_{44}&=&\frac{\partial(F_4)}{\partial(x_4)}=-d(\ln{\bar{\sigma}^B}) - dm^B \log(qq)-\frac{\partial \phi^B}{\partial \sigma^B_{11}}|_\text{band}\nonumber
 \end{eqnarray}
 In \verb|func_fld.py| module, another import function is \verb|func_fld2|.
 \begin{eqnarray}
