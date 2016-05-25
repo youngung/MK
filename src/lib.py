@@ -523,6 +523,17 @@ def get_stime():
     hr,mn,sec = time.split(':')
     return date,hr+mn+sec
 
+def gen_hash_code2(nchar=6):
+    """
+    Generate random hash tag (to mimick what mdtemp does)
+
+    Arguments
+    ---------
+    nchar=6
+    """
+    import os
+    return os.urandom(16).encode('hex')[:nchar]
+
 def gen_hash_code(nchar=6,i=0):
     """
     Generate random hash tag (to mimic what mktemp does)
@@ -580,10 +591,10 @@ def gen_tempfile(prefix='',affix='',ext='txt',i=0):
     import os
     _tmp_ = find_tmp(verbose=False)
     exitCondition = False
-
     it = 0
     while not(exitCondition):
-        hc = gen_hash_code(nchar=6,i=i+it)
+        # hc = gen_hash_code(nchar=6,i=i+it)
+        hc = gen_hash_code2(nchar=6)
         tmpLocation = find_tmp(verbose=False)
         filename = '%s-%s-%s'%(prefix,hc,affix)
         if type(ext).__name__=='str':
