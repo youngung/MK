@@ -292,7 +292,8 @@ The onset of forming limit is $\frac{\Delta\lambda^A}{\Delta\lambda^B}<0.1$ thus
 In \verb|func_fld.py| module, another import function is \verb|func_fld2|.
 \begin{eqnarray}
   \label{eq:dpsi}
-  \Delta\psi=\Delta{\lambda}^A \frac{ (\frac{\partial \phi}{\partial\sigma_{11}}-\frac{\partial \phi}{\partial\sigma_{22}}) \tan(\psi)}    {1+\tan^2(\psi)}
+  \Delta\psi&=&\Delta{\lambda}^A \frac{ (\frac{\partial \phi}{\partial\sigma_{11}}-\frac{\partial \phi}{\partial\sigma_{22}}) \tan(\psi)}    {1+\tan^2(\psi)}\\
+            &=&\Delta{\lambda}^A (\frac{\partial \phi}{\partial\sigma_{11}}-\frac{\partial \phi}{\partial\sigma_{22}}) \cos\psi \sin\psi \nonumber
 \end{eqnarray}
 \verb|E| is defined as:
 \begin{eqnarray}
@@ -316,7 +317,7 @@ Variable \verb|dpe| is defined as:
 And \verb|Q| is defined as
 \begin{eqnarray}
   \label{eq:Q}
-  Q = \Delta\lambda^A/\Delta\lambda^B \text{ for the given time increment } \Delta T
+Q = \Delta\lambda^A/\Delta\lambda^B \text{ for the given time increment } \Delta T
 \end{eqnarray}
 \begin{eqnarray}
   \label{eq:func2_Fi}

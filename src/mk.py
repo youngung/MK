@@ -324,11 +324,30 @@ def integrateMono(
             matA.recordCurrentStat()
             matB.recordCurrentStat()
             snapshot.takeshot(
-                k=k,
-                deltt=deltt,
-                dydx=dydx,
-                ynew=ynew,
-                xbb=xbb)
+                k=k,              #0
+                deltt=deltt,      #1
+
+                dydx0=dydx[0],    #2
+                dydx1=dydx[1],    #3
+                dydx2=dydx[2],    #4
+                dydx3=dydx[3],    #5
+                dydx4=dydx[4],    #6
+
+                xbb0 = xbb[0],    #7
+                xbb1 = xbb[1],    #8
+                xbb2 = xbb[2],    #9
+                xbb3 = xbb[3],    #10
+                xbb4 = xbb[4],    #11
+                xbb5 = xbb[5],    #12
+                xbb6 = xbb[6],    #13
+
+                ynew0=ynew[0],    #14
+                ynew1=ynew[1],    #15 ERD
+                ynew2=ynew[2],    #16 ETD
+                ynew3=ynew[3],    #17 ERD
+                ynew4=ynew[4]     #18 ETD
+            )
+
             snapshot.linebreak()
 
         time_used_in_syst = time_used_in_syst + (time.time()-t0)

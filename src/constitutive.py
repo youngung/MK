@@ -21,13 +21,16 @@ class Snapshot:
         """
         with open(self.logfn,'a') as fo:
             for key, value in kwargs.iteritems():
-                fo.write('%s = %s\n'%(key,value))
+                try:
+                    fo.write('%11.4e '%value)
+                except:
+                    fo.write('%11i' %value)
     def linebreak(self):
         """
         Insert linebreak in the snapshot file
         """
         with open(self.logfn,'a') as fo:
-            fo.write('------\n')
+            fo.write('\n')
 
 class Constitutive:
     def __init__(self,f_yld,f_hrd,hashcode=None):

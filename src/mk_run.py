@@ -103,6 +103,7 @@ def postAnalysis(masterFileName):
                        color='red',linestyle='-')
         parser.plotMat(matB_FN,ax=ax3,
                        color='blue',linestyle='--')
+        parser.plotEtc(ss_FN,ax=ax4)
     fig.savefig('mk_fld_pp.pdf')
 
 def test_pp(fn='/local_scratch/MK-6e59e6-results.txt'):
