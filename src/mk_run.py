@@ -98,7 +98,7 @@ def postAnalysis(masterFileName):
 
     ##
     for i in xrange(len(dat_min_master)):
-        dat_min, matA_FN, matB_FN = dat_min_master[i]
+        dat_min, matA_FN, matB_FN, ss_FN = dat_min_master[i]
         parser.plotMat(matA_FN,ax=ax3,
                        color='red',linestyle='-')
         parser.plotMat(matB_FN,ax=ax3,
