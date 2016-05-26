@@ -27,7 +27,7 @@ class Snapshot:
         Insert linebreak in the snapshot file
         """
         with open(self.logfn,'a') as fo:
-            fo.write('------')
+            fo.write('------\n')
 
 class Constitutive:
     def __init__(self,f_yld,f_hrd,hashcode=None):

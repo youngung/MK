@@ -13,7 +13,9 @@ def read(fn):
         elements = data_line.split()
         matA_FN=elements[9]
         matB_FN=elements[10]
-    return map(float, elements[:9]),f,psi0,th, data_line, matA_FN,matB_FN
+        ss_FN  =elements[11]
+    return map(float, elements[:9]),f,psi0,th,\
+        data_line,matA_FN,matB_FN,ss_FN
 
 def postAnalysis(masterFileName):
     """
@@ -51,7 +53,7 @@ def postAnalysis(masterFileName):
                 ind, fn = line.split()
                 try:
                     data, f, psi0, th, data_line,\
-                        matA_FN, matB_FN = read(fn)
+                        matA_FN, matB_FN, ss_FN = read(fn)
                 except:
                     pass
                 else:
@@ -70,7 +72,8 @@ def postAnalysis(masterFileName):
                             ind_min = j
                             data_min_line = data_line
 
-            dat_min_master.append([dat_min,matA_FN,matB_FN])
+            dat_min_master.append(
+                [dat_min,matA_FN,matB_FN,ss_FN])
             if type(data_min_line).__name__!='NoneType':
                 fileFLDmin.write('%s'%data_min_line)
 

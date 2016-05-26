@@ -49,7 +49,10 @@ def main(
     from mk_lib   import findStressOnYS
     from lib      import gen_tempfile, calcAlphaRho
     from mk_paths import constructBC,findCorrectPath
+    import constitutive
+    snapshot = constitutive.Snapshot()
     # from yf2 import wrapHill48
+
 
     if type(material).__name__=='NoneType':
         from materials import IsoMat
@@ -92,9 +95,12 @@ def main(
     absciss0 = 1e3
     nind = max([len(matA.logfn),len(matB.logfn)])+3
     print('Iteration over the given psi angle')
-    head = ('%8s'*9+('%'+'%is'%nind)*2)%(
-        'epsRD','epsTD','psi0','psif','sigRD',
-        'sigTD','sigA','T','cmpt','aLogFN','bLogFN')
+    head = (
+        '%8s'*9+  ## variables
+        ('%'+'%is'%nind)*2+ ## aLogFN and bLogFN
+        '%'+'%is'%(len(snapshot.logfn)+3))%(
+            'epsRD','epsTD','psi0','psif','sigRD',
+            'sigTD','sigA','T','cmpt','aLogFN','bLogFN','ssFN')
     head = '%s\n'%head
     logFile.write(head)
     t0   = time.time()
@@ -110,12 +116,16 @@ def main(
     dTime = time.time() - t0
     psif1 = xbb[0]
 
-    cnt = ('%8.3f'*8+'%8i'+('%'+'%is'%nind)*2)%(
+    cnt = (
+        '%8.3f'*8+
+        '%8i'+
+        ('%'+'%is'%nind)*2+
+        '%'+'%is'%(len(snapshot.logfn)+3))%(
         ynew[1],ynew[2],psi0,
         psif1*rad2deg,
         matA.stress[0],matA.stress[1],
         matA.sig, ## hardening (effective stress)
-        absciss,dTime,matA.logfn,matB.logfn)
+        absciss,dTime,matA.logfn,matB.logfn,snapshot.logfn)
     print(cnt)
     logFile.write(cnt+'\n')
     uet(dTime,'total time spent');print('')
@@ -123,7 +133,7 @@ def main(
     print('%s has been saved'%logFileName)
     return logFileName,dTime, matA, matB
 
-def onepath(matA,matB,psi0,f0,T):
+def onepath(matA,matB,psi0,f0,T,snapshot):
     """
     Run under the given condition that is
     characterized by the passed arguments
@@ -135,6 +145,7 @@ def onepath(matA,matB,psi0,f0,T):
     psi0
     f0
     T
+    snapshot
     """
     import os
     from lib import rot_6d
@@ -208,6 +219,7 @@ def onepath(matA,matB,psi0,f0,T):
             xbb,
             matA,
             matB,
+            snapshot,
             verbose=False)
 
     psif = xbb[0]
@@ -228,6 +240,7 @@ def integrateMono(
         xbb,
         matA,
         matB,
+        snapshot,
         verbose):
     """
     Step by step integration
@@ -243,6 +256,7 @@ def integrateMono(
     xbb    : [psi0, s1, s2, s3, s4, s5, s6]
     matA
     matB
+    snapshot: snapshot object to record state variables to study
     verbose: flag to be or not to be verbose
 
     Returns
@@ -265,7 +279,6 @@ def integrateMono(
     deltat = 1e-3
     # (incremental stepsize)
     #
-
     tmax   = 1.5      # (maximum effective strain upper limit (2.0?))
 
     k =-1
@@ -274,6 +287,13 @@ def integrateMono(
     while(k<=nbpas and absciss<tmax and dydx[0]>=1e-1):
         """
         dydx[0] = delta lambdaA
+
+        Forming limit criterion: if dydx<0.1
+
+        i.e., the instant when the equivalent strain rate
+        of region a becomes far less than that of region B.
+
+        that implies that dydx = d\lambda^A / d\lamda^B
         """
         k=k+1
         ## adjusting the incremental size size
@@ -286,7 +306,7 @@ def integrateMono(
         t0 = time.time()
 
         ## find solution at current deformation increment
-        dydx,ynew,xbb=syst(
+        dydx, ynew, xbb = syst(
             deltt,
             t,
             f0,
@@ -295,6 +315,7 @@ def integrateMono(
             yold,
             matA,
             matB,
+            snapshot,
             verbose)
 
         ## record current status of the two regions
@@ -302,6 +323,13 @@ def integrateMono(
         if np.mod(k,100)==0: ## every 10 steps
             matA.recordCurrentStat()
             matB.recordCurrentStat()
+            snapshot.takeshot(
+                k=k,
+                deltt=deltt,
+                dydx=dydx,
+                ynew=ynew,
+                xbb=xbb)
+            snapshot.linebreak()
 
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
         k1      = deltt * dydx ## Y increments
@@ -323,11 +351,12 @@ def syst(
         y,
         matA,
         matB,
+        snapshot,
         verbose):
     """
     Arguments
     ---------
-    deltt   : incremental size (adaptively changing)
+    deltt   : equivalent strain increment of region B
     t       : axis along the intergration occurs
     f0      : initial inhomogeneity
     dydx    :
@@ -338,6 +367,7 @@ def syst(
         y[2]: accumulative strain RD
     matA
     matB
+    snapshot : (if not None, activated)
     verbose
 
     Returns
@@ -347,6 +377,10 @@ def syst(
     siga     strain hardening flow stress, sig = hard(E)
     """
     import os
+    """
+    xzero is the initial guesses
+    xzero[0] = equivalent strain increment of region A
+    """
     xzero    = np.zeros(4)
     xzero[0] = dydx[0]*deltt
     xzero[1] = xbb[1] ## s1
@@ -384,7 +418,7 @@ def syst(
     dydx[3] = fb[0]
     dydx[4] = fb[1]
 
-    return dydx, y, xbb#, matA.sig, matA.stress
+    return dydx, y, xbb
 
 def new_raph_fld(
         T=None,ndim=None,ncase=None,

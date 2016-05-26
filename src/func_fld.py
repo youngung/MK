@@ -82,7 +82,12 @@ def func_fld2(
         b[9] : psi_old
         b[10]: psi_new
 
-    x      : the unknowns passed to func_fld [dlambda^A,s11,s22,s12] - stress initially for region B
+    x      :
+       x[0]: d\lambda^A, i.e., the increment of equivalent strain pertaining to region A
+       x[1]: s11 component of stress
+       x[2]: s22 component of stress
+       x[3]: s12 component of stress
+
     yold: yold defined in pasapas [deps,]
         y[1]: accumulative strain RD
         y[2]: accumulative strain TD
@@ -152,7 +157,7 @@ def func_fld2(
     dpe = (fa[0]-fa[1])*tan(psi_new)/(1+tan(psi_new)**2)
     Q   = x[0]/deltat # ratio between A / B equivalent strain rate increment?
 
-    ## x[0] ?
+    ## x[0] = \delta \Lambda^A?
     ## x[1] = xb
     ## x[2] = yb ???
     ## x[3] = zb

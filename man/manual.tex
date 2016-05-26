@@ -284,6 +284,10 @@ The Jacobian is obtained as:
 
 %%%%%%%%%%%%% FLD_FUNC2
 
+The first element of array \verb|dydx| (i.e., \verb|dydx[0]|) acts as the criterion.
+The instant when \verb|dydx[0]| becomes lower than 0.1 is the onset of forming limit.
+That means, \verb|dydx| is $\frac{\Delta\lambda^A}{\Delta\lambda^B}$.
+The onset of forming limit is $\frac{\Delta\lambda^A}{\Delta\lambda^B}<0.1$ thus $10 \Delta\lambda^A<\Delta\lambda^B$
 
 In \verb|func_fld.py| module, another import function is \verb|func_fld2|.
 \begin{eqnarray}
@@ -293,11 +297,9 @@ In \verb|func_fld.py| module, another import function is \verb|func_fld2|.
 \verb|E| is defined as:
 \begin{eqnarray}
   \label{eq:yancien}
-  E = -y_3 - y_4 - \Delta{t} (\frac{\partial \phi^B}{\partial\sigma^B_{11}}+\frac{\partial \phi^B}{\partial\sigma^B_{22}})+E_{RD}^A+E_{TD}^A+\Delta\lambda^A(\frac{\partial \phi^A}{\partial\sigma^A_{11}}+\frac{\partial \phi^A}{\partial\sigma^A_{22}})
+  E = -y_3 - y_4 - \Delta{\lambda}^B (\frac{\partial \phi^B}{\partial\sigma^B_{11}}+\frac{\partial \phi^B}{\partial\sigma^B_{22}})+E_{RD}^A+E_{TD}^A+\Delta\lambda^A(\frac{\partial \phi^A}{\partial\sigma^A_{11}}+\frac{\partial \phi^A}{\partial\sigma^A_{22}})
 \end{eqnarray}
-
 Below is \verb|dxp| defined within \verb|func_fld2|.
-
 \begin{eqnarray}
   \label{eq:dxp}
   \\
@@ -305,33 +307,30 @@ Below is \verb|dxp| defined within \verb|func_fld2|.
   dx^p_2&=&2\cos\psi\sin\psi(\sigma_{22}^B|_{band}-\sigma_{11}^B|_{band})    - 2 (\cos^2\psi-\sin^2\psi) \sigma_{12}^B|_{band}\nonumber \\
   dx^p_6&=&(\cos^2\psi-\sin^2\psi) (\sigma^B_{11}|_{band}-\sigma^B_{22}|_{band}) - 4 \cos\psi^B \sin\psi^B \sigma_{12}^B|_{band}\nonumber
 \end{eqnarray}
-
 Variable \verb|dpe| is defined as:
 \begin{eqnarray}
   \label{eq:dpe}
   dpe &=&(\frac{\partial \phi^A}{\partial\sigma^A_{11}}-\frac{\partial \phi^A}{\partial\sigma^A_{22}}) \frac{\tan\psi }{1+\tan^2\psi}\\
       &=&(\frac{\partial \phi^A}{\partial\sigma^A_{11}}-\frac{\partial \phi^A}{\partial\sigma^A_{22}})\cos\psi\sin\psi\nonumber
 \end{eqnarray}
-
 And \verb|Q| is defined as
 \begin{eqnarray}
   \label{eq:Q}
-  Q = \Delta\lambda^A/\Delta\lambda^B
+  Q = \Delta\lambda^A/\Delta\lambda^B \text{ for the given time increment } \Delta T
 \end{eqnarray}
-
 \begin{eqnarray}
   \label{eq:func2_Fi}
   F_1&=&f_0 \bar{\sigma}^B\sigma_{11}^B|_{band}\ \exp(E) - \bar{\sigma}^A \sigma_{11}^A|_{band} (Q^{m^B})qq^{m^A-m^B}\\
   F_2&=&\sigma_{11}^B|_{band}\ \sigma_{12}^A|_{band}\ -\sigma_{12}^B|_{band}\ \sigma_{11}^A|_{band}\nonumber\\
   F_3&=&\phi^B-1.\nonumber \\
-  F_4&=&\Delta t (\frac{\partial \phi^B}{\partial\sigma^B_{11}}|_{band}) - x_0 (\frac{\partial \phi^A}{\partial\sigma^A_{11}}|_{band})\nonumber
+  F_4&=&\Delta\lambda^B (\frac{\partial \phi^B}{\partial\sigma^B_{22}}|_{band}) - \Delta\lambda^A (\frac{\partial \phi^A}{\partial\sigma^A_{22}}|_{band})\nonumber
 \end{eqnarray}
 The Jacobian is defined as
 \begin{eqnarray}
   \label{eq:jacobian_fld2}
   J_{11}&=&\frac{\partial(F_1)}{\partial(x_1)}=\\
        & &(\frac{\partial\phi}{\sigma_{11}^A}+\frac{\partial\phi}{\sigma_{22}^A})\nonumber\\
-       & &f_0\exp{E}\bar{\sigma}^B\sigma_{11}^B|_{band}- \nonumber \\
+       & &f_0\exp(E)\bar{\sigma}^B\sigma_{11}^B|_{band}- \nonumber \\
        & &\sigma^A_{11}|_{band}(Q^{m^B})\cdot (qq^B)^{m^A-m^B}-\nonumber \\
        & &\sigma^A_{11}|_{band}\codt\bar{\sigma}*((m^B/\Delta t)\cdot (Q^{m^B-1})\cdot (qq)^{m^A-m^B}+(\Delta m^A/x_0)\log(qq^B)\cdot{qq^B}(m^A-m^B))\nonumber\\
   J_{12}&=&\frac{\partial(F_1)}{\partial(x_2)}=-\Delta{t} (\frac{\partial^2\phi}{\partial\sigma_{11}^2}+\frac{\partial^2\phi}{\partial\sigma_{22}\partial\sigma_{11}})f_0\exp{E}\ \bar{\sigma}^B\sigma^B_{11}|_{band}+f_0\exp{E}\bar{\sigma}^B\nonumber\\
@@ -345,7 +344,6 @@ The Jacobian is defined as
   J_{32}&=&\frac{\partial(F_3)}{\partial(x_2)}=\frac{\partial\phi}{\partial\sigma_{11}}|_{band}\nonumber\\
   J_{33}&=&\frac{\partial(F_3)}{\partial(x_3)}=\frac{\partial\phi}{\partial\sigma_{22}}|_{band}\nonumber\\
   J_{34}&=&\frac{\partial(F_3)}{\partial(x_4)}=2\frac{\partial\phi}{\partial\sigma_{12}}|_{band}\nonumber\\
-  
   J_{41}&=&\frac{\partial(F_4)}{\partial(x_4)}=\nonumber\\
   J_{42}&=&\frac{\partial(F_4)}{\partial(x_4)}=\nonumber\\
   J_{43}&=&\frac{\partial(F_4)}{\partial(x_4)}=\nonumber\\
