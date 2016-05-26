@@ -68,9 +68,24 @@ def func_fld2(
     ndim
     T      : axis along integration occurs
     s      : stress of region A
-    b      : variables?               [?,f0,?,?,?,?,?,?,deltat]
-    x      : the unknowns passed to func_fld [??,s11,s22,s12] - stress initially for region B
+    b      : variables?
+
+        b[0] : unknown
+        b[1] : f0
+        b[2] : unknown
+        b[3] : unknown
+        b[4] : unknown
+        b[5] : unknown
+        b[6] : unknown
+        b[7] : unknown
+        b[8] : delta t:   delta equivalent strain increment: \dot{lambda}d(time)=dleta lambda^B for region B
+        b[9] : psi_old
+        b[10]: psi_new
+
+    x      : the unknowns passed to func_fld [dlambda^A,s11,s22,s12] - stress initially for region B
     yold: yold defined in pasapas [deps,]
+        y[1]: accumulative strain RD
+        y[2]: accumulative strain TD
     matA   : A material
     matB   : B material
     verbose
@@ -78,7 +93,6 @@ def func_fld2(
     ** yold
     Initially, it is determined:
     [0,0,0,tzero*fb[0],tzero*fb[1]]
-
 
     ** bn
     b[1]  = f0
@@ -94,8 +108,7 @@ def func_fld2(
     from lib import rot_6d
 
     f0     = b[1]
-    deltat = b[8]
-
+    deltat = b[8] # delta t for region B
     ## stress in region B
     xb      = x[1]
     yb      = x[2]
@@ -104,7 +117,7 @@ def func_fld2(
     sb_dump = np.array([xb,yb,0.,0.,0.,zb])
 
     ## Parameters in region A
-    matA.update_yld(matA.stress) ## may be abundant
+    matA.update_yld(matA.stress) ## may be abundant since the loading is 'monotonic'
     s,phia,fa,f2a = matA.o_yld
 
     ## psi0 * ()
@@ -114,7 +127,7 @@ def func_fld2(
     sa_rot   = rot_6d(s,-psi_new) ## A stress referred in the band axes
     xa,ya,za = sa_rot[0], sa_rot[1],sa_rot[5]
     da_rot   = rot_6d(fa,-psi_new) ## A's dphi/dsig referred in the band axes
-    matA.update_hrd(x[0] + yold[0])
+    matA.update_hrd(yold[0]+x[0])
     na,ma,siga,dsiga,dma,qqa = matA.o_hrd
 
     ## parameters in region B
@@ -122,7 +135,7 @@ def func_fld2(
     matB.update_yld(sb)
     sb,phib,fb,f2b = matB.o_yld
     db_rot         = rot_6d(fb,-psi_new)
-    matB.update_hrd(T+deltat)
+    matB.update_hrd(T+deltat) ## delta t (incremental effective strain)
     nb,mb,sigb,dsigb,dmb,qqb = matB.o_hrd
 
     E = -yold[3]-yold[4]-deltat*(fb[0]+fb[1])\
@@ -137,7 +150,12 @@ def func_fld2(
     dxp[1] = -dxp[0]
     dxp[5] = (c2-s2)*(xb-yb)-4*sc*zb
     dpe = (fa[0]-fa[1])*tan(psi_new)/(1+tan(psi_new)**2)
-    Q   = x[0]/deltat # x[0]: psi
+    Q   = x[0]/deltat # ratio between A / B equivalent strain rate increment?
+
+    ## x[0] ?
+    ## x[1] = xb
+    ## x[2] = yb ???
+    ## x[3] = zb
 
     F = np.zeros(4)
     ## conditions to satisfy
@@ -151,17 +169,21 @@ def func_fld2(
              -xa*dsiga*(Q**mb)*qqb**(ma-mb)\
              -xa*siga*(
                  (mb/deltat)*(Q**(mb-1.))*qqb**(ma-mb)\
-                 +(dma/x[0])*np.log(qqb)*qqb*(ma-mb))
+                 +(dma/x[0])*np.log(qqb)*qqb*(ma-mb)
+             )
     J[0,1] =-deltat*(d2fb[0,0]+d2fb[1,0])*f0*np.exp(E)*sigb*xb\
         +f0*np.exp(E)*sigb
     J[0,2] =-deltat*(d2fb[0,1]+d2fb[1,1])*f0*np.exp(E)*sigb*xb
     J[0,3] =-deltat*(d2fb[0,5]+d2fb[1,5])*f0*np.exp(E)*sigb*xb
     J[1,1] = za
     J[1,3] =-xa
+
     J[2,0] = (fb[0]*dxp[0]+fb[1]*dxp[1]+2*fb[5]*dxp[5])*dpe
     J[2,1] = db_rot[0]
     J[2,2] = db_rot[1]
     J[2,3] = 2*db_rot[5]
+
+
     J[3,0] = (f2b[0,0]*dxp[0]+f2b[0,1]*dxp[1]+f2b[0,5]*dxp[5]/2.)*s2+(f2b[1,0]*dxp[0]+f2b[1,1]*dxp[1]+f2b[1,5]*dxp[5]/2)*c2
     J[3,0] = (J[3,0]-2*(f2b[5,0]*dxp[0]+f2b[5,1]*dxp[1]+f2b[5,5]*dxp[5]/2)*sc)*deltat*dpe
     J[3,0] = J[3,0]-da_rot[1]+x[0]*(2*sc*(fa[0]-fa[1])-2*fa[5]*(c2-s2))*dpe + deltat*(2*sc*(fb[0]-fb[1])-2*fb[5]*(c2-s2))*dpe

@@ -101,7 +101,8 @@ def main(
 
     ynew, absciss, xbb= onepath(
         matA=matA,matB=matB,
-        psi0=psi0*deg2rad,f0=f0,T=absciss)
+        psi0=psi0*deg2rad,f0=f0,
+        T=absciss,snapshot=snapshot)
 
     matA.recordCurrentStat()
     matB.recordCurrentStat()
@@ -234,7 +235,9 @@ def integrateMono(
     f0     : initial inhomgeneity factor
     S      : stress state of region A
     tzero
-    yzero
+    yzero  :
+        y[1] accumulative strain RD
+        y[2] accumulative strain TD
     ndds   : dimension differential system
     dydx   :
     xbb    : [psi0, s1, s2, s3, s4, s5, s6]
@@ -257,13 +260,21 @@ def integrateMono(
     ## integration values
     nbpas  = 200000
     freq   = 100      # frequency of output (probably not needed for this)
-    deltat = 1e-3     # (incremental stepsize)
+
+    ## --- delta t
+    deltat = 1e-3
+    # (incremental stepsize)
+    #
+
     tmax   = 1.5      # (maximum effective strain upper limit (2.0?))
 
     k =-1
     t = tzero
     time_used_in_syst=0.
     while(k<=nbpas and absciss<tmax and dydx[0]>=1e-1):
+        """
+        dydx[0] = delta lambdaA
+        """
         k=k+1
         ## adjusting the incremental size size
         if dydx[0]<0.5:
@@ -295,7 +306,7 @@ def integrateMono(
         time_used_in_syst = time_used_in_syst + (time.time()-t0)
         k1      = deltt * dydx ## Y increments
         ynew    = yold + k1
-        t       = t +deltt
+        t       = t +deltt ## accmulated equivalent strain
         absciss = t*1.
         yold[::]=ynew[::]
 
@@ -323,6 +334,8 @@ def syst(
     xbb     : [psi0,s1,s2,s3,s4,s5,s6]
               -- psi0 and stress state of region b
     y       : yold defined in integrateMono
+        y[1]: accumulative strain RD
+        y[2]: accumulative strain RD
     matA
     matB
     verbose
@@ -360,12 +373,12 @@ def syst(
             matB=matB,
             verbose=verbose)
 
-    xbb[0] = bn[9]+bn[10]
+    xbb[0] = bn[9]+bn[10]  ## psi^n + \delta psi
     xbb[1] = xfinal[1]
     xbb[2] = xfinal[2]
     xbb[5] = xfinal[3]
 
-    dydx[0] = xfinal[0]/deltt
+    dydx[0] = xfinal[0]/deltt ## delta lambda^A / lambda^B
     dydx[1] = fa[0]*dydx[0]
     dydx[2] = fa[1]*dydx[0]
     dydx[3] = fb[0]

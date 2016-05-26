@@ -6,6 +6,29 @@
 
 import lib
 
+"""
+Snapshot may be more useful by allowing 'custom' printing
+"""
+
+class Snapshot:
+    def __init__(self):
+        self.logfn = lib.gen_tempfile(
+            prefix='mk-constitutive',
+            affix='log',ext='txt')
+    def takeshot(self,**kwargs):
+        """
+        Take a snapshot of given key-worded arguments
+        """
+        with open(self.logfn,'a') as fo:
+            for key, value in kwargs.iteritems():
+                fo.write('%s = %s\n'%(key,value))
+    def linebreak(self):
+        """
+        Insert linebreak in the snapshot file
+        """
+        with open(self.logfn,'a') as fo:
+            fo.write('------')
+
 class Constitutive:
     def __init__(self,f_yld,f_hrd,hashcode=None):
         """
