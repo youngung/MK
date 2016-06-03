@@ -1,7 +1,7 @@
 import matplotlib as mpl
 mpl.use('Agg') ## In case X-window is not available.
 from for_lib import vm
-from yf2 import wrapHill48, wrapHill48R, wrapHillQuad
+from yf2 import wrapHill48, wrapHill48R, wrapHillQuad, wrapYLD
 import numpy as np
 import matplotlib.pyplot as plt
 pi=np.pi
@@ -29,21 +29,43 @@ def main(ax=None):
         fig = plt.figure()
         ax  = fig.add_subplot(111)
 
+    import time
+    t0=time.time()
+
     ## two parameters from Jeong et al. Acta Mat 112, 2016
     ## for the interstitial-free steel
     r0   = 2.20
     r45  = 2.0
     r90  = 2.9
-    hq   = wrapHillQuad(r0=r0,r90=r90)
+    rb   = 1.
+
+    y0   =1
+    y45  =1
+    y90  =1
+    yb   =1.
+
+    # hq   = wrapHillQuad(r0=r0,r90=r90)
     # h48  = wrapHill48(r0=r0,r90=r90) ## tune f,g,h by HillQuad
     h48g = wrapHill48R([r0,r45,r90])
+    yld2000 = wrapYLD(r=[r0,r45,r90,rb],y=[y0,y45,y90,yb],m=6,k=2)
 
-    funcs =   h48g,        hq,        vm
-    labs  = ['Hill48R','Hill Quad','von Mises']
+    funcs =    vm,    h48g,        yld2000
+    labs  = ['von Mises', 'Hill48R','yld2000']
     ls    = ['-','--','-.',':']
+    xs=[];ys=[]
+    t_indv=[]
     for i in xrange(len(funcs)):
+        t_indv0= time.time()
         x,y = locus(funcs[i])
-        ax.plot(x,y,label=labs[i],ls=ls[i])
+        t_indv.append(time.time()-t_indv0)
+        xs.append(x)
+        ys.append(y)
+
+    for i in xrange(len(funcs)):
+        print 'time %s :'%labs[i], t_indv[i]
+    print 'total time:',time.time()-t0
+    for i in xrange(len(funcs)):
+        ax.plot(xs[i],ys[i],label=labs[i],ls=ls[i])
 
     ax.legend(loc='best')
     fn='vm_check.pdf'
@@ -56,6 +78,8 @@ def main(ax=None):
         fig.savefig(fn)
     except:
         pass
+
+
 
 if __name__=='__main__':
     main()

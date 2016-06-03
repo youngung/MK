@@ -2,8 +2,36 @@
 import matplotlib as mpl
 mpl.use('Agg') ## In case X-window is not available.
 from for_lib import vm, hqe, hill48
+import yld2000
 from lib import c6p, s62c, rot_6d,rot_tensor_r, c2s6, rotPrincOrig ## cauchy stress to principal stresses
 import numpy as np
+
+
+def wrapYLD(r=[1,1,1,1],y=[1,1,1,1],m=6,k=2):
+    """
+    Gvien 8 parameteres
+    characterize yld2000-2d and return the outputs...
+
+    Arguments
+    ---------
+    r=[1,1,1,1]   ## r-values
+    y=[1,1,1,1]   ## yield stresses
+    m=6           ## exponent
+    k=2
+    """
+    import time
+    r, y = np.array(r),np.array(y)
+    ac=np.concatenate((y,r),axis=0)
+    ##
+    t0=time.time()
+    l=yld2000.calcyld(ac,m=m,k=k)
+    print 'elapsed time for characterizing yld2000-2d:',\
+        time.time()-t0
+    ##
+    def yld_func(s):
+        newstress, e, h, dphi, phi ,d2phi = yld2000.skew(m,k,l,s)
+        return newstress, phi, dphi,d2phi
+    return yld_func
 
 def VonMises(s):
     """
