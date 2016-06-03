@@ -165,17 +165,18 @@ def func_fld2(
     F = np.zeros(4)
     ## conditions to satisfy
     F[0] = f0*np.exp(E)*sigb*xb - xa*siga*(Q**mb)*qqb**(ma-mb)
+
     F[1] = xb*za - zb*xa
     F[2] = phib - 1.0
     F[3] = deltat*db_rot[1] - x[0]*da_rot[1]
 
     J=np.zeros((4,4))
     J[0,0] =  (fa[0]+fa[1])*f0*np.exp(E)*sigb*xb\
-             -xa*dsiga*(Q**mb)*qqb**(ma-mb)\
-             -xa*siga*(
-                 (mb/deltat)*(Q**(mb-1.))*qqb**(ma-mb)\
-                 +(dma/x[0])*np.log(qqb)*qqb*(ma-mb)
-             )
+              -xa*dsiga*(Q**mb)*qqb**(ma-mb)\
+              -xa*siga*(
+                  (mb/deltat)*(Q**(mb-1.))*qqb**(ma-mb)\
+                  +(dma/x[0])*np.log(qqb)*qqb*(ma-mb)
+              )
     J[0,1] =-deltat*(d2fb[0,0]+d2fb[1,0])*f0*np.exp(E)*sigb*xb\
         +f0*np.exp(E)*sigb
     J[0,2] =-deltat*(d2fb[0,1]+d2fb[1,1])*f0*np.exp(E)*sigb*xb

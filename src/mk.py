@@ -286,7 +286,7 @@ def integrateMono(
     time_used_in_syst=0.
     while(k<=nbpas and absciss<tmax and dydx[0]>=1e-1):
         """
-        dydx[0] = delta lambdaA
+        dydx[0] = d\lambda^A /  d\lambda^B
 
         Forming limit criterion: if dydx<0.1
 
@@ -327,9 +327,9 @@ def integrateMono(
                 k=k,              #0
                 deltt=deltt,      #1
 
-                dydx0=dydx[0],    #2
-                dydx1=dydx[1],    #3
-                dydx2=dydx[2],    #4
+                dydx0=dydx[0],    #2  ## partials of d(ynew[0])/dx[0]
+                dydx1=dydx[1],    #3  ## partials of d(ynew[0])/dx[1]
+                dydx2=dydx[2],    #4  ## partials of
                 dydx3=dydx[3],    #5
                 dydx4=dydx[4],    #6
 
@@ -401,7 +401,7 @@ def syst(
     xzero[0] = equivalent strain increment of region A
     """
     xzero    = np.zeros(4)
-    xzero[0] = dydx[0]*deltt
+    xzero[0] = dydx[0]*deltt ## use \Delta\lambda^A * \Delta T as a guess
     xzero[1] = xbb[1] ## s1
     xzero[2] = xbb[2] ## s2
     xzero[3] = xbb[6] ## s6 of region B (stress referred in... )

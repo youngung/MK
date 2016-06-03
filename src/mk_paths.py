@@ -269,9 +269,9 @@ def testEachPath(funcPath=None):
         raise IOError, 'Error!'
 
     ang1,ang2,anginc = angs
+    SR = stressR[::]
+    SL = stressL[::]
     for npth in xrange(npt):
-        SR = stressR[::]
-        SL = stressL[::]
         pthr = pth[0] + npth*(pth[2]-pth[0])/npt
         ptht = pth[1] + npth*(pth[3]-pth[1])/npt
 

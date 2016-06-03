@@ -58,11 +58,7 @@ def rot_vec(r,vect):
     """
     v[i] = r[i,j]*vect[j]
     """
-    v=np.zeros(3)
-    for i in xrange(3):
-        for j in xrange(3):
-            v[i]=v[i]+r[i,j]*vect[j]
-    return v
+    return np.tensordot(r,vect,axes=[1,0])
 
 @jit
 def rot_tensor(a,psi):
@@ -82,13 +78,15 @@ def rot_tensor(a,psi):
 
 @jit
 def rot_tensor_r(a,r):
-    b=np.zeros((3,3))
-    for i in xrange(3):
-        for j in xrange(3):
-            for k in xrange(3):
-                for l in xrange(3):
-                    b[i,j] = b[i,j] + r[i,k] * a[k,l] * r[j,l]
-    return b
+    c=np.tensordot(r,a,axes=[1,0])
+    return np.tensordot(c,r,axes=[1,1])
+    # b=np.zeros((3,3))
+    # for i in xrange(3):
+    #     for j in xrange(3):
+    #         for k in xrange(3):
+    #             for l in xrange(3):
+    #                 b[i,j] = b[i,j] + r[i,k] * a[k,l] * r[j,l]
+    # return b
 
 @jit
 def rotPrincOrig(rotMatrix, v):
@@ -384,9 +382,11 @@ def assoc_flow(s6,lamb,yfunc,**kwargs):
         dum=0.
         s1=np.zeros(6);
         s2=np.zeros(6);
-        for i in xrange(6):
-            s1[i] = s6[i] + dki[k,i] * dlt
-            s2[i] = s6[i] - dki[k,i] * dlt
+        s1[:]=s6[:]+dki[k,:]*dlt
+        s2[:]=s6[:]-dki[k,:]*dlt
+        # for i in xrange(6):
+        #     s1[i] = s6[i] + dki[k,i] * dlt
+        #     s2[i] = s6[i] - dki[k,i] * dlt
         e_k[k] = lamb*(yfunc(s1,**kwargs)
                        - yfunc(s2,**kwargs))/(2*dlt)
 
@@ -424,9 +424,8 @@ def assoc_flow_c(s6,lamb,yfunc):
         dum=0.
         s1=np.zeros(6);
         s2=np.zeros(6);
-        for i in xrange(6):
-            s1[i] = s6[i] + dki[k,i] * dlt
-            s2[i] = s6[i] - dki[k,i] * dlt
+        s1[:]=s6[:]+dki[k,:]*dlt
+        s2[:]=s6[:]-dki[k,:]*dlt
         e_k[k] = lamb*(yfunc(s1)
                        - yfunc(s2))/(2*dlt)
 

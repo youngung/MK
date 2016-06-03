@@ -21,10 +21,8 @@ class Snapshot:
         """
         with open(self.logfn,'a') as fo:
             for key, value in kwargs.iteritems():
-                try:
-                    fo.write('%11.4e '%value)
-                except:
-                    fo.write('%11i' %value)
+                fo.write('%11.4e '%float(value))
+
     def linebreak(self):
         """
         Insert linebreak in the snapshot file

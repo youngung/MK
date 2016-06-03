@@ -333,9 +333,9 @@ The Jacobian is defined as
        & &(\frac{\partial\phi}{\sigma_{11}^A}+\frac{\partial\phi}{\sigma_{22}^A})\nonumber\\
        & &f_0\exp(E)\bar{\sigma}^B\sigma_{11}^B|_{band}- \nonumber \\
        & &\sigma^A_{11}|_{band}(Q^{m^B})\cdot (qq^B)^{m^A-m^B}-\nonumber \\
-       & &\sigma^A_{11}|_{band}\codt\bar{\sigma}*((m^B/\Delta t)\cdot (Q^{m^B-1})\cdot (qq)^{m^A-m^B}+(\Delta m^A/x_0)\log(qq^B)\cdot{qq^B}(m^A-m^B))\nonumber\\
-  J_{12}&=&\frac{\partial(F_1)}{\partial(x_2)}=-\Delta{t} (\frac{\partial^2\phi}{\partial\sigma_{11}^2}+\frac{\partial^2\phi}{\partial\sigma_{22}\partial\sigma_{11}})f_0\exp{E}\ \bar{\sigma}^B\sigma^B_{11}|_{band}+f_0\exp{E}\bar{\sigma}^B\nonumber\\
-  J_{13}&=&\frac{\partial(F_1)}{\partial(x_3)}=\nonumber\\
+       & &\sigma^A_{11}|_{band}\codt\bar{\sigma}\codt((m^B/\Delta \lambda^B)\cdot (Q^{m^B-1})\cdot (qq)^{m^A-m^B}+(\Delta m^A/\Delta\lambda^A)\log(qq^B)\cdot{qq^B}(m^A-m^B))\nonumber\\
+  J_{12}&=&\frac{\partial(F_1)}{\partial(x_2)}=-\Delta\lambda^B (\frac{\partial^2\phi}{\partial\sigma_{11}^2}+\frac{\partial^2\phi}{\partial\sigma_{22}\partial\sigma_{11}})f_0\exp(E)\ \bar{\sigma}^B\sigma^B_{11}|_{band}+f_0\exp(E)\bar{\sigma}^B\nonumber\\
+  J_{13}&=&\frac{\partial(F_1)}{\partial(x_3)}=\Delta\lambda^B \nonumber\\
   J_{14}&=&\frac{\partial(F_1)}{\partial(x_4)}=\nonumber\\
   J_{21}&=&\frac{\partial(F_2)}{\partial(x_1)}=0\nonumber\\
   J_{22}&=&\frac{\partial(F_2)}{\partial(x_2)}=\sigma_{12}^A|_{band}\nonumber\\
