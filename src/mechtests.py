@@ -4,7 +4,7 @@ various mechanical tests using
 import numpy as np
 from lib import rot_6d
 
-def inplaneTension(fYLD,**kwargs):
+def inplaneTension(fYLD,iopt=0,**kwargs):
     """
     inplane tesion tests provides
     R-value and yield stress variations along difference
@@ -33,7 +33,10 @@ def inplaneTension(fYLD,**kwargs):
         ysMat, Phi, dPhiMat, d2PhiMat = fYLD(s=sMat,**kwargs)
         ysLab = rot_6d(ysMat,  -psis[i])
         deLab = rot_6d(dPhiMat,-psis[i])
-        phis.append(Phi)
+        if iopt==0:
+            phis.append(Phi)
+        elif iopt==1:
+            phis.append(ysLab[0])
         e1,e2,e3 = deLab[0],deLab[1],- deLab[0]-deLab[1]
         rvs.append(e2/e3)
 

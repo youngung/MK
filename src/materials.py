@@ -1,7 +1,17 @@
 ## Collection of materials
 from constitutive import Constitutive
 from func_hard_for import return_swift
-from yf2 import wrapHill48R, VonMises
+from yf2 import wrapHill48R, VonMises, wrapYLD
+
+def IFsteel_yld2000():
+    """
+    Return constitutive decription for
+    IF steel parameters based on YLD2000-2D
+    """
+    f_hrd = return_swift(n=0.28985,m=5e-2, ks=518.968, e0=0.0007648, qq=1e3)
+    ## yield function characterized by three r-values
+    f_yld = wrapYLD(r=[2.2,2.0,2.9,1.0],y=[1,1,1,1])
+    return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
 
 def IFsteel():
     """

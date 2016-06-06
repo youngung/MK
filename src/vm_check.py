@@ -8,11 +8,11 @@ pi=np.pi
 sin=np.sin
 cos=np.cos
 
-def locus(func):
+def locus(func,nth=100):
     """
     in-plane biaxial locus
     """
-    th=np.linspace(-pi,pi,100)
+    th=np.linspace(-pi,pi,nth)
     x=cos(th); y=sin(th)
     z=np.zeros(len(th))
     s=np.array([x,y,z,z,z,z]).T

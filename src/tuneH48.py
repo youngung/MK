@@ -24,7 +24,6 @@ def tuneGenR(r=[2.2,2.0,2.9]):
     r    - r value list
     fYLD - yield function
     """
-
     objf = returnObjRV(rv=r,fYLD=Hill48)
     res = minimize(fun=objf, x0=[0.5,0.5,0.5,1],method='BFGS',
                    jac=False,tol=1e-20,options=dict(maxiter=400))
@@ -32,14 +31,15 @@ def tuneGenR(r=[2.2,2.0,2.9]):
     n_it = res.nit
     fopt = res.fun
 
-    print 'popt:',popt
-    print 'fopt:',fopt
+    # print 'popt:',popt
+    # print 'fopt:',fopt
     f,g,h,n=popt
     y=(g+h)
     params = np.array([f,g,h,n])
     params = params / y
     f,g,h,n = params
 
+    print 'Hill48 parameter tuning in tuneH48.tuneGenR'
     print ('%6s'*4)%('f','g','h','n')
     print ('%6.3f'*4)%(f,g,h,n)
 
@@ -85,7 +85,7 @@ def tuneR2(r0=1.,r90=1.):
     n_it = res.nit
     fopt = res.fun
 
-    print 'popt:',popt
+    # print 'popt:',popt
     f,g,h,n=popt
 
     y=(g+h)
@@ -93,6 +93,7 @@ def tuneR2(r0=1.,r90=1.):
     params = params / y
     f,g,h,n = params
 
+    print 'Hill48 parameter tuning in tuneH48.tuneR2'
     print ('%6s'*4)%('f','g','h','n')
     print ('%6.3f'*4)%(f,g,h,n)
     return f,g,h,n

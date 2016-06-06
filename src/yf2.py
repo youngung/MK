@@ -1,11 +1,40 @@
 ### yf version that relies on fortran version of yield functions
 import matplotlib as mpl
+import os
 mpl.use('Agg') ## In case X-window is not available.
 from for_lib import vm, hqe, hill48
 import yld2000
 from lib import c6p, s62c, rot_6d,rot_tensor_r, c2s6, rotPrincOrig ## cauchy stress to principal stresses
+from lib import gen_tempfile
 import numpy as np
 
+def wrapYLD_SA(r=[1,1,1,1],y=[1,1,1,1],m=6):
+    """
+    Running yld2000_sa (stand-alone) executable to deal with
+    the unwanted stop while estimating yld2000-2d coefficieints
+    """
+    cmd ='./yld2000_sa'
+    for i in xrange(4):
+        cmd = '%s %.5e'%(cmd, y[i])
+    for i in xrange(4):
+        cmd = '%s %.5e'%(cmd, r[i])
+
+    cmd = '%s %.5e'%(cmd, m)
+    ## append file name
+    fnTemp = gen_tempfile(prefix='yld2000-sa',ext='tmp',affix='la')
+    cmd = '%s %s'%(cmd,fnTemp)
+    cmd = '%s > /tmp/dump'%cmd
+    # print cmd
+    flag = os.system(cmd)
+    # print flag
+
+    if flag==0:
+        ## read la
+        la = yld2000.readla(fnTemp)
+        return la
+    else:
+        return -1 ## fail to converge
+    raise IOError, 'unexpected case'
 
 def wrapYLD(r=[1,1,1,1],y=[1,1,1,1],m=6,k=2):
     """
@@ -24,13 +53,24 @@ def wrapYLD(r=[1,1,1,1],y=[1,1,1,1],m=6,k=2):
     ac=np.concatenate((y,r),axis=0)
     ##
     t0=time.time()
-    l=yld2000.calcyld(ac,m=m,k=k)
-    print 'elapsed time for characterizing yld2000-2d:',\
-        time.time()-t0
-    ##
-    def yld_func(s):
-        newstress, e, h, dphi, phi ,d2phi = yld2000.skew(m,k,l,s)
-        return newstress, phi, dphi,d2phi
+
+    nit = 100
+    iexit=False
+    l = wrapYLD_SA(r=r,y=y,m=m)
+    # print 'elapsed time for characterizing yld2000-2d:',\
+    #     time.time()-t0
+
+    if type(l).__name__=='int':
+        ## return bogus results?
+        return l
+    else:
+        ##
+        def yld_func(s):
+            #         s, e, f,   e1,  f1,   de1 = yld2000.skew(m,k,l,s)
+            # newstress, e, h, phi, dphi ,d2phi = yld2000.skew(m,k,l,s) -old
+            newstress  , e, h, dphi, phi, d2phi =  yld2000.skew(m,k,l,s)
+            return newstress, phi, dphi,d2phi
+
     return yld_func
 
 def VonMises(s):
