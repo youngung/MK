@@ -163,26 +163,41 @@ def case2(YS,rv):
 
     return popt
 
-def ex2():
+
+
+def H48toYld(rv=[2.2,2.0,2.9],m=6,iplot=False):
     """
-    Characterize through in-plane tension tests, and rb, yb
+    Characterize yld2000-2D using Hill48.
+    1. First, characterize Hill48 using three r-values
+    2. Obtain RB, YB, and yield stresses in uniaxial
+       to characterize YLD2000-2D
+    3. Run YLD2000-2D and conduct uniaxial tension tests
+       and compare the r-value and yield stress profiles
+       as well as the plane-stress yield locus with Hill48
+    4. If iplot==True, the resulting plots are saved to
+        <yld2000fromH48.pdf>
+    5. Finally, return the chracterized yield function <yfunc_yld>
+
+    Arguments
+    =========
+    rv =[ 2.2, 2.0, 2.9]
+    m = 6
+
+    Return
+    ------
+    yfunc_yld
     """
     import tuneH48, yf2, mechtests
-    rv=[2.2,2.0,2.9]
     f,g,h,n = tuneH48.tuneGenR(r=rv)
-    # f,g,h,n = 0.237,0.313,0.687,1.374
     yfunc_H48 = yf2.wrapHill48Gen(f,g,h,n)
     locus_H48 = locus(yfunc_H48,30000)
-
     psi_uni_H48, rvs_uni_H48, ys_uni_H48 \
         = mechtests.inplaneTension(yfunc_H48,1)
     y0, y90, yb, rb, y45, r45 = extractParamsFromYS(
         locus_H48,psi_uni_H48,rvs_uni_H48,ys_uni_H48)
-    print y0, y90, yb, rb, y45, r45
-
     r_yld     = [rv[0],     rv[1],  rv[2], rb]
     y_yld     = [ys_uni_H48[0], y45,   ys_uni_H48[-1], yb]
-    yfunc_yld = yf2.wrapYLD(r=r_yld, y=y_yld, m=6.)
+    yfunc_yld = yf2.wrapYLD(r=r_yld, y=y_yld, m=m)
 
     if type(yfunc_yld).__name__=='int':
         raise IOError
@@ -191,24 +206,22 @@ def ex2():
     psi_uni_yld, rvs_uni_yld, ys_uni_yld \
         = mechtests.inplaneTension(yfunc_yld,1)
 
-    fig =plt.figure(figsize=(11,3.));
-    ax1=fig.add_subplot(131);ax2=fig.add_subplot(132)
-    ax3=fig.add_subplot(133)
+    if iplot:
+        fig =plt.figure(figsize=(11,3.));
+        ax1=fig.add_subplot(131);ax2=fig.add_subplot(132)
+        ax3=fig.add_subplot(133)
 
-    ax1.plot(psi_uni_H48*180/np.pi,ys_uni_H48,label='Hill48')
-    ax2.plot(psi_uni_H48*180/np.pi,rvs_uni_H48,label='Hill48')
-    ax1.plot(psi_uni_yld*180/np.pi,ys_uni_yld,'--',label='YLD2000')
-    ax2.plot(psi_uni_yld*180/np.pi,rvs_uni_yld,'--',label='YLD2000')
-    ax3.plot(locus_H48[0],locus_H48[1],label='Hill48')
-    ax3.plot(locus_yld[0],locus_yld[1],'--',label='YLD2000')
-    ax1.legend()
-    ax2.legend()
-    ax3.legend()
-    ax3.set_xlim(0.,)
-    ax3.set_ylim(0.,)
-    ax3.set_aspect('equal')
-    fig.tight_layout()
-    fig.savefig('in-plane-tension.pdf',bbox_to_inches='tight')
+        ax1.plot(psi_uni_H48*180/np.pi,ys_uni_H48,label='Hill48')
+        ax2.plot(psi_uni_H48*180/np.pi,rvs_uni_H48,label='Hill48')
+        ax1.plot(psi_uni_yld*180/np.pi,ys_uni_yld,'--',label='YLD2000')
+        ax2.plot(psi_uni_yld*180/np.pi,rvs_uni_yld,'--',label='YLD2000')
+        ax3.plot(locus_H48[0],locus_H48[1],label='Hill48')
+        ax3.plot(locus_yld[0],locus_yld[1],'--',label='YLD2000')
+        ax1.legend(); ax2.legend(); ax3.legend()
+        ax3.set_xlim(0.,); ax3.set_ylim(0.,); ax3.set_aspect('equal')
+        fig.tight_layout()
+        fig.savefig('yld2000fromH48.pdf',bbox_to_inches='tight')
+    return yfunc_yld
 
 def ex1():
     """
@@ -226,7 +239,6 @@ def ex1():
     r, th = xy2rt(np.array(YS_H48X), np.array(YS_H48Y))
 
     ## popt = [rv, y45, y90, yb]
-
     popt = case2([r,th], rv=rv)
     rv.append(popt[0])
     ys = np.ones(4)
@@ -251,9 +263,11 @@ def ex1():
     # print YS_YLDY
     fig.savefig('Yld2000-Hill48.pdf')
 
+def ex2(rv=[2.2,2.0,2.9],m=6.):
+    H48toYld(rv=rv,m=m,iplot=True)
 
 def test():
-    # ex1()
+    ex1()
     ex2()
 
 if __name__=='__main__':
