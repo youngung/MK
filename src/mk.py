@@ -1,6 +1,5 @@
 """
-Adapted from FB's forming limit calculation subroutine
-
+Adapted from FB's forming limit calculation subroutine/algorithm
 
 Youngung Jeong
 --------------
@@ -52,7 +51,6 @@ def main(
     import constitutive
     snapshot = constitutive.Snapshot()
     # from yf2 import wrapHill48
-
 
     if type(material).__name__=='NoneType':
         from materials import IsoMat
@@ -544,11 +542,17 @@ if __name__=='__main__':
         '-t', type=float,default=0.,
         help='Angle [theta in degree] of'+\
             ' strain rate theta=atan2(eyy,exx) in [degree]')
+    parser.add_argument(
+        '--mat', type=int, default=0,
+        help='Material card in materials.py (e.g., 0: IsoMat)')
     #-------------------------------------------------------
     args = parser.parse_args()
     f0   = args.f
     psi0 = args.p
     th   = args.t
     fn   = args.fn
-    main(f0=f0,psi0=psi0,th=th,logFileName=fn)
+
+    import materials
+    mat = materials.library(args.mat)
+    main(f0=f0,psi0=psi0,th=th,logFileName=fn,material=mat)
     pass

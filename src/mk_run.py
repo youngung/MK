@@ -109,7 +109,7 @@ def postAnalysis(masterFileName):
 def test_pp(fn='/local_scratch/MK-6e59e6-results.txt'):
     postAnalysis(fn)
 
-def makeCommands(f0,psi0,th,logFileName):
+def makeCommands(f0,psi0,th,logFileName,mat):
     """
     Arguments
     ---------
@@ -117,27 +117,28 @@ def makeCommands(f0,psi0,th,logFileName):
     psi0
     th
     logFileName
+    mat
     """
     from lib      import gen_tempfile
     # stdoutFileName = gen_tempfile(
     #     prefix='stdout-mkrun')
     stdoutFileName ='/tmp/dump'
-    cmd = 'python mk.py --fn %s -f %5.4f -p %+6.1f -t %+7.2f > %s'%(
-        logFileName,f0,psi0,th,stdoutFileName)
-    # print 'cmd:',cmd
+    cmd = 'python mk.py --fn %s -f %5.4f -p %+6.1f -t %+7.2f --mat %i > %s'%(
+        logFileName,f0,psi0,th,mat,stdoutFileName)
+    print 'cmd:',cmd
     return cmd
 
 def test_run():
     run(f0=0.995,psi0=0.,th=0.,logFileName='dum')
 
 def run(*args):
-    import os,subprocess
+    import os
     cmd = makeCommands(*args)
     os.system(cmd)
     return cmd
 
 def prepRun(*args):
-    import os,subprocess
+    import os
     cmd = makeCommands(*args)
     return cmd
 
@@ -160,6 +161,9 @@ if __name__=='__main__':
         '--r1',type=float,help='rho end')
     parser.add_argument(
         '--nr',type=int,help='number of rhos')
+    parser.add_argument(
+        '--mat', type=int, default=0,
+        help='Material card in materials.py (e.g., 0: IsoMat)')
 
     ## rho to theta? ( should be later passed as arguments)
     args        = parser.parse_args()
@@ -206,7 +210,9 @@ if __name__=='__main__':
                 args=(f0,
                       psi0*180/np.pi,
                       ths[i]*180/np.pi,
-                      logFileNames[i][j]))
+                      logFileNames[i][j],
+                      args.mat
+                ))
             results[i].append(r)
             pass
         pass

@@ -44,7 +44,7 @@ def test6():
     """
     a short FLD calcultion
     """
-    cmd = 'python mk_run.py --f0 0.995 --r0 -0.5 --r1 1. --nr 4'
+    cmd = 'python mk_run.py --f0 0.995 --r0 -0.5 --r1 1. --nr 4 --mat 0'
     import os
     print 'cmd:',cmd
     os.system(cmd)

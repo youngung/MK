@@ -1,3 +1,5 @@
+## material library in the form of constitutive models
+## with an assumption of 'isotropic' hardening
 ## Collection of materials
 from constitutive import Constitutive
 from func_hard_for import return_swift
@@ -34,3 +36,11 @@ def IsoMat():
     ## yield function
     f_yld = VonMises
     return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
+
+def library(iopt):
+    if iopt==0:
+        return IsoMat
+    elif iopt==1:
+        return IFsteel
+    elif iopt==2:
+        return IFsteel_yld2000_case1
