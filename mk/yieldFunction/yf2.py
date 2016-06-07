@@ -2,9 +2,11 @@
 import matplotlib as mpl
 import os
 mpl.use('Agg') ## In case X-window is not available.
-from for_lib import vm, hqe, hill48
-import yld2000
-from lib import c6p, c2s6, rotPrincOrig, gen_tempfile  ## cauchy stress to principal stresses
+
+from yf_for import vm, hqe, hill48
+import yf_yld2000 as yld2000
+#from .. import library
+from mk.library.lib import c6p, c2s6, rotPrincOrig, gen_tempfile  ## cauchy stress to principal stresses
 import numpy as np
 
 def wrapYLD_SA(r=[1,1,1,1],y=[1,1,1,1],m=6):
@@ -12,12 +14,13 @@ def wrapYLD_SA(r=[1,1,1,1],y=[1,1,1,1],m=6):
     Running yld2000_sa (stand-alone) executable to deal with
     the unwanted stop while estimating yld2000-2d coefficieints
     """
-    cmd ='./yld2000_sa'
+    import yf_yld2000
+    path = os.path.split(yf_yld2000.__file__)[0]
+    cmd = os.path.join(path,'yld2000_sa')
     for i in xrange(4):
         cmd = '%s %.5e'%(cmd, y[i])
     for i in xrange(4):
         cmd = '%s %.5e'%(cmd, r[i])
-
     cmd = '%s %.5e'%(cmd, m)
     ## append file name
     fnTemp = gen_tempfile(prefix='yld2000-sa',ext='tmp',affix='la')
