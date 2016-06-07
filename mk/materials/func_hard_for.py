@@ -12,7 +12,7 @@ def return_swift(n,m,ks,e0,qq):
     e0
     qq
     """
-    from for_lib import swift
+    from yf_for import swift
     def f_swift(e):
         return swift(e,ks,n,e0,m,qq)
     return f_swift

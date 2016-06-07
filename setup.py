@@ -16,18 +16,24 @@ setup(name='MK',
       author_email='youngung.jeong@gmail.com',
       url='https://github.com/youngung/mk.git',
 
-      packages=['mk','mk.yieldFunction','mk.library',
+      packages=['mk',
+                'mk.yieldFunction',
+                'mk.library',
+                'mk.materials',
                 'mk.tests'],
       package_dir={'mk':'mk',
                    'mk.yieldFunction':'mk/yieldFunction',
                    'mk.library':'mk/library',
+                   'mk.materials':'mk/materials',
                    'mk.tests':'mk/tests'
       })
 
 
+## Compile the stand-alone binary of yld2000
 path_site = site.getsitepackages()[0]
 os.system('bash setup_for.sh')
 shutil.copy('yld2000_sa',path_site)
+os.remove('yld2000_sa')
 
 
 ## Fortran subroutines with f2py

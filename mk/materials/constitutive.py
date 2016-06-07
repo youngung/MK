@@ -4,7 +4,7 @@
 ## strain hardening description
 ## yielding description
 
-import lib
+import mk.library.lib as lib
 
 """
 Snapshot may be more useful by allowing 'custom' printing

@@ -1,5 +1,5 @@
 """
-Cases for tuning-up YLD2000-2D parameters
+Cases for tuning-up YLD2000-2D parameters when parameters are not fully obtained.
 """
 from mk.yieldFunction.yf2 import wrapYLD
 from mk.tests.vm_check import locus
@@ -164,6 +164,40 @@ def case2(YS,rv):
     return popt
 
 
+def H48toYld_withYS(
+        rv=[2.2,2.0,2.9],
+        ys=[1,1,1],
+        m=6):
+    """
+    Characterize yld2000-2D in assistance of Hill48
+
+    This function accepets three r-values and three yield
+    stresses. YB and RB are obtained from Hill48 yield function
+    that is characterized by the given r-values.
+
+    Arguments
+    ---------
+    rv = []
+    ys = []
+    m = 6
+    """
+    import tuneH48, yf2
+    import mk.tests.mechtests as mechtests
+    f,g,h,n = tuneH48.tuneGenR(r=rv)
+    yfunc_H48 = yf2.wrapHill48Gen(f,g,h,n)
+    locus_H48 = locus(yfunc_H48,30000)
+    psi_uni_H48, rvs_uni_H48, ys_uni_H48 \
+        = mechtests.inplaneTension(yfunc_H48,1)
+    y0, y90, yb, rb, y45, r45 = extractParamsFromYS(
+        locus_H48,psi_uni_H48,rvs_uni_H48,ys_uni_H48)
+    r_yld     = [rv[0], rv[1],  rv[2], rb]
+    y_yld     = [ys[0], ys[1],  ys[2], yb]
+    yfunc_yld = yf2.wrapYLD(r=r_yld, y=y_yld, m=m)
+
+    if type(yfunc_yld).__name__=='int':
+        raise IOError
+
+    return yfunc_yld
 
 def H48toYld(rv=[2.2,2.0,2.9],m=6,iplot=False):
     """
@@ -187,7 +221,8 @@ def H48toYld(rv=[2.2,2.0,2.9],m=6,iplot=False):
     ------
     yfunc_yld
     """
-    import tuneH48, yf2, mechtests
+    import tuneH48, yf2
+    import mk.tests.mechtests as mechtests
     f,g,h,n = tuneH48.tuneGenR(r=rv)
     yfunc_H48 = yf2.wrapHill48Gen(f,g,h,n)
     locus_H48 = locus(yfunc_H48,30000)
@@ -231,7 +266,7 @@ def ex1():
     that of yld2000-2d
     """
     import tuneH48
-    import yf2
+    import mk.yieldFunction.yf2 as yf2
     rv=[2.2,2.0,2.9]
     f,g,h,n = tuneH48.tuneGenR(r=rv)
     yfunc_H48 = yf2.wrapHill48Gen(f,g,h,n)

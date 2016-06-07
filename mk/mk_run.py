@@ -81,7 +81,7 @@ def postAnalysis(masterFileName):
 
     ## iplot?
     import matplotlib.pyplot as plt
-    from lib import draw_guide
+    from mk.library.lib import draw_guide
     fig = plt.figure(figsize=(7,6))
     ax1=fig.add_subplot(221);ax2=fig.add_subplot(222)
     ax3=fig.add_subplot(223);ax4=fig.add_subplot(224)
@@ -119,11 +119,11 @@ def makeCommands(f0,psi0,th,logFileName,mat):
     logFileName
     mat
     """
-    from lib      import gen_tempfile
+    from mk.library.lib      import gen_tempfile
     # stdoutFileName = gen_tempfile(
     #     prefix='stdout-mkrun')
     stdoutFileName ='/tmp/dump'
-    cmd = 'python mk.py --fn %s -f %5.4f -p %+6.1f -t %+7.2f --mat %i > %s'%(
+    cmd = 'python main.py --fn %s -f %5.4f -p %+6.1f -t %+7.2f --mat %i > %s'%(
         logFileName,f0,psi0,th,mat,stdoutFileName)
     print 'cmd:',cmd
     return cmd
@@ -145,7 +145,7 @@ def prepRun(*args):
 if __name__=='__main__':
     import numpy as np
     # from mk import main as mk_main
-    from lib import gen_tempfile, rhos2ths
+    from mk.library.lib import gen_tempfile, rhos2ths
     import os,multiprocessing,time
     from MP import progress_bar
     from mk_paths import findCorrectPsi

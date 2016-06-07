@@ -3,7 +3,7 @@
 ## Collection of materials
 from constitutive import Constitutive
 from func_hard_for import return_swift
-from yf2 import wrapHill48R, VonMises, wrapYLD
+from mk.yieldFunction.yf2 import wrapHill48R, VonMises, wrapYLD
 
 def IFsteel_yld2000_case1():
     """

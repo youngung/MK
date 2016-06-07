@@ -3,7 +3,6 @@ Forming limig diagram predictive tool on the basis of
 macro-mechanical constitutive models using anisotropic yield function
 and hardening curve.
 
-
 Adapted from FB's forming limit calculation subroutine/algorithm
 
 Youngung Jeong
@@ -50,10 +49,10 @@ def main(
     # np.seterr(all='raise')
     np.seterr(all='ignore')
     import os
-    from mk_lib   import findStressOnYS
-    from lib      import gen_tempfile, calcAlphaRho
+    from mk.library.mk_lib   import findStressOnYS
+    from mk.library.lib      import gen_tempfile, calcAlphaRho
     from mk_paths import constructBC,findCorrectPath
-    import constitutive
+    import mk.materials.constitutive as constitutive
     snapshot = constitutive.Snapshot()
     # from yf2 import wrapHill48
 
@@ -151,8 +150,8 @@ def onepath(matA,matB,psi0,f0,T,snapshot):
     snapshot
     """
     import os
-    from lib import rot_6d
-    from func_hard_for import return_swift
+    from mk.library.lib import rot_6d
+    from mk.materials.func_hard_for import return_swift
 
     ## A stress state referred in band axes
     sx = rot_6d(matA.stress,-psi0)
@@ -529,7 +528,7 @@ def new_raph_fld(
 """
 test case for command line usage:
 
-$ python mk.py --fn /tmp/dummy-log-file-name -f 0.995 -p 0 -t 0 --mat 0
+$ python main.py --fn /tmp/dummy-log-file-name -f 0.995 -p 0 -t 0 --mat 0
 """
 if __name__=='__main__':
     from MP import progress_bar
@@ -561,7 +560,7 @@ if __name__=='__main__':
     th   = args.t
     fn   = args.fn
 
-    import mk.materials
-    mat = mk.materials.library(args.mat)
+    import mk.materials.materials
+    mat = mk.materials.materials.library(args.mat)
     main(f0=f0,psi0=psi0,th=th,logFileName=fn,material=mat)
     pass

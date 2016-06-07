@@ -110,7 +110,7 @@ def func_fld2(
     F,J,fa,fb,b,siga,s (region A strss)
     """
     import os
-    from lib import rot_6d
+    from mk.library.lib import rot_6d
 
     f0     = b[1]
     deltat = b[8] # delta t for region B
@@ -257,7 +257,7 @@ def func_fld1(
           pertaining to the region B)
     """
     import os
-    from lib import rot_6d
+    from mk.library.lib import rot_6d
     psi0, f0, siga, ma, qq, b6 = b[:6]
 
     ### currently (guessed) stress states of region B in band axes

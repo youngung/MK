@@ -1,29 +1,18 @@
+"""
+Compare yield loci from various criteria
+"""
+
 import matplotlib as mpl
 mpl.use('Agg') ## In case X-window is not available.
-# from for_lib import vm
+
 from yf_for import vm
 from mk.yieldFunction.yf2 import wrapHill48, wrapHill48R, wrapHillQuad, wrapYLD
+from mk.tests.mechtests import locus
 import numpy as np
 import matplotlib.pyplot as plt
 pi=np.pi
 sin=np.sin
 cos=np.cos
-
-def locus(func,nth=100):
-    """
-    in-plane biaxial locus
-    """
-    th=np.linspace(-pi,pi,nth)
-    x=cos(th); y=sin(th)
-    z=np.zeros(len(th))
-    s=np.array([x,y,z,z,z,z]).T
-    X=[]; Y=[]
-    for i in xrange(len(s)):
-        rst = func(s[i])
-        ys = rst[0]
-        X.append(ys[0])
-        Y.append(ys[1])
-    return X,Y
 
 def main(ax=None):
     if type(ax).__name__=='NoneType':
@@ -37,8 +26,9 @@ def main(ax=None):
     r0   = 2.20
     r45  = 2.0
     r90  = 2.9
-    rb   = 1.
 
+    ## the rest of parameters are assumed as 1.
+    rb   =1.
     y0   =1
     y45  =1
     y90  =1

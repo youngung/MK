@@ -199,10 +199,9 @@ def test2(r0=2.20,r45=1.95,r90=2.9):
     """
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
-    from lib import rot
+    from mk.library.lib import rot
     import numpy as np
-    from mechtests import inplaneTension
-    # h48 = wrapHill48(r0=r0,r90=r90)
+    from mk.tests.mechtests import inplaneTension
     h48 = wrapHill48R([r0,r45,r90])
 
     psis = np.linspace(0,+np.pi/2.,100)

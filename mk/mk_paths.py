@@ -20,7 +20,7 @@ BBTD: biaxial TD
 PSTD: plane-strain TD
 DTD : drawing in TD
 """
-from for_lib import vm
+from yf_for import vm
 import numpy as np
 
 def DRD():

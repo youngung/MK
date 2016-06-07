@@ -1,10 +1,17 @@
 """
-various mechanical tests using
+Various mechanical tests...
+
+<inplaneTension>
+  - uniaxial tension tests to reveal the anisotropy in terms
+    of r-values and uniaxial yield stresses at various angles
+<locus>
+  - Conduct in-plane biaxial stress tests to reavel yield
+    locus in plane-stress space.
 """
 import numpy as np
 from mk.library.lib import rot_6d
 
-def inplaneTension(fYLD,iopt=0,**kwargs):
+def inplaneTension(fYLD,iopt=1,**kwargs):
     """
     inplane tesion tests provides
     R-value and yield stress variations along difference
@@ -39,5 +46,25 @@ def inplaneTension(fYLD,iopt=0,**kwargs):
             phis.append(ysLab[0])
         e1,e2,e3 = deLab[0],deLab[1],- deLab[0]-deLab[1]
         rvs.append(e2/e3)
-
     return psis, rvs, phis
+
+def locus(func,nth=100):
+    """
+    in-plane biaxial locus
+
+    Arguments
+    ---------
+    func       (yield function)
+    nth = 100
+    """
+    th=np.linspace(-pi,pi,nth)
+    x=cos(th); y=sin(th)
+    z=np.zeros(len(th))
+    s=np.array([x,y,z,z,z,z]).T
+    X=[]; Y=[]
+    for i in xrange(len(s)):
+        rst = func(s[i])
+        ys = rst[0]
+        X.append(ys[0])
+        Y.append(ys[1])
+    return np.array(X),np.array(Y)
