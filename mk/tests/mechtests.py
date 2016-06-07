@@ -2,7 +2,7 @@
 various mechanical tests using
 """
 import numpy as np
-from lib import rot_6d
+from mk.library.lib import rot_6d
 
 def inplaneTension(fYLD,iopt=0,**kwargs):
     """

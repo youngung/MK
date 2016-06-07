@@ -1,8 +1,8 @@
 """
 Cases for tuning-up YLD2000-2D parameters
 """
-from yf2 import wrapYLD
-from vm_check import locus
+from mk.yieldFunction.yf2 import wrapYLD
+from mk.tests.vm_check import locus
 from vpscyld.lib_dat import xy2rt, rad_xy2
 import numpy as np
 import matplotlib.pyplot as plt

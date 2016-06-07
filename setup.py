@@ -16,10 +16,12 @@ setup(name='MK',
       author_email='youngung.jeong@gmail.com',
       url='https://github.com/youngung/mk.git',
 
-      packages=['mk','mk.yieldFunction','mk.library'],
+      packages=['mk','mk.yieldFunction','mk.library',
+                'mk.tests'],
       package_dir={'mk':'mk',
                    'mk.yieldFunction':'mk/yieldFunction',
                    'mk.library':'mk/library',
+                   'mk.tests':'mk/tests'
       })
 
 

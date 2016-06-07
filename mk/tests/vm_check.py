@@ -1,7 +1,8 @@
 import matplotlib as mpl
 mpl.use('Agg') ## In case X-window is not available.
-from for_lib import vm
-from yf2 import wrapHill48, wrapHill48R, wrapHillQuad, wrapYLD
+# from for_lib import vm
+from yf_for import vm
+from mk.yieldFunction.yf2 import wrapHill48, wrapHill48R, wrapHillQuad, wrapYLD
 import numpy as np
 import matplotlib.pyplot as plt
 pi=np.pi
@@ -28,7 +29,6 @@ def main(ax=None):
     if type(ax).__name__=='NoneType':
         fig = plt.figure()
         ax  = fig.add_subplot(111)
-
     import time
     t0=time.time()
 
@@ -44,8 +44,6 @@ def main(ax=None):
     y90  =1
     yb   =1.
 
-    # hq   = wrapHillQuad(r0=r0,r90=r90)
-    # h48  = wrapHill48(r0=r0,r90=r90) ## tune f,g,h by HillQuad
     h48g = wrapHill48R([r0,r45,r90])
     yld2000 = wrapYLD(r=[r0,r45,r90,rb],y=[y0,y45,y90,yb],m=6,k=2)
 
@@ -78,8 +76,6 @@ def main(ax=None):
         fig.savefig(fn)
     except:
         pass
-
-
 
 if __name__=='__main__':
     main()

@@ -1,14 +1,15 @@
 """
 Tune-up parameters of Hill48 using Hill Quad
 """
-from for_lib import vm
+#from for_lib import vm
+from yf_for import vm
 from yf2 import HillQuad,Hill48, wrapHill48Gen
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from vpscyld.lib_dat import xy2rt
 from scipy import interpolate
-from mechtests import inplaneTension
+from mk.tests.mechtests import inplaneTension
 
 pi  = np.pi
 sin = np.sin
