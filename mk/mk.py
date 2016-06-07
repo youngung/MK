@@ -522,6 +522,11 @@ def new_raph_fld(
     if ncase==2: return xn1,fa,fb,b
 
 ## command line usage (may be called in mk_run for multi-threaded run)
+"""
+test case for command line usage:
+
+$ python mk.py --fn /tmp/dummy-log-file-name -f 0.995 -p 0 -t 0 --mat 0
+"""
 if __name__=='__main__':
     from MP import progress_bar
     import argparse

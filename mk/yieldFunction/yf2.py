@@ -4,8 +4,7 @@ import os
 mpl.use('Agg') ## In case X-window is not available.
 from for_lib import vm, hqe, hill48
 import yld2000
-from lib import c6p, s62c, rot_6d,rot_tensor_r, c2s6, rotPrincOrig ## cauchy stress to principal stresses
-from lib import gen_tempfile
+from lib import c6p, c2s6, rotPrincOrig, gen_tempfile  ## cauchy stress to principal stresses
 import numpy as np
 
 def wrapYLD_SA(r=[1,1,1,1],y=[1,1,1,1],m=6):
