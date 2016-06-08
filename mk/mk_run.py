@@ -163,7 +163,7 @@ if __name__=='__main__':
         '--nr',type=int,help='number of rhos')
     parser.add_argument(
         '--mat', type=int, default=0,
-        help='Material card in materials.py (e.g., 0: IsoMat)')
+        help='Material card in materials.py - see <def library> in materials.py\n(0: IsoMat, 1:)')
 
     ## rho to theta? ( should be later passed as arguments)
     args        = parser.parse_args()
