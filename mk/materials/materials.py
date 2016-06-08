@@ -10,8 +10,9 @@ def IFsteel_yld2000_case1():
     Return constitutive decription for
     IF steel parameters based on YLD2000-2D
     """
+    import mk.yieldFunction.tuneYld2000
     f_hrd = return_swift(n=0.28985,m=5e-2, ks=518.968, e0=0.0007648, qq=1e3)
-    f_yld = tuneYld2000.H48toYld(rv=[2.2,2.0,2.9,1.0],m=6)
+    f_yld = mk.yieldFunction.tuneYld2000.H48toYld(rv=[2.2,2.0,2.9,1.0],m=6)
     return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
 
 def IFsteel():
