@@ -57,6 +57,10 @@ def locus(func,nth=100):
     func       (yield function)
     nth = 100
     """
+    import numpy as np
+    pi = np.pi
+    cos=np.cos
+    sin=np.sin
     th=np.linspace(-pi,pi,nth)
     x=cos(th); y=sin(th)
     z=np.zeros(len(th))

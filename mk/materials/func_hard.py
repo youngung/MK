@@ -7,14 +7,16 @@ respective tensors.
 """
 import numpy as np
 
-def func_swift(eps,k,eps_0,n):
+def func_swift(eps,args):
     """
     sigma = k * (eps+eps_0) **n
 
     Arguments
     ---------
-    eps,k,eps_0,n
+    eps
+    args = (k,eps_0,n)
     """
+    k,eps_0,n = args
     return k * (eps+eps_0) **n
 
 def func_swift_d(eps,k,eps_0,n):

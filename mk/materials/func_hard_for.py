@@ -17,7 +17,6 @@ def return_swift(n,m,ks,e0,qq):
         return swift(e,ks,n,e0,m,qq)
     return f_swift
 
-
 def test():
     """
     test various functions.
