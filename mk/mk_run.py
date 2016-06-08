@@ -27,7 +27,7 @@ def postAnalysis(masterFileName):
     masterFileName
     """
     import numpy as np
-    import parser
+    import mk.library.parser
     numFail=0
     fileFail=[]
 
@@ -99,11 +99,11 @@ def postAnalysis(masterFileName):
     ##
     for i in xrange(len(dat_min_master)):
         dat_min, matA_FN, matB_FN, ss_FN = dat_min_master[i]
-        parser.plotMat(matA_FN,ax=ax3,
+        mk.library.parser.plotMat(matA_FN,ax=ax3,
                        color='red',linestyle='-')
-        parser.plotMat(matB_FN,ax=ax3,
+        mk.library.parser.plotMat(matB_FN,ax=ax3,
                        color='blue',linestyle='--')
-        parser.plotEtc(ss_FN,ax=ax4)
+        mk.library.parser.plotEtc(ss_FN,ax=ax4)
     fig.savefig('mk_fld_pp.pdf')
 
 def test_pp(fn='/local_scratch/MK-6e59e6-results.txt'):
@@ -142,6 +142,10 @@ def prepRun(*args):
     cmd = makeCommands(*args)
     return cmd
 
+
+"""
+$ python mk_run.py --f0 0.995 --r0 -0.5 --r1 1 --nr 4 --mat 0
+"""
 if __name__=='__main__':
     import numpy as np
     # from mk import main as mk_main
