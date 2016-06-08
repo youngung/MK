@@ -33,7 +33,7 @@ def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
 
-@jit
+# @jit
 def rot(psi):
     #if psi>np.pi or psi<-np.pi:
     # print("Warning: You might have put degree than radian... Please check.")
@@ -43,7 +43,7 @@ def rot(psi):
     r[2,2]= 1.
     return r
 
-@jit
+# @jit
 def nt_psi(psi):
     n=np.zeros(3)
     t=np.zeros(3)
@@ -53,14 +53,14 @@ def nt_psi(psi):
     t[1] =  cos(psi)
     return n, t
 
-@jit
+# @jit
 def rot_vec(r,vect):
     """
     v[i] = r[i,j]*vect[j]
     """
     return np.tensordot(r,vect,axes=[1,0])
 
-@jit
+# @jit
 def rot_tensor(a,psi):
     """
     Arguments
@@ -76,7 +76,7 @@ def rot_tensor(a,psi):
     r=rot(psi)
     return rot_tensor_r(a,r)
 
-@jit
+# @jit
 def rot_tensor_r(a,r):
     c=np.tensordot(r,a,axes=[1,0])
     return np.tensordot(c,r,axes=[1,1])
@@ -88,7 +88,7 @@ def rot_tensor_r(a,r):
     #                 b[i,j] = b[i,j] + r[i,k] * a[k,l] * r[j,l]
     # return b
 
-@jit
+# @jit
 def rotPrincOrig(rotMatrix, v):
     """
     Rotate from principal space (3D)
@@ -158,7 +158,7 @@ def th_planestress_c(th,yfunc):
     rst   = Sigma / y
     return rst
 
-@jit
+# @jit
 def convert_6sig_princ(s6):
     """
     Convert 6D stress vectors to
@@ -183,7 +183,7 @@ def convert_6sig_princ(s6):
     ## Add ordering below
     return w,rot
 
-@jit
+# @jit
 def convert_sig33_sig6(sig33):
     s6=np.zeros(6)
     for k in xrange(6):
@@ -191,7 +191,8 @@ def convert_sig33_sig6(sig33):
         s6[k] = sig33[i,j]
     return s6
 
-@jit
+
+# @jit
 def convert_sig6_sig33(sig6):
     s33=np.zeros((3,3))
     for k in xrange(6):
@@ -212,7 +213,7 @@ def proj_sig33_nt(sig33,n,t):
     snn = np.dot(n,np.dot(sig33,n))
     return snn, snt
 
-@jit
+# @jit
 def calcAlphaRho(s,e):
     """
     Based on the given stress <s>
@@ -233,7 +234,7 @@ c2s6 = convert_sig33_sig6
 s62c = convert_sig6_sig33
 
 
-@jit
+# @jit
 def rot_6d(a6,psi):
     a33 = s62c(a6.copy())
     a33r = rot_tensor(a33,psi)
@@ -305,7 +306,7 @@ def pi_proj(sd):
     y =                sd[1] / sq2 - sd[2] / sq2
     return x,y
 
-@jit
+# @jit
 def devit(x,p=0.):
     """
     Convert it to a deviatoric space with
@@ -356,7 +357,7 @@ def y_locus_c(nths,yfunc):
 def norm_vec(a):
     return np.sqrt((a**2).sum())
 
-@jit
+# @jit
 def assoc_flow(s6,lamb,yfunc,**kwargs):
     """
     Argument
@@ -440,7 +441,7 @@ def alph2sig(alpha,beta):
     if alpha>1.:
         return alph2sig2(2-alpha,beta)
 
-@jit
+# @jit
 def alph2sig1(alpha,beta):
     """
             |   1   beta   0 |
@@ -454,7 +455,7 @@ def alph2sig1(alpha,beta):
     sigma[1,0] = beta
     return sigma
 
-@jit
+# @jit
 def alph2sig2(alpha,beta):
     """
             |alpha  beta   0 |
@@ -468,7 +469,7 @@ def alph2sig2(alpha,beta):
     sigma[1,0] = beta
     return sigma
 
-@jit
+# @jit
 def alph2sig6(alpha,beta):
     """
     (alpha,beta) to sigma6

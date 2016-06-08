@@ -9,26 +9,36 @@ log = np.log
 tan = np.tan
 
 
-@jit
+## @jit
 def calcD2FB(psi,f2b):
     """
     """
+    import time
+    t0_grand = time.time()
     d2fb = np.zeros((6,6))
-    d2fb=np.zeros((6,6))
+
     cp = cos(psi);  sp = sin(psi)
     c2 = cp*cp; s2 = sp*sp; sc = sp*cp
-    d2fb[0,0] = f2b[0,0]*c2+f2b[0,1]*s2+f2b[0,5]*sc/2
-    d2fb[1,0] = f2b[1,0]*c2+f2b[1,1]*s2+f2b[1,5]*sc/2
-    d2fb[5,0] = f2b[5,0]*c2+f2b[5,1]*s2+f2b[5,5]*sc/2
-    d2fb[0,1] = f2b[0,0]*s2+f2b[0,1]*c2-f2b[0,5]*sc/2
-    d2fb[1,1] = f2b[1,0]*s2+f2b[1,1]*c2-f2b[1,5]*sc/2
-    d2fb[5,1] = f2b[5,0]*s2+f2b[5,1]*c2-f2b[5,5]*sc/2
-    d2fb[0,5] = 2*sc*(f2b[0,1]-f2b[0,0])+f2b[0,5]*(c2-s2)/2
-    d2fb[1,5] = 2*sc*(f2b[1,1]-f2b[1,0])+f2b[1,5]*(c2-s2)/2
-    d2fb[5,5] = 2*sc*(f2b[5,1]-f2b[5,0])+f2b[5,5]*(c2-s2)/2
+    t1 = time.time()-t0_grand
+
+
+    t0 = time.time()
+    d2fb[0,0] = f2b[0,0]*c2+f2b[0,1]*s2+f2b[0,5]*sc/2.
+    d2fb[1,0] = f2b[1,0]*c2+f2b[1,1]*s2+f2b[1,5]*sc/2.
+    d2fb[5,0] = f2b[5,0]*c2+f2b[5,1]*s2+f2b[5,5]*sc/2.
+    d2fb[0,1] = f2b[0,0]*s2+f2b[0,1]*c2-f2b[0,5]*sc/2.
+    d2fb[1,1] = f2b[1,0]*s2+f2b[1,1]*c2-f2b[1,5]*sc/2.
+    d2fb[5,1] = f2b[5,0]*s2+f2b[5,1]*c2-f2b[5,5]*sc/2.
+    d2fb[0,5] = 2.*sc*(f2b[0,1]-f2b[0,0])+f2b[0,5]*(c2-s2)/2.
+    d2fb[1,5] = 2.*sc*(f2b[1,1]-f2b[1,0])+f2b[1,5]*(c2-s2)/2.
+    d2fb[5,5] = 2.*sc*(f2b[5,1]-f2b[5,0])+f2b[5,5]*(c2-s2)/2.
+    t2=time.time()-t0
+    dt = time.time()-t0_grand
+
+    # print ('%.1f  '*2)%(t1/dt*100, t2/dt*100)
     return d2fb
 
-@jit
+# @jit
 def calcF2XB(psi0,f2b):
     """
     Originally in func_fld1 function
@@ -109,8 +119,11 @@ def func_fld2(
     -------
     F,J,fa,fb,b,siga,s (region A strss)
     """
-    import os
+    import os, time
     from mk.library.lib import rot_6d
+
+    t0 = time.time()
+    t0_grand = time.time()
 
     f0     = b[1]
     deltat = b[8] # delta t for region B
@@ -122,8 +135,12 @@ def func_fld2(
     sb_dump = np.array([xb,yb,0.,0.,0.,zb])
 
     ## Parameters in region A
-    matA.update_yld(matA.stress) ## may be abundant since the loading is 'monotonic'
+    matA.update_yld(matA.stress)
     s,phia,fa,f2a = matA.o_yld
+
+    t1 = time.time()-t0_grand
+    # ------------------------------------------------------------#
+    t0 = time.time()
 
     ## psi0 * ()
     delta_psi= x[0] * (fa[0]-fa[1])*tan(b[9])/(1+tan(b[9])**2)
@@ -146,9 +163,16 @@ def func_fld2(
     E = -yold[3]-yold[4]-deltat*(fb[0]+fb[1])\
         +yold[1]+yold[2]+  x[0]*(fa[0]+fa[1])
 
+    t2 = time.time()-t0
+    # ------------------------------------------------------------#
+    t0 = time.time()
+
     cp = cos(psi_new);  sp = sin(psi_new)
     c2 = cp*cp; s2 = sp*sp; sc = sp*cp
+
+    t_bench_0 = time.time()
     d2fb = calcD2FB(psi=psi_new,f2b=f2b)
+    dt_bench = time.time() - t_bench_0
 
     dxp    = np.zeros(6)
     dxp[0] = 2*sc*(yb-xb)-2*(c2-s2)*zb
@@ -162,25 +186,34 @@ def func_fld2(
     ## x[2] = yb ???
     ## x[3] = zb
 
+
+    t3 = time.time()-t0
+    # print 'dt_bench/t3',(dt_bench/t3)*100
+    # ------------------------------------------------------------#
+
+    t0 = time.time()
     F = np.zeros(4)
     ## conditions to satisfy
-    F[0] = f0*np.exp(E)*sigb*xb - xa*siga*(Q**mb)*qqb**(ma-mb)
+
+    eE = np.exp(E)
+
+    F[0] = f0*eE*sigb*xb - xa*siga*(Q**mb)*qqb**(ma-mb)
 
     F[1] = xb*za - zb*xa
     F[2] = phib - 1.0
     F[3] = deltat*db_rot[1] - x[0]*da_rot[1]
 
     J=np.zeros((4,4))
-    J[0,0] =  (fa[0]+fa[1])*f0*np.exp(E)*sigb*xb\
+    J[0,0] =  (fa[0]+fa[1])*f0*eE*sigb*xb\
               -xa*dsiga*(Q**mb)*qqb**(ma-mb)\
               -xa*siga*(
                   (mb/deltat)*(Q**(mb-1.))*qqb**(ma-mb)\
                   +(dma/x[0])*np.log(qqb)*qqb*(ma-mb)
               )
-    J[0,1] =-deltat*(d2fb[0,0]+d2fb[1,0])*f0*np.exp(E)*sigb*xb\
-        +f0*np.exp(E)*sigb
-    J[0,2] =-deltat*(d2fb[0,1]+d2fb[1,1])*f0*np.exp(E)*sigb*xb
-    J[0,3] =-deltat*(d2fb[0,5]+d2fb[1,5])*f0*np.exp(E)*sigb*xb
+    J[0,1] =-deltat*(d2fb[0,0]+d2fb[1,0])*f0*eE*sigb*xb\
+        +f0*eE*sigb
+    J[0,2] =-deltat*(d2fb[0,1]+d2fb[1,1])*f0*eE*sigb*xb
+    J[0,3] =-deltat*(d2fb[0,5]+d2fb[1,5])*f0*eE*sigb*xb
     J[1,1] = za
     J[1,3] =-xa
 
@@ -195,6 +228,22 @@ def func_fld2(
     J[3,1] = deltat*(d2fb[0,0]*s2+d2fb[1,0]*c2-2*d2fb[5,0]*sc)
     J[3,2] = deltat*(d2fb[0,1]*s2+d2fb[1,1]*c2-2*d2fb[5,1]*sc)
     J[3,3] = deltat*(d2fb[0,5]*s2+d2fb[1,5]*c2-2*d2fb[5,5]*sc)
+
+
+    t4 = time.time()-t0
+    # ------------------------------------------------------------#
+    dt_grand = time.time() - t0_grand
+
+    t1=t1/dt_grand * 100
+    t2=t2/dt_grand * 100
+    t3=t3/dt_grand * 100
+    t4=t4/dt_grand * 100
+
+    # print '---------------------------------------'
+    # print ('%.1f '*5)%(t1,t2,t3,t4, (t1+t2+t3+t4))
+    # print '---------------------------------------'
+    # raise IOError
+
     return F,J,fa,fb,b# ,s
 
 def func_fld1(
