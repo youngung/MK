@@ -25,24 +25,53 @@ def tuneGenR(r=[2.2,2.0,2.9]):
     r    - r value list
     fYLD - yield function
     """
-    objf = returnObjRV(rv=r,fYLD=Hill48)
-    res = minimize(fun=objf, x0=[0.5,0.5,0.5,1],method='BFGS',
-                   jac=False,tol=1e-20,options=dict(maxiter=400))
-    popt = res.x
-    n_it = res.nit
-    fopt = res.fun
+    if len(r)==3 and False:
+        r0,r45,r90 = r
+        # ## original formula in R. Hill, JMPS, V38, 1990
+        # h = 2*r0 / (2*r0+1)
+        # g = 1 - h
+        # f = h/(2.*r90)
+        # n = (2*r45+1) * (g+f) / 2.
 
-    # print 'popt:',popt
-    # print 'fopt:',fopt
-    f,g,h,n=popt
-    y=(g+h)
-    params = np.array([f,g,h,n])
-    params = params / y
-    f,g,h,n = params
+        ## Eq 3 in Dasappa et al. IJSS, vol 49, (2012)
+        h = r0/(r0+1)
+        g = 1 - h
+        f = g * r0/r90
+        n = (r45+0.5)*(r0/r90+1)*g
+    else:
+        ## approximate...
+        r0  = r[0]
+        r45 = r[int(len(r)/2.)]
+        r90 = r[-1]
+
+        h   = r0/(r0+1)
+        g   = 1-h
+        f   = g * r0/r90
+        n   = (r45+0.5)*(r0/r90+1)*g
+
+        x0 =[h,g,f,n]
+
+        objf = returnObjRV(rv=r,fYLD=Hill48)
+        res = minimize(fun=objf, x0=x0,method='BFGS',
+                       jac=False,tol=1e-10,options=dict(maxiter=200))
+        #               jac=False,tol=1e-20,options=dict(maxiter=400))
+
+        popt = res.x
+        n_it = res.nit
+        fopt = res.fun
+
+        # print 'popt:',popt
+        # print 'fopt:',fopt
+
+        f,g,h,n=popt
+        y=(g+h)
+        params = np.array([f,g,h,n])
+        params = params / y
+        f,g,h,n = params
 
     print 'Hill48 parameter tuning in tuneH48.tuneGenR'
-    print ('%6s'*4)%('f','g','h','n')
-    print ('%6.3f'*4)%(f,g,h,n)
+    print ('%7s'*4)%('f','g','h','n')
+    print ('%7.3f'*4)%(f,g,h,n)
 
     return f,g,h,n
 
@@ -144,14 +173,8 @@ def returnObjRV(rv,fYLD=Hill48):
         psis_ref = np.linspace(0,np.pi/2.,nth)
         f, g, h, n = xs
         psis, rvs, phis = inplaneTension(fYLD=fYLD,f=f,g=g,h=h,n=n)
-
         funcINT = interpolate.interp1d(x=psis,y=rvs)
-        # raise IOError
         rvs_ref = funcINT(psis_ref)
-
-        # print 'rvs_ref:',rvs_ref
-        # print 'xs:     ',xs
-
         diff = np.sqrt(((rvs_ref - rv)**2).sum())/(nth-1.)
         return diff
     return objf
