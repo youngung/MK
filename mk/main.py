@@ -286,6 +286,7 @@ def integrateMono(
     k =-1
     t = tzero
     time_used_in_syst=0.
+    totalTimeFunc=0.
     while(k<=nbpas and absciss<tmax and dydx[0]>=1e-1):
         """
         dydx[0] = d\lambda^A /  d\lambda^B
@@ -308,7 +309,7 @@ def integrateMono(
         t0 = time.time()
 
         ## find solution at current deformation increment
-        dydx, ynew, xbb = syst(
+        dydx, ynew, xbb, totalTimeFunc = syst(
             deltt,
             t,
             f0,
@@ -318,7 +319,7 @@ def integrateMono(
             matA,
             matB,
             snapshot,
-            verbose)
+            verbose,totalTimeFunc)
 
         ## record current status of the two regions
         ## might need to reduce the writing frequency
@@ -360,6 +361,10 @@ def integrateMono(
         yold[::]=ynew[::]
 
     uet(time_used_in_syst,'Total time used for iteration in syst')
+    print
+    uet(totalTimeFunc,'Total time elapsed in func')
+    print
+
     return ynew,absciss,xbb
 
 ## differential system
@@ -373,7 +378,8 @@ def syst(
         matA,
         matB,
         snapshot,
-        verbose):
+        verbose,
+        totalTimeFunc=0.):
     """
     Arguments
     ---------
@@ -396,6 +402,7 @@ def syst(
     dydx
     yold
     siga     strain hardening flow stress, sig = hard(E)
+    totalTimeFunc
     """
     import os
     """
@@ -416,7 +423,7 @@ def syst(
     bn[8] = deltt
     bn[9] = xbb[0] ## psi0
 
-    xfinal, fa, fb, bn\
+    xfinal, fa, fb, bn, totalTimeFunc\
         = new_raph_fld(
             T=t,
             ndim=ndim,
@@ -426,7 +433,7 @@ def syst(
             b=bn,
             matA=matA,
             matB=matB,
-            verbose=verbose)
+            verbose=verbose,totalTimeFunc=totalTimeFunc)
 
     xbb[0] = bn[9]+bn[10]  ## psi^n + \delta psi
     xbb[1] = xfinal[1]
@@ -439,13 +446,13 @@ def syst(
     dydx[3] = fb[0]
     dydx[4] = fb[1]
 
-    return dydx, y, xbb
+    return dydx, y, xbb, totalTimeFunc
 
 def new_raph_fld(
         T=None,ndim=None,ncase=None,
         xzero=None,y=None,b=None,#f_hard=None,f_yld=None,
         matA=None,matB=None,
-        verbose=True):
+        verbose=True,totalTimeFunc=0):
     """
     Find numerical solution using Newton-Raphson method.
     The relevant jacobian and objective functions are defined
@@ -465,23 +472,27 @@ def new_raph_fld(
     matA
     matB
     verbose=True
+    totalTimeFunc
 
     Return
     ------
     xn1, fb (case 1)
     xn1, fa, fb, b
     """
-    import os
+    import os, time
     from yf_for import gauss,norme
     from func_fld import func_fld1, func_fld2
 
     residu  = 1.0
     xn      = xzero[::]
     it      = 0
-    itmax   = 200
-    eps     = 1e-10
+    # itmax   = 200
+    itmax   = 20
+    # eps     = 1e-10
+    eps = 1e-4
 
-    totalTimeFunc = 0.
+    # totalTimeFunc = 0.
+    dt = 0.
     # if ncase==2: verbose=True ##override
     while (residu>eps and it<itmax):
         it = it+1
@@ -509,7 +520,6 @@ def new_raph_fld(
                     matA,
                     matB,
                     verbose)
-
             dt = time.time() - t0
         totalTimeFunc = totalTimeFunc + dt ## to estimate compute performance
         F,J,res = gauss(ndim=ndim,a=J,b=F) ## f2py module
@@ -517,13 +527,15 @@ def new_raph_fld(
         residu = norme(ndim,res)
         xn=xn1[::] ## x^(n)
 
+    # uet(totalTimeFunc,'Time elapsed in new_raph_fld')
+
     # if no convergence
     if it>=itmax:
         print 'could not converge'
         return
 
     if ncase==1: return xn1,fb
-    if ncase==2: return xn1,fa,fb,b
+    if ncase==2: return xn1,fa,fb,b,totalTimeFunc
 
 ## command line usage (may be called in mk_run for multi-threaded run)
 """
