@@ -57,6 +57,7 @@ def main(
     # from yf2 import wrapHill48
 
     if type(material).__name__=='NoneType':
+        print 'given material', material
         from materials import IsoMat
         matA = IsoMat()
         matB = IsoMat()
@@ -561,6 +562,11 @@ if __name__=='__main__':
     fn   = args.fn
 
     import mk.materials.materials
+
+    print 'args.mat:', args.mat
     mat = mk.materials.materials.library(args.mat)
+    if type(mat).__name__=='NoneType':
+        raise IOError, 'None returned from the library'
+    print 'mat:', mat
     main(f0=f0,psi0=psi0,th=th,logFileName=fn,material=mat)
     pass

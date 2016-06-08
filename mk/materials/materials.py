@@ -64,6 +64,7 @@ def IFsteel_yld2000_2d_2_20160608():
     """
     ## hardening model
     f_hrd = return_swift(n=0.255392940,m=5e-2,ks= 6.00162331e+02, e0=4.23405410e-04, qq=1e3)
+    import mk.yieldFunction.tuneYld2000
     f_yld = mk.yieldFunction.tuneYld2000.H48toYld_withYS(
         rv=[2.092113652699876, 1.8999691982523326, 2.8779441147053473],
         ys=[1.        ,  1.02781532,  0.98441769],m=6)
