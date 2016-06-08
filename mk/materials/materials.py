@@ -11,7 +11,6 @@ def IFsteel_yld2000_case1():
     IF steel parameters based on YLD2000-2D
     """
     f_hrd = return_swift(n=0.28985,m=5e-2, ks=518.968, e0=0.0007648, qq=1e3)
-    ## yield function characterized by three r-values in assistance of H48 yield function
     f_yld = tuneYld2000.H48toYld(rv=[2.2,2.0,2.9,1.0],m=6)
     return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
 

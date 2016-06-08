@@ -6,29 +6,29 @@ All stress/strain terms are 'equivalent' scholar values of the
 respective tensors.
 """
 import numpy as np
-
-def func_swift(eps,args):
+def func_swift(eps,k,eps_0,n):
     """
     sigma = k * (eps+eps_0) **n
 
     Arguments
     ---------
     eps
-    args = (k,eps_0,n)
-    """
-    k,eps_0,n = args
-    return k * (eps+eps_0) **n
-
-def func_swift_d(eps,k,eps_0,n):
-    """
-     sigma  =     k * (eps+eps_0) ** n
-    dsigma  = n * k * (eps+eps_0) ** (n-1)
-
-    Arguments
-    ---------
-    eps,k,eps_0,n
+    k
+    eps_0
+    n
     """
     return k * (eps+eps_0) **n
+
+# def func_swift_d(eps,k,eps_0,n):
+#     """
+#      sigma  =     k * (eps+eps_0) ** n
+#     dsigma  = n * k * (eps+eps_0) ** (n-1)
+
+#     Arguments
+#     ---------
+#     eps,k,eps_0,n
+#     """
+#     return k * (eps+eps_0) **n
 
 def func_hollomon(eps,k,n):
     """
@@ -80,6 +80,34 @@ def func_baragar(eps,sig0,c,d,e):
     """
     return sig0 + c*eps**0.4+ d*eps**0.8+e*eps**1.2
 
+
+## place-holder for flow stress that accounts for strain-rate
+## sensitivity
+def flowStress(f_hard,eps,d,q,a):
+    """
+    Flow stress as function of strain-hardening curve
+    multiplied by a factor that accounts for strain rate
+    sensitivity. Here, the strain rate sensitivity
+    is described by a power law such that
+
+
+    sigma = (f).(a)^q
+
+    with f is the strain-hardening curve and (a)^q describes
+    the strain rate dependence.
+
+    Arguments
+    ---------
+    f_hard
+    eps
+    d
+    q
+    a
+    """
+
+    pass
+
+
 def c_G(iopt,**kwargs):
     """
     Return characterized hardening function
@@ -108,18 +136,18 @@ def c_G(iopt,**kwargs):
         elif iopt==5:
             return func_baragar(eps_eq,**kwargs)
 
-    def func_d(eps_eq):
-        if iopt==0:
-            return func_swift_d(eps_eq,**kwargs)
-        elif iopt==1:
-            return np.nan
-        elif iopt==2:
-            return np.nan
-        elif iopt==3:
-            return np.nan
-        elif iopt==4:
-            return np.nan
-        elif iopt==5:
-            return np.nan
+    # def func_d(eps_eq):
+    #     if iopt==0:
+    #         return func_swift_d(eps_eq,**kwargs)
+    #     elif iopt==1:
+    #         return np.nan
+    #     elif iopt==2:
+    #         return np.nan
+    #     elif iopt==3:
+    #         return np.nan
+    #     elif iopt==4:
+    #         return np.nan
+    #     elif iopt==5:
+    #         return np.nan
 
     return func, func_d
