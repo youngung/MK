@@ -23,13 +23,17 @@ def draw_guide(ax,r_line = [-0.5,0. ,1],max_r=2,
     xlim=ax.get_xlim(); ylim=ax.get_ylim()
     for i in xrange(len(r_line)):
         r = r_line[i]
-        mx=max_r
-        mx = mx/np.sqrt(1.+r**2)
-        ys = np.linspace(0.,mx)
-        xs = r * ys
-
+        if r<=1:
+            mx=max_r
+            mx = mx/np.sqrt(1.+r**2)
+            ys = np.linspace(0.,mx)
+            xs = r * ys
+        elif r>1:
+            r=2-r
+            my = mx/np.sqrt(1+r**2)
+            xs = np.linspace(0.,my)
+            ys = r * xs
         ax.plot(xs,ys,ls=ls,color=color,alpha=alpha)
-
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
 

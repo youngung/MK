@@ -16,6 +16,15 @@ sin = np.sin
 cos = np.cos
 nth = 800
 
+
+def tuneGenY(y):
+    """
+    Place-holder to tune based on yield functions
+    """
+    if len(y)==3:
+        pass
+    pass
+
 def tuneGenR(r=[2.2,2.0,2.9]):
     """
     Tune based on r-values
@@ -25,7 +34,7 @@ def tuneGenR(r=[2.2,2.0,2.9]):
     r    - r value list
     fYLD - yield function
     """
-    if len(r)==3 and False:
+    if len(r)==3:
         r0,r45,r90 = r
         # ## original formula in R. Hill, JMPS, V38, 1990
         # h = 2*r0 / (2*r0+1)
@@ -53,7 +62,7 @@ def tuneGenR(r=[2.2,2.0,2.9]):
 
         objf = returnObjRV(rv=r,fYLD=Hill48)
         res = minimize(fun=objf, x0=x0,method='BFGS',
-                       jac=False,tol=1e-10,options=dict(maxiter=200))
+                       jac=False,tol=1e-10,options=dict(maxiter=20))
         #               jac=False,tol=1e-20,options=dict(maxiter=400))
 
         popt = res.x

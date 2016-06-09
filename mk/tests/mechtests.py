@@ -72,3 +72,27 @@ def locus(func,nth=100):
         X.append(ys[0])
         Y.append(ys[1])
     return np.array(X),np.array(Y)
+
+def locus_shear(func,nth=100):
+    """
+    S11/S12 locus
+
+    Arguments
+    ---------
+    func       (yield function)
+    nth = 100
+    """
+    pi = np.pi
+    cos=np.cos
+    sin=np.sin
+    th=np.linspace(-pi,pi,nth)
+    x=cos(th); y=sin(th)
+    z=np.zeros(len(th))
+    s=np.array([x,z,z,z,z,y]).T
+    X=[]; Y=[]
+    for i in xrange(len(s)):
+        rst = func(s[i])
+        ys = rst[0]
+        X.append(ys[0])
+        Y.append(ys[5])
+    return np.array(X),np.array(Y)

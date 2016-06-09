@@ -47,7 +47,6 @@ class Constitutive:
 
         self.f_yld = f_yld
         self.f_hrd = f_hrd
-
     def update_yld(self,stress):
         """
         Given the stress (and potentially

@@ -234,6 +234,7 @@ def test2(r0=2.20,r45=1.95,r90=2.9):
     print '%s has been saved'%fn
 
 def test1():
+    import mk.materials.materials
     s1  = [1.,0.,0.,0.,0.,0.] ## uniaxial s11
     s2  = [0.,1.,0.,0.,0.,0.] ## uniaxial s22
     s3  = [0.,0.,0.,0.,0.,1.] ## uniaxial s12
@@ -241,28 +242,40 @@ def test1():
     s5  = [1.,-1.,0.,0.,0.,0.] ## pure shear1
     s6  = [-1.,1.,0.,0.,0.,0.] ## pure shear2
 
+
     ss = [s1,s2,s3,s4,s5,s6]
     r0 =1.; r90=1.
-    xs=[];ys=[];zs=[]
-    for i in xrange(len(ss)):
-        snew,phi,dphi,d2phi = HillQuad(s=ss[i],r0=r0,r90=1.)
-        s11,s22,s12 = snew[0],snew[1],snew[5]
-        xs.append(s11)
-        ys.append(s22)
-        zs.append(s12)
+
+    iopts = [0,1,2,3,4,5]
+    mats=[]
+    for i in xrange(len(iopts)):
+        mats.append(mk.materials.materials.library(i))
+
+    coords=np.zeros((len(mats),len(ss),3))
+    for j in xrange(len(mats)):
+        for i in xrange(len(ss)):
+            # snew, phi, dphi, d2phi = HillQuad(s=ss[i],r0=r0,r90=1.)
+            mat = mats[j]()
+            snew,phi,dphi,d2phi = mat.f_yld(ss[i])
+            s11, s22, s12 = snew[0],snew[1],snew[5]
+            coords[j,i,:] = s11,s22,s12
 
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     fig = plt.figure()
     ax  = fig.add_subplot(111,projection='3d')
-    ax.scatter(xs,ys,zs)
+
+    colors=['r','g','b','m','c','y','k']
+    for j in xrange(len(mats)):
+        x,y,z = coords[j,:,0],coords[j,:,1],coords[j,:,2]
+        ax.scatter(x,y,z,color=colors[j])
+
     ax.set_xlabel(r'$\sigma_{11}$')
     ax.set_ylabel(r'$\sigma_{22}$')
     ax.set_zlabel(r'$\sigma_{12}$')
-
     ax.set_aspect('equal')
 
-    fn ='yf2_test.pdf'
+    fn ='yf2_test1.pdf'
     fig.savefig(fn)
     print '%s has been saved'%fn
 
