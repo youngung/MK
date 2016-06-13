@@ -1,5 +1,8 @@
 """
-Tune-up parameters of Hill48 using Hill Quad
+Tune-up parameters of Hill48.
+
+Hill48 parameters can be tuned by r-values or yield stresses
+obtained by a series of uniaxial tension tests.
 """
 #from for_lib import vm
 from yf_for import vm
@@ -16,39 +19,64 @@ sin = np.sin
 cos = np.cos
 nth = 800
 
-
 def tuneGenY(y):
     """
-    Place-holder to tune based on yield functions
+    Place-holder to tune H48 yield function parameters
+    by fitting with the in-plane variation of uniaxial
+    yield stresses <y>
+
+    If only three elements are present,
+    h,g,f,n parameters in Hill48 yield function
+    are analytically obtained.
+
+    Argument
+    --------
+    y   - yield stress list
     """
     if len(y)==3:
         pass
-    pass
+    elif len(y)<3:
+        raise IOError, 'At least 3 parameters are necessary.'
+    else:
+        pass
+
 
 def tuneGenR(r=[2.2,2.0,2.9]):
     """
     Tune based on r-values
 
+    r-values are assumed to be in the form
+    of an array with the first element being
+    associated with RD and the last TD.
+    If only three elements are present,
+    h,g,f,n parameters in Hill48 yield function
+    are analytically obtained.
+
     Arguments
     ---------
     r    - r value list
-    fYLD - yield function
     """
     if len(r)==3:
         r0,r45,r90 = r
-        # ## original formula in R. Hill, JMPS, V38, 1990
-        # h = 2*r0 / (2*r0+1)
-        # g = 1 - h
-        # f = h/(2.*r90)
-        # n = (2*r45+1) * (g+f) / 2.
-
         ## Eq 3 in Dasappa et al. IJSS, vol 49, (2012)
         h = r0/(r0+1)
         g = 1 - h
         f = g * r0/r90
         n = (r45+0.5)*(r0/r90+1)*g
+    elif len(r)<2:
+        raise IOError, 'At least 3 parameters are necessary.'
+    elif len(r)==2:
+        print 'Warning: only two r-values are given'
+        print 'Tune Hill48 prameters by using'
+        print "Hill's quadratic plane-stress yield locus"
+        f,g,h,n = tuneR2(r0=r[0],r90=r[2])
     else:
-        ## approximate...
+        ## case that many more r-values are available
+        ## numerically determine h,g,f,n that 'best'
+        ## fits the r-value profile.
+
+        ## Initial guess is approximated by
+        ## the three r-values.
         r0  = r[0]
         r45 = r[int(len(r)/2.)]
         r90 = r[-1]
@@ -63,14 +91,10 @@ def tuneGenR(r=[2.2,2.0,2.9]):
         objf = returnObjRV(rv=r,fYLD=Hill48)
         res = minimize(fun=objf, x0=x0,method='BFGS',
                        jac=False,tol=1e-10,options=dict(maxiter=20))
-        #               jac=False,tol=1e-20,options=dict(maxiter=400))
 
         popt = res.x
         n_it = res.nit
         fopt = res.fun
-
-        # print 'popt:',popt
-        # print 'fopt:',fopt
 
         f,g,h,n=popt
         y=(g+h)
@@ -141,12 +165,26 @@ def tuneR2(r0=1.,r90=1.):
 ## in the plane-stress space.
 def returnObjYS(ref=None,fYLD=Hill48):
     """
+    Given the reference data <ref>,
+    provide an objective function that is
+    subject to optimized when a proper
+    set of parameter is obtained.
+
     Arguments
     ---------
     ref
     fYLD
     """
     def objf(xs):
+        """
+        The objective function
+        generated in mk.yieldFunction.tuneH48.returnObjYS
+
+        Argument
+        --------
+        xs -- <f,g,h,n> the four Hill48 parameters
+        in the plane-stress space.
+        """
         th=np.linspace(-pi,+pi,nth)
         x=cos(th); y=sin(th)
         z=np.zeros(len(th))

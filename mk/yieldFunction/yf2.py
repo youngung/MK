@@ -13,6 +13,12 @@ def wrapYLD_SA(r=[1,1,1,1],y=[1,1,1,1],m=6):
     """
     Running yld2000_sa (stand-alone) executable to deal with
     the unwanted stop while estimating yld2000-2d coefficieints
+
+    Arguments
+    ---------
+    r=[1,1,1,1]
+    y=[1,1,1,1]
+    m=6
     """
     import yf_yld2000
     path = os.path.split(yf_yld2000.__file__)[0]
@@ -61,7 +67,6 @@ def wrapYLD(r=[1,1,1,1],y=[1,1,1,1],m=6,k=2):
     l = wrapYLD_SA(r=r,y=y,m=m)
     # print 'elapsed time for characterizing yld2000-2d:',\
     #     time.time()-t0
-
     if type(l).__name__=='int':
         ## return bogus results?
         return l
@@ -72,7 +77,6 @@ def wrapYLD(r=[1,1,1,1],y=[1,1,1,1],m=6,k=2):
             # newstress, e, h, phi, dphi ,d2phi = yld2000.skew(m,k,l,s) -old
             newstress  , e, h, dphi, phi, d2phi =  yld2000.skew(m,k,l,s)
             return newstress, phi, dphi,d2phi
-
     return yld_func
 
 def VonMises(s):
