@@ -19,11 +19,12 @@ sin = np.sin
 cos = np.cos
 nth = 800
 
-def tuneGenY(y):
+def tuneGenY(y=[1.,1.,1.],r0=None,r90=None):
     """
-    Place-holder to tune H48 yield function parameters
+    Function to tune H48 yield function parameters
     by fitting with the in-plane variation of uniaxial
-    yield stresses <y>
+    yield stresses <y>.
+    This approach requires either r0 or r90.
 
     If only three elements are present,
     h,g,f,n parameters in Hill48 yield function
@@ -32,14 +33,81 @@ def tuneGenY(y):
     Argument
     --------
     y   - yield stress list
+    r0  - r-value along RD
+    r90 - r-value along TD
+
+    Returns
+    -------
+    f,g,h,n
     """
+    y=np.array(y,dtype='float')
     if len(y)==3:
-        pass
+        ## Eq 4 in Dasappa et al. IJSS, vol 49, (2012)
+        y0,y45,y90 = y
+        if type(r0)!=type(None) and type(r90)==type(None):
+            r0=float(r0)
+            ## using R0
+            h = r0 / (1.+r0) / y0**2.
+            g = h  / r0
+            f = 1. / y90**2  - h
+            n = 2. / y45**2  - (g+f)/2.
+        elif type(r0)==type(None) and type(r90)!=type(None):
+            r90=float(r90)
+            ## using R90
+            h = r90 / (1.+r90) / y90**2
+            f = h   / r90
+            g = 1.  / y0**2  - h
+            n = 2. / y45**2  - (g+f)/2.
+        else:
+            raise IOError, 'At least 3 parameters are necessary.'
     elif len(y)<3:
         raise IOError, 'At least 3 parameters are necessary.'
-    else:
-        pass
+    elif len(y)>3:
+        y0  = y[0]
+        y45 = y[int(len(y)/2.)]
+        y90 = y[-1]
+        if type(r0)!=type(None) and type(r90)==type(None):
+            ## using R0
+            h = r0 / (1.+r0) / y0**2.
+            g = h  / r0
+            f = 1. / y90**2  - h
+            n = 2. / y45**2  - (g+f)/2.
+        elif type(r0)==type(None) and type(r90)!=type(None):
+            ## using R90
+            h = r90 / (1+r90) / y90**2
+            f = h   / r90
+            g = 1.  / y0**2  - h
+            n = 2.  / y45**2  - (g+f)/2.
+        else:
+            raise IOError, 'At least 3 parameters are necessary.'
 
+        x0=[h,g,f,n],
+        print 'guess:',x0
+        objf = returnObjYV(y=y,fYLD=Hill48)
+        res = minimize(
+            fun=objf,
+            x0=x0,
+            method='BFGS',
+            jac=False,
+            tol=1e-10,
+            options=dict(maxiter=20))
+
+        popt = res.x
+        n_it = res.nit
+        fopt = res.fun
+        f,g,h,n=popt
+        y=(g+h)
+        params = np.array([f,g,h,n])
+        params = params / y
+        f,g,h,n = params
+
+    else:
+        raise IOError, 'Unexpected case of arguments passed to mk.yieldfunction.tuneH48.tuneGenY'
+    print 'Hill48 parameter tuning in tuneH48.tuneGenY'
+    print ('%7s'*4)%('f','g','h','n')
+    print ('%7.3f'*4)%(f,g,h,n)
+
+    return f,g,h,n
 
 def tuneGenR(r=[2.2,2.0,2.9]):
     """
@@ -55,6 +123,10 @@ def tuneGenR(r=[2.2,2.0,2.9]):
     Arguments
     ---------
     r    - r value list
+
+    Returns
+    -------
+    f,g,h,n
     """
     if len(r)==3:
         r0,r45,r90 = r
@@ -175,6 +247,7 @@ def returnObjYS(ref=None,fYLD=Hill48):
     ref
     fYLD
     """
+
     def objf(xs):
         """
         The objective function
@@ -185,6 +258,7 @@ def returnObjYS(ref=None,fYLD=Hill48):
         xs -- <f,g,h,n> the four Hill48 parameters
         in the plane-stress space.
         """
+        nth  = len(np.array(ref[0]))
         th=np.linspace(-pi,+pi,nth)
         x=cos(th); y=sin(th)
         z=np.zeros(len(th))
@@ -207,6 +281,25 @@ def returnObjYS(ref=None,fYLD=Hill48):
         diff = ((r-R)**2).sum()/(len(th)-1)
         return diff
     return objf
+
+def returnObjYV(y,fYLD=Hill48):
+    """
+    Arguments
+    ---------
+    rv
+    fYLD
+    """
+    def objf(xs):
+        nth  = len(y)
+        psis_ref = np.linspace(0,np.pi/2.,nth)
+        f, g, h, n = xs
+        psis, rvs, phis = inplaneTension(fYLD=fYLD,f=f,g=g,h=h,n=n)
+        funcINT = interpolate.interp1d(x=psis,y=phis)
+        phis_ref = funcINT(psis_ref)
+        diff = np.sqrt(((phis_ref - y)**2).sum())/(nth-1.)
+        return diff
+    return objf
+
 
 def returnObjRV(rv,fYLD=Hill48):
     """

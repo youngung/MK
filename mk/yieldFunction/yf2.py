@@ -1,7 +1,12 @@
 ### yf version that relies on fortran version of yield functions
 import matplotlib as mpl
 import os
-mpl.use('Agg') ## In case X-window is not available.
+
+matplotlib.get_backend()
+
+from MP.lib import whichcomp
+submitCommand, availX = whichcomp.determineEnvironment()
+if not(availX): mpl.use('Agg') ## In case X-window is not available.
 
 from yf_for import vm, hqe, hill48
 import yf_yld2000 as yld2000
@@ -124,6 +129,32 @@ def wrapHill48R(rvs):
     """
     import tuneH48
     Hill48params = tuneH48.tuneGenR(rvs)
+    f,g,h,n=Hill48params
+    return wrapHill48Gen(f,g,h,n)
+
+def wrapHill48Y(ys,r0=None,r90=None):
+    """
+    This wrapper gives Hill48 yield function that is
+    characterized by in-plane uniaxial yield stresses and an r-value (either r0 or r90).
+    Yield stresses are passed as a list variable (or numpy array)
+    and is supposed to be a collection measured at an equi-angle
+    interval from RD to TD. For example, when ys=[1.5, 2.0] is given,
+    it is assumed that the corresponding yield stresses are 1.5 and 2.0 at RD and TD.
+
+    When the argument is a list that has 3 elements, it is assumed
+    that each element is an yield stress measured at, 0, 45 and 90 degrees
+    from RD, respectively.
+
+    Hill48 using yield-stresses
+
+    Arguments
+    ---------
+    ys
+    r0
+    r90
+    """
+    import tuneH48
+    Hill48params = tuneH48.tuneGenY(y=ys,r0=r0,r90=r90)
     f,g,h,n=Hill48params
     return wrapHill48Gen(f,g,h,n)
 
