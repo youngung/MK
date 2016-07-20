@@ -1,7 +1,12 @@
 ### yf version that relies on fortran version of yield functions
 import matplotlib as mpl
 import os
-mpl.use('Agg') ## In case X-window is not available.
+
+matplotlib.get_backend()
+
+from MP.lib import whichcomp
+submitCommand, availX = whichcomp.determineEnvironment()
+if not(availX): mpl.use('Agg') ## In case X-window is not available.
 
 from yf_for import vm, hqe, hill48
 import yf_yld2000 as yld2000
@@ -13,6 +18,12 @@ def wrapYLD_SA(r=[1,1,1,1],y=[1,1,1,1],m=6):
     """
     Running yld2000_sa (stand-alone) executable to deal with
     the unwanted stop while estimating yld2000-2d coefficieints
+
+    Arguments
+    ---------
+    r=[1,1,1,1]
+    y=[1,1,1,1]
+    m=6
     """
     import yf_yld2000
     path = os.path.split(yf_yld2000.__file__)[0]
@@ -61,7 +72,6 @@ def wrapYLD(r=[1,1,1,1],y=[1,1,1,1],m=6,k=2):
     l = wrapYLD_SA(r=r,y=y,m=m)
     # print 'elapsed time for characterizing yld2000-2d:',\
     #     time.time()-t0
-
     if type(l).__name__=='int':
         ## return bogus results?
         return l
@@ -72,7 +82,6 @@ def wrapYLD(r=[1,1,1,1],y=[1,1,1,1],m=6,k=2):
             # newstress, e, h, phi, dphi ,d2phi = yld2000.skew(m,k,l,s) -old
             newstress  , e, h, dphi, phi, d2phi =  yld2000.skew(m,k,l,s)
             return newstress, phi, dphi,d2phi
-
     return yld_func
 
 def VonMises(s):
@@ -120,6 +129,32 @@ def wrapHill48R(rvs):
     """
     import tuneH48
     Hill48params = tuneH48.tuneGenR(rvs)
+    f,g,h,n=Hill48params
+    return wrapHill48Gen(f,g,h,n)
+
+def wrapHill48Y(ys,r0=None,r90=None):
+    """
+    This wrapper gives Hill48 yield function that is
+    characterized by in-plane uniaxial yield stresses and an r-value (either r0 or r90).
+    Yield stresses are passed as a list variable (or numpy array)
+    and is supposed to be a collection measured at an equi-angle
+    interval from RD to TD. For example, when ys=[1.5, 2.0] is given,
+    it is assumed that the corresponding yield stresses are 1.5 and 2.0 at RD and TD.
+
+    When the argument is a list that has 3 elements, it is assumed
+    that each element is an yield stress measured at, 0, 45 and 90 degrees
+    from RD, respectively.
+
+    Hill48 using yield-stresses
+
+    Arguments
+    ---------
+    ys
+    r0
+    r90
+    """
+    import tuneH48
+    Hill48params = tuneH48.tuneGenY(y=ys,r0=r0,r90=r90)
     f,g,h,n=Hill48params
     return wrapHill48Gen(f,g,h,n)
 
