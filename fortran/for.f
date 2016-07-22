@@ -67,7 +67,7 @@ c----------------------------------------------------------------------c
       subroutine hill48(s,fh,gh,hh,nh,phi,dphi,d2phi)
       implicit none
       real*8 s(6),fh,gh,hh,nh
-      real*8 h,phi,dphi(6),d2phi(6,6), d2h(6,6),a, b, dff, d2ff
+      real*8 h,phi,dphi(6),d2phi(6,6), d2h(6,6), dff, d2ff
 cf2py intent(in,out) s
 cf2py intent(in)     fh,gh,hh,nh
 cf2py intent(out)    phi, dphi, d2phi
@@ -97,12 +97,14 @@ cf2py intent(out)    phi, dphi, d2phi
       return
       end
 c----------------------------------------------------------------------c
-      subroutine swift(e,ks,n,e0,m,sig,dsig,dm,qq)
+      subroutine swift(e,ks,e0,m,sig,dsig,dm,qq,n)
       implicit none
       real*8 e,sig,dsig,dm
-      real*8 ks,e0,n,qq,m
-Cf2py intent(out) sig,dsig,n,m,dm,qq
+      real*8 ks,e0,qq,m,n
+Cf2py intent(out) sig,dsig,m,dm,qq,n
 Cf2py intent(in) e,ks,n,e0,m,qq
+
+c -- n,m,sig,dsig,dm,qq
 
 ! swift
       sig  = ks*(e+e0)**n
@@ -118,6 +120,19 @@ c$$$      write(*,*)'dm:',dm
 c$$$      write(*,*)'qq:',qq
       return
       end subroutine swift
+c----------------------------------------------------------------------c
+      subroutine voce(e,a,b0,c,b1,m,sig,dsig,dm,qq)
+      implicit none
+      real*8 e,a,b0,c,b1,m,sig,dsig,dm,qq
+cf2py intent(out) sig,dsig,n,m,dm,qq
+cf2py intent(in) e,a,b0,c,b1,m,qq
+
+!     Voce
+      sig  = a - b0 * dexp(-c*e) + b1*e
+      dsig = c * b0 * dexp(-c*e) + b1
+      dm   = 0.
+      return
+      end subroutine voce
 c----------------------------------------------------------------------c
 c     a: jacobian
 c     x: res

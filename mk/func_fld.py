@@ -150,7 +150,8 @@ def func_fld2(
     xa,ya,za = sa_rot[0], sa_rot[1],sa_rot[5]
     da_rot   = rot_6d(fa,-psi_new) ## A's dphi/dsig referred in the band axes
     matA.update_hrd(yold[0]+x[0])
-    na,ma,siga,dsiga,dma,qqa = matA.o_hrd
+    # na,ma,siga,dsiga,dma,qqa = matA.o_hrd
+    ma, siga, dsiga, dma, qqa = matA.o_hrd[:5]
 
     ## parameters in region B
     sb      = rot_6d(sb_dump,psi_new) ## use updated (tilde) psi
@@ -158,7 +159,7 @@ def func_fld2(
     sb,phib,fb,f2b = matB.o_yld
     db_rot         = rot_6d(fb,-psi_new)
     matB.update_hrd(T+deltat) ## delta t (incremental effective strain)
-    nb,mb,sigb,dsigb,dmb,qqb = matB.o_hrd
+    mb,sigb,dsigb,dmb,qqb = matB.o_hrd[:5]
 
     E = -yold[3]-yold[4]-deltat*(fb[0]+fb[1])\
         +yold[1]+yold[2]+  x[0]*(fa[0]+fa[1])
@@ -353,7 +354,7 @@ def func_fld1(
     ## which is often the case in forming limit simulations
     f2xb = calcF2XB(psi0,f2b)
 
-    nb,mb,sigb,dsigb,dmb,qq=matB.f_hrd(x[3])
+    mb,sigb,dsigb,dmb,qq=matB.f_hrd(x[3])[:5]
     if verbose:print 'x(4):',x[3]
     f=np.zeros(4)
     f[0] = db[1]              ## ettb (transverse strain rate or region B, should it be ettb - etta???)
@@ -361,6 +362,20 @@ def func_fld1(
     f[1] = x[2] - x[0]*b[5]   ## s12b - s11b * s12a/s11a ( all in band axes)
     f[2] = phib - 1.          ## determine if the stress is on the yield locus (consistency condition?)
     f[3] =-log(b[1]*sigb/b[2])+(b[3]-mb)*log(b[4])-x[3]*db[0]
+
+
+    if not(np.isfinite(f[3])):
+        print '-'*20
+        print 'f[3] is not finite:',f[3]
+        print 'b[:]:',b[:]
+        print 'mb:',mb
+        print 'sigb:',sigb
+        print 'dsigb:',dsigb
+        print 'dmb:',dmb
+        print 'qq:',qq
+        print 'x[:]',x[:]
+        print '-'*20
+
 
     cp = cos(psi0)
     sp = sin(psi0)

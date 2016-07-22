@@ -16,8 +16,30 @@ def func_swift(eps,k,eps_0,n):
     k
     eps_0
     n
+
+    Returns
+    -------
+    k*(eps+eps_0)**n
     """
     return k * (eps+eps_0) **n
+
+def func_voce(eps,a,b0,c,b1):
+    """
+    sigma = a-b0*exp(-c*eps) + b1 *eps
+
+    Arguments
+    ---------
+    eps
+    a
+    b0
+    c
+    b1
+
+    Returns
+    -------
+    a-b0*exp(-c*eps) + b1 *eps
+    """
+    return a-b0*np.exp(-c*eps) + b1 *eps
 
 # def func_swift_d(eps,k,eps_0,n):
 #     """
@@ -38,6 +60,10 @@ def func_hollomon(eps,k,n):
     Arguments
     ---------
     eps,k,n
+
+    Returns
+    -------
+    k * eps**n
     """
     return k * eps**n
 
@@ -49,6 +75,10 @@ def func_ludwik(eps,k,sig0,n):
     Arguments
     ---------
     eps,k,sig0,n
+
+    Returns
+    -------
+    sig0 + k*eps**n
     """
     return sig0 + k*eps**n
 
@@ -61,6 +91,10 @@ def func_hs(eps,sig0,k,eps0,n):
     Arguments
     ---------
     eps,sig0,k,eps0,n
+
+    Returns
+    -------
+    sig0 + K * (eps0 + eps)**n
     """
     return sig0 + K * (eps0 + eps)**n
 
@@ -69,6 +103,18 @@ def func_ludwigson(eps,k1,n1,k2,n2,):
     Ludwigson, 1971
 
     sigma = k1 * eps**n1 + exp(k2+n2*eps)
+
+    Arguments
+    --------
+    eps
+    k1
+    n1
+    k2
+    n2
+
+    Returns
+    -------
+    k1*eps**n1+np.exp(k2+n2*eps)
     """
     return k1*eps**n1+np.exp(k2+n2*eps)
 

@@ -73,8 +73,12 @@ class Constitutive:
         """
         self.eps = strain
         self.o_hrd = self.f_hrd(self.eps)
-        self.n, self.m, self.sig, self.dsig,\
-            self.dm, self.qq = self.o_hrd
+
+        self.m    = self.o_hrd[0]
+        self.sig  = self.o_hrd[1]
+        self.dsig = self.o_hrd[2]
+        self.dm   = self.o_hrd[3]
+        self.qq   = self.o_hrd[4]
 
     def recordCurrentStat(self):
         """

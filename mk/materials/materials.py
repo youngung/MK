@@ -5,7 +5,8 @@ Collection of materials
 ## with an assumption of 'isotropic' hardening
 ## Collection of materials
 from constitutive import Constitutive
-from func_hard_for import return_swift
+from func_hard_for import return_swift, return_voce
+import mk.yieldFunction.yf2
 from mk.yieldFunction.yf2 import wrapHill48R, VonMises, wrapYLD
 
 def IsoMat():
@@ -91,6 +92,46 @@ def IFsteel_H48R():
 
 
 
+
+## 20160722
+r_exp    = [2.0112440248052055, 1.8235555903215106, 2.669009844748163]
+y_exp    = [1.                , 1.02572944        , 0.99007923]
+rv3_vpsc = [1.42453631        , 1.43288609        , 1.94065753]
+ys3_vpsc = [1.                , 1.01883562        , 1.01582869]
+def IFsteel_H48R_20160722():
+    f_hrd = return_voce(a=479.00408591,b0=339.71480479,c=7.68395984,b1=70.86783572,m=5e-2,qq=1e3)
+    f_yld = mk.yieldFunction.yf2.wrapHill48R(rvs=[r_exp[0],r_exp[1],r_exp[2]])
+    return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
+def IFsteel_H48YR0_20160722():
+    f_hrd = return_voce(a=479.00408591,b0=339.71480479,c=7.68395984,b1=70.86783572,m=5e-2,qq=1e3)
+    f_yld = mk.yieldFunction.yf2.wrapHill48Y(ys=[y_exp[0],y_exp[1],y_exp[2]],r0=r_exp[0])
+    return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
+def IFsteel_H48YR90_20160722():
+    f_hrd = return_voce(a=479.00408591,b0=339.71480479,c=7.68395984,b1=70.86783572,m=5e-2,qq=1e3)
+    y_yld = mk.yieldFunction.yf2.wrapHill48Y(ys=[y_exp[0],y_exp[1],y_exp[2]],r90=r_exp[2])
+    return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
+def IFsteel_H48R_vpsc_20160722():
+    f_hrd = return_voce(a=479.00408591,b0=339.71480479,c=7.68395984,b1=70.86783572,m=5e-2,qq=1e3)
+    f_yld = mk.yieldFunction.yf2.wrapHill48R(rvs=rv3_vpsc)
+    return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
+def IFsteel_H48YR0_vpsc_20160722():
+    f_hrd = return_voce(a=479.00408591,b0=339.71480479,c=7.68395984,b1=70.86783572,m=5e-2,qq=1e3)
+    f_yld = mk.yieldFunction.yf2.wrapHill48Y(r0=rv3_vpsc[0], ys=ys3_vpsc)
+    return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
+def IFsteel_H48YR90_vpsc_20160722():
+    f_hrd = return_voce(a=479.00408591,b0=339.71480479,c=7.68395984,b1=70.86783572,m=5e-2,qq=1e3)
+    f_yld = mk.yieldFunction.yf2.wrapHill48Y(r90=rv3_vpsc[0], ys=ys3_vpsc)
+    return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
+def IFsteel_yld1_20160722():
+    f_hrd = return_voce(a=479.00408591,b0=339.71480479,c=7.68395984,b1=70.86783572,m=5e-2,qq=1e3)
+    f_yld = mk.yieldFunction.tuneYld2000.H48toYld_withYS(rv=[r_exp[0],r_exp[1],r_exp[2]],ys=y_exp,m=6)
+    return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
+def IFsteel_yld2_20160722():
+    f_hrd = return_voce(a=479.00408591,b0=339.71480479,c=7.68395984,b1=70.86783572,m=5e-2,qq=1e3)
+    f_yld = mk.yieldFunction.tuneYld2000.wrapYLD(r=[rv3_vpsc[0],rv3_vpsc[1],rv3_vpsc[2],rb],y=[ys3_vpsc[0],ys3_vpsc[1],ys3_vpsc[2],yb_vpsc],m=6)
+    return Constitutive(f_yld=f_yld, f_hrd=f_hrd)
+## End of 20160722 block
+
 def library(iopt):
     if iopt==0:
         return IsoMat
@@ -98,11 +139,29 @@ def library(iopt):
         return IFsteel
     elif iopt==2:
         return IFsteel_yld2000_case1
+    ## 20160608 starts here
     elif iopt==3:
         return IFsteel_Hill48R_20160608
     elif iopt==4:
         return IFsteel_yld2000_2d_1_20160608
     elif iopt==5:
         return IFsteel_yld2000_2d_2_20160608
+    ## 20160722 starts here
+    elif iopt==6:
+        return IFsteel_H48R_20160722
+    elif iopt==7:
+        return IFsteel_H48YR0_20160722
+    elif iopt==8:
+        return IFsteel_H48YR90_20160722
+    elif iopt==9:
+        return IFsteel_H48R_vpsc_20160722
+    elif iopt==10:
+        return IFsteel_H48YR0_vpsc_20160722
+    elif iopt==11:
+        return IFsteel_H48YR90_vpsc_20160722
+    elif iopt==12:
+        return IFsteel_yld1_20160722
+    elif iopt==13:
+        return IFsteel_yld2_20160722
     else:
         raise IOError,'not quite ready for this material'

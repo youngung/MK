@@ -1,8 +1,8 @@
 ### yf version that relies on fortran version of yield functions
 import matplotlib as mpl
 import os
-
-matplotlib.get_backend()
+mpl_backend=mpl.get_backend()
+print 'mpl.backend:',mpl_backend
 
 from MP.lib import whichcomp
 submitCommand, availX = whichcomp.determineEnvironment()
