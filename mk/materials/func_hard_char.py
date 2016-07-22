@@ -2,21 +2,41 @@
 import numpy as np
 from scipy.optimize import curve_fit
 
+def wrapper(func,*args):
+    """
+    Hardening function wrapper
+
+    Arguments
+    ---------
+    func
+    *args
+
+    Returns
+    -------
+    func(x,*args) that is a function of only strain (x).
+    """
+    def f_hard_char(x):
+        """
+        Argument
+        --------
+        x
+        """
+        return func(x,*args)
+    return f_hard_char
+
 def main(exp_dat,f_hard,params):
     """
     Arguments
     ---------
     exp_dat
     f_hard
-    x0
+    params (initial guess)
     """
     x,y = exp_dat
     # bounds --
+    # print 'params:', params
     popt, pcov = curve_fit(f_hard,x,y,p0=params)
-    def wrapper(func,*args):
-        def f_hard_char(x):
-            return func(x,*args)
-        return f_hard_char
+
     return wrapper(f_hard,*popt), popt, pcov
 
 def test1():
