@@ -85,13 +85,6 @@ def IFsteel_yld2000_2d_2_20160608():
         ys=[1.        ,  1.02781532,  0.98441769],m=6)
     return Constitutive(f_yld=f_yld,f_hrd=f_hrd)
 
-### -- 20160722
-def IFsteel_H48R():
-    ## hardening model
-    f_hrd = return_swift(n=0.255392940,m=5e-2,ks= 6.00162331e+02, e0=4.23405410e-04, qq=1e3)
-
-
-
 
 ## 20160722
 r_exp    = [2.0112440248052055, 1.8235555903215106, 2.669009844748163]
