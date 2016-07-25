@@ -147,7 +147,7 @@ def surface(func):
     return yieldSurface, y_s12
 
 def testSurface(
-        yfunc = mk.yieldFunction.yf2.wrapHill48R([1.5,2.4,2.9])):
+        yfunc =None): #mk.yieldFunction.yf2.wrapHill48R([1.5,2.4,2.9])):
     """
     Calculate the 3D space yield surface in (s11,s22,s12)
 

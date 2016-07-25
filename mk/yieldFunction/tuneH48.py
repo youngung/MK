@@ -30,8 +30,8 @@ def tuneGenY(y=[1.,1.,1.],r0=None,r90=None):
     h,g,f,n parameters in Hill48 yield function
     are analytically obtained.
 
-    Argument
-    --------
+    Arguments
+    ---------
     y   - yield stress list
     r0  - r-value along RD
     r90 - r-value along TD
