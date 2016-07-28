@@ -566,19 +566,32 @@ if __name__=='__main__':
     parser.add_argument(
         '--mat', type=int, default=0,
         help='Material card in materials.py (e.g., 0: IsoMat)')
+    parser.add_argument(
+        '--fnyld', type=str, default=None,
+        help='Yield function (pickled) binary file name')
+    parser.add_argument(
+        '--fnhrd', type=str, default=None,
+        help='Strain-hardening function (pickled) binary file name')
     #-------------------------------------------------------
     args = parser.parse_args()
-    f0   = args.f
-    psi0 = args.p
-    th   = args.t
-    fn   = args.fn
 
-    import mk.materials.materials
-
+    import mk.materials.materials, mk.materials.constitutive
+    import dill
     print 'args.mat:', args.mat
-    mat = mk.materials.materials.library(args.mat)
+    print 'args.fnyld:', args.fnyld
+    print 'args.fnhrd:', args.fnhrd
+    if type(args.fnyld).__name__=='NoneType' \
+       and type(args.fnhrd).__name__=='NoneType':
+        with open(args.fnyld,'rb') as fo:
+            fyld = dill.load(fo)
+        with open(args.fnhrd,'rb') as fo:
+            fhrd = dill.load(fo)
+        mat = mk.materials.constitutive.Constutitive(f_yld=fyld,f_hrd=fhrd)
+    else:
+        mat = mk.materials.materials.library(args.mat)
+
     if type(mat).__name__=='NoneType':
         raise IOError, 'None returned from the library'
     print 'mat:', mat
-    main(f0=f0,psi0=psi0,th=th,logFileName=fn,material=mat)
+    main(f0=args.f,psi0=args.p,th=args.t,logFileName=args.fn,material=mat)
     pass

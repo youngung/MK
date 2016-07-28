@@ -109,7 +109,7 @@ def postAnalysis(masterFileName):
 def test_pp(fn='/local_scratch/MK-6e59e6-results.txt'):
     postAnalysis(fn)
 
-def makeCommands(f0,psi0,th,logFileName,mat):
+def makeCommands(f0,psi0,th,logFileName,mat,fnyld,fnhrd):
     """
     Arguments
     ---------
@@ -118,13 +118,15 @@ def makeCommands(f0,psi0,th,logFileName,mat):
     th
     logFileName
     mat
+    fnyld
+    fnhrd
     """
     from mk.library.lib      import gen_tempfile
-    # stdoutFileName = gen_tempfile(
-    #     prefix='stdout-mkrun')
-    stdoutFileName ='/tmp/dump'
-    cmd = 'python main.py --fn %s -f %5.4f -p %+6.1f -t %+7.2f --mat %i > %s'%(
-        logFileName,f0,psi0,th,mat,stdoutFileName)
+    stdoutFileName = gen_tempfile(
+        prefix='stdout-mkrun')
+    # stdoutFileName ='/tmp/dump'
+    cmd = 'python main.py --fn %s -f %5.4f -p %+6.1f -t %+7.2f --mat %i --fnyld %s --fnhrd %s > %s'%(
+        logFileName,f0,psi0,th,mat,fnyld,fnhrd,stdoutFileName)
     print 'cmd:',cmd
     return cmd
 
@@ -142,9 +144,9 @@ def prepRun(*args):
     cmd = makeCommands(*args)
     return cmd
 
-
 """
-$ python mk_run.py --f0 0.995 --r0 -0.5 --r1 1 --nr 4 --mat 0
+$ python mk_run.py --f0 0.995 --r0 -0.5 --r1 1
+             --nr 4 --mat 0 --fnyld <> --fnhrd <>
 """
 if __name__=='__main__':
     import numpy as np
@@ -168,10 +170,15 @@ if __name__=='__main__':
     parser.add_argument(
         '--mat', type=int, default=0,
         help='Material card in materials.py - see <def library> in materials.py\n(0: IsoMat, 1:)')
+    parser.add_argument(
+        '--fnyld', type=str,default=None,
+        help='yield function pickled file name')
+    parser.add_argument(
+        '--fnhrd', type=str,default=None,
+        help='strain hardening function pickled file name')
 
     ## rho to theta? ( should be later passed as arguments)
     args        = parser.parse_args()
-    f0   = args.f0
     rhos = np.linspace(args.r0,args.r1,args.nr)
 
     print 'rhos:', rhos
@@ -191,12 +198,13 @@ if __name__=='__main__':
             psi0 = _psi0s_[j]
             logFileName = gen_tempfile(
                 prefix='mk-f0%3.3i-psi%+6.3f-th%+6.3f'%(
-                    int(f0*1e3),psi0,ths[i]),
+                    int(args.f0*1e3),psi0,ths[i]),
                 affix='log',i=(i*10000+j))
             logFileNames[i].append(logFileName)
             k=k+1
             print '%3i %6.2f %5.1f %5.1f %60s'%(
-                k, rhos[i], ths[i]*180/np.pi, psi0*180/np.pi,logFileName)
+                k, rhos[i], ths[i]*180/np.pi,
+                psi0*180/np.pi,logFileName)
             pass
         print '-'*83
         pass
@@ -211,11 +219,12 @@ if __name__=='__main__':
             psi0 = p0s[i][j]
             r=pool.apply_async(
                 func=run,
-                args=(f0,
+                args=(args.f0,
                       psi0*180/np.pi,
                       ths[i]*180/np.pi,
                       logFileNames[i][j],
-                      args.mat
+                      args.mat,
+                      args.fnyld,args.fnhrd
                 ))
             results[i].append(r)
             pass
