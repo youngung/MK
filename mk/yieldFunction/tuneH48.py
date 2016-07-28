@@ -103,9 +103,9 @@ def tuneGenY(y=[1.,1.,1.],r0=None,r90=None):
 
     else:
         raise IOError, 'Unexpected case of arguments passed to mk.yieldfunction.tuneH48.tuneGenY'
-    print 'Hill48 parameter tuning in tuneH48.tuneGenY'
-    print ('%7s'*4)%('f','g','h','n')
-    print ('%7.3f'*4)%(f,g,h,n)
+    # print 'Hill48 parameter tuning in tuneH48.tuneGenY'
+    # print ('%7s'*4)%('f','g','h','n')
+    # print ('%7.3f'*4)%(f,g,h,n)
 
     return f,g,h,n
 
@@ -174,9 +174,9 @@ def tuneGenR(r=[2.2,2.0,2.9]):
         params = params / y
         f,g,h,n = params
 
-    print 'Hill48 parameter tuning in tuneH48.tuneGenR'
-    print ('%7s'*4)%('f','g','h','n')
-    print ('%7.3f'*4)%(f,g,h,n)
+    # print 'Hill48 parameter tuning in tuneH48.tuneGenR'
+    # print ('%7s'*4)%('f','g','h','n')
+    # print ('%7.3f'*4)%(f,g,h,n)
 
     return f,g,h,n
 
@@ -228,9 +228,9 @@ def tuneR2(r0=1.,r90=1.):
     params = params / y
     f,g,h,n = params
 
-    print 'Hill48 parameter tuning in tuneH48.tuneR2'
-    print ('%6s'*4)%('f','g','h','n')
-    print ('%6.3f'*4)%(f,g,h,n)
+    # print 'Hill48 parameter tuning in tuneH48.tuneR2'
+    # print ('%6s'*4)%('f','g','h','n')
+    # print ('%6.3f'*4)%(f,g,h,n)
     return f,g,h,n
 
 ## Generate objective function that compares yield locus
