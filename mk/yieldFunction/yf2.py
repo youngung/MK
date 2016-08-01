@@ -87,6 +87,10 @@ def wrapYLD(r=[1,1,1,1],y=[1,1,1,1],m=6,k=2):
 def VonMises(s):
     """
     Wrapper of Von Mises yield function (no parameter is required)
+
+    Argument
+    --------
+    s
     """
     snew,phi,dphi,d2phi = vm(s)
     return snew,phi,dphi,d2phi

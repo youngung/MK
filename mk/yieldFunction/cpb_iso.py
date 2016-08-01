@@ -29,16 +29,31 @@ def eq4(S,a,k):
     return f
 
 def eq5a(a,k):
+    """
+    Calculate ratio of tension to compression yield stress
+    using the exponent a and parameter k
+
+    Arguments
+    ---------
+    a
+    k
+    """
     p1=2./3.
     p2=1./3.
-
-    rst =(   (  (p1*(1+k))**a+2*(p2*(1-k))**a  ) /  ( (p1*(1-k))**a+2*(p2*(1+k))**a   )   ) **(1./a)
+    rst =(( (p1*(1+k))**a+2*(p2*(1-k))**a )/  \
+          ( (p1*(1-k))**a+2*(p2*(1+k))**a )  )\
+          **(1./a)
     return rst
 
 def eq5b(x,a):
     """
     Convert tension/compression ratio (x) to k
     with the given value of exponent a
+
+    Arguments
+    ---------
+    x
+    a
     """
     h = eq5c(x,a)
     k = (1-h)/(1+h)
