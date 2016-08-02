@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import scipy.optimize
 import mk.library.lib
 
-
 def data(iopt=0):
     """
     Data library

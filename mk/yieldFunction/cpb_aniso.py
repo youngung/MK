@@ -30,17 +30,20 @@ def eq9(S,a,k):
         F=F+(np.abs(S[i]) - k * S[i])**a
     return F
 
-def main(s=[1,0,0,0,0,0],iopt=0):
+def main(s=[1,0,0,0,0,0],iopt=0,inorm=False):
     """
     Arguments
     ---------
     s = [1,0,0,0,0,0] - Cauchy stress
     iopt (used in cpb_data.tab1_cpb)
+    inorm = False (if True, normalize the yield locus by
+            tension stress along RD)
     """
     if type(s).__name__=='ndarray':
         S=s.copy()
     else:
-        S=np.array(s,dtype='float')
+        s=np.array(s,dtype='float')
+        S=s.copy()
     Sdev = cpb_lib.deviator(S)
 
     C, k = cpb_data.tab1_cpb(iopt=iopt)
@@ -53,6 +56,13 @@ def main(s=[1,0,0,0,0,0],iopt=0):
     a = 2.
     F = eq9(S=Sig, a=a, k=k)
     f1 = (F)**(1./a)
+
+    if inorm:
+        """
+        normarlize w.r.t. uniaxial tension yield stress along RD
+        """
+        s0t, s0c = eq12(C,a,k)
+        f1=f1*s0t
     return S.copy()/f1
 
 def locus(yfunc=main,nth=100,iplot=False,**kwargs):
@@ -161,9 +171,7 @@ def eq11_aux(cauchyStress,C):
 
 def calcPhis(C):
     """
-    Returns Phi1, Phi2, Phi3
-
-    Eq12
+    Returns Phi1, Phi2, Phi3 for Eq12
 
     Argument
     --------
@@ -171,18 +179,14 @@ def calcPhis(C):
     """
     p1   = 2./3.
     p2   = 1./3.
-    c11  = C[0,0]
-    c12  = C[0,1]
-    c13  = C[0,2]
-    c22  = C[1,1]
-    c23  = C[1,2]
-    c33  = C[2,2]
+    c11,c22,c33,c44,c55,c66,c23,c13,c12 = cpb_lib.C2comp(C)
+
     Phi1 = (p1*c11-p2*c12-p2*c13)
     Phi2 = (p1*c12-p2*c22-p2*c23)
     Phi3 = (p1*c13-p2*c23-p2*c33)
     return Phi1, Phi2, Phi3
 
-def calcTC0(C,a,k):
+def eq12(C,a,k):
     """
     Calculate tension and compression yield stress
     at phi = 0.
@@ -203,3 +207,42 @@ def calcTC0(C,a,k):
     s0t = (1./s0t_) ** (1./a)
     s0c = (1./s0c_) ** (1./a)
     return s0t, s0c
+
+def calcPsis(C):
+    """
+    Returns Psi1, Psi2, Psi3 for eq13
+
+    Argument
+    --------
+    C (6x6) matrix
+    """
+    p1   = 1./3.
+    p2   = 2./3.
+    c11,c22,c33,c44,c55,c66,c23,c13,c12 = cpb_lib.C2comp(C)
+
+    Psi1 = -p1*c11+p2*c12-p1*c13
+    Psi2 = -p1*c12+p2*c22-p1*c23
+    Psi3 = -p1*c13+p2*c23-p1*c33
+    return Psi1, Psi2, Psi3
+
+def eq13(C,a,k):
+    """
+    Calculate tension and compression yield stress
+    at phi = 0.
+
+    Arguments
+    ---------
+    C (6x6)
+    a : exponent
+    k : k parameter
+    """
+    p1,p2,p3 = calcPsis(C)
+    Psis = np.array([p1,p2,p3])
+    s90t_=0
+    s90c_=0.
+    for i in xrange(len(Psis)):
+        s90t_ = s90t_ + (np.abs(Psis[i])-k*Psis[i])**a
+        s90c_ = s90c_ + (np.abs(Psis[i])+k*Psis[i])**a
+    s90t = (1./s90t_)**(1./a)
+    s90c = (1./s90c_)**(1./a)
+    return s90t, s90c
