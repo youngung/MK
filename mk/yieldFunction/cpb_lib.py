@@ -13,10 +13,11 @@ def deviator(a):
     S[:3] = S[:3] - p/3.
     return S
 
-def calcC(c11=0.,c22=0.,c33=0.,c44=0.,c55=0.,c66=0.,c23=0.,c13=0.,c12=0.):
+def calcC(c11=1.,c22=1.,c33=1.,c44=1.,c55=1.,c66=0.,c23=0.,c13=0.,c12=0.):
     """
     Calculate C (6x6) matrix
-    The default value of each invidual component is zero.
+    The default value of each individual diagonal components is unity.
+    The default value of each individual off-diagonal components is zero.
 
     Arguments
     ---------

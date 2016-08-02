@@ -44,13 +44,10 @@ def main(s=[1,0,0,0,0,0],iopt=0):
     Sdev = cpb_lib.deviator(S)
 
     C, k = cpb_data.tab1_cpb(iopt=iopt)
-    # Sig = np.tensordot(C,S,axes=(1,0))
-    # ## find principal values
-    # Sig,dum = mk.library.lib.convert_6sig_princ(Sig)
-    # Sig=np.sort(Sig)[::-1] ## descending order (large to small)
+    # C, k = cpb_data.tab2_cpb(iopt=iopt)
 
-    # ## principal values from def princ
-    Sig = princ2(s, C)
+    # ## find principal values
+    Sig = princ(s, C)
     Sig = np.sort(Sig)
 
     a = 2.
@@ -66,15 +63,30 @@ def locus(yfunc=main,nth=100,iplot=False,**kwargs):
     nth
     iplot
     **kwargs
+
+    Returns
+    -------
+    X,Y coordinates of polygonal yield locus in plane stress space
+    of (s11, s22) with s_ij being cauchy stress compoents.
     """
     x,y = cpb_iso.locus(yfunc,nth,iplot,**kwargs)
     return x, y
 
-
 def princ2(cauchyStress,C):
     """
-    Calculate the principal values using 
+    Calculate the principal values using
     Sig = C:T:s form
+
+    Arguments
+    ---------
+    cauchyStress - the linearly transformed stress Sigma
+    C (6x6) tensor for linear transformation
+
+    Returns
+    -------
+    S1
+    S2
+    S3
     """
     sqrt=np.sqrt
     s = cauchyStress.copy()
@@ -87,7 +99,6 @@ def princ2(cauchyStress,C):
     S2 = 0.5*(Sxx + Syy - sqrt( (Sxx-Syy)**2 + 4*Sxy**2))
     S3 = Szz
     return S1, S2, S3
-    
 
 def princ(cauchyStress,C):
     """
@@ -104,7 +115,7 @@ def princ(cauchyStress,C):
     """
     sqrt=np.sqrt
     Sxx,Syy,Szz,Sxy = eq11_aux(cauchyStress,C)
-    
+
     S1 = 0.5*(Sxx + Syy + sqrt( (Sxx-Syy)**2 + 4*Sxy**2))
     S2 = 0.5*(Sxx + Syy - sqrt( (Sxx-Syy)**2 + 4*Sxy**2))
     S3 = Szz
