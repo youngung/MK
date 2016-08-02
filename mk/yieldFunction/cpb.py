@@ -113,7 +113,7 @@ def main(s=[1,0,0,0,0,0]):
     s=s*ct
     return s
 
-def locus(nth=100):
+def locus(nth=100,iplot=False):
     """
     in-plane biaxial locus
 
@@ -135,21 +135,26 @@ def locus(nth=100):
         X.append(ys[0])
         Y.append(ys[1])
 
-    fig=plt.figure()
-    ax1=fig.add_subplot(111)
-    ax1.plot(X,Y)
-    ft=dict(fontsize=18)
-    ax1.set_xlabel(r'$\bar{\Sigma}_{RD}$',ft)
-    ax1.set_ylabel(r'$\bar{\Sigma}_{TD}$',ft)
-    ax1.grid('on')
-    ax1.set_aspect('equal')
+    if iplot:
+        fig=plt.figure()
+        ax1=fig.add_subplot(111)
+        ax1.plot(X,Y)
+        ft=dict(fontsize=18)
+        ax1.set_xlabel(r'$\bar{\Sigma}_{RD}$',ft)
+        ax1.set_ylabel(r'$\bar{\Sigma}_{TD}$',ft)
+        ax1.grid('on')
+        ax1.set_aspect('equal')
 
-    ax1.set_xlim(-2.0,3.0); ax1.set_ylim(-2.0,3.0)
-    ticks=np.linspace(-2,3,6)
-    ax1.set_xticks(ticks)
-    ax1.set_yticks(ticks)
+        ax1.set_xlim(-2.0,3.0); ax1.set_ylim(-2.0,3.0)
+        ticks=np.linspace(-2,3,6)
+        ax1.set_xticks(ticks)
+        ax1.set_yticks(ticks)
+        fn='cpb_locus.pdf'
+        fig.savefig(fn,bbox_inches='tight')
+        print '%s has been saved'%fn
+        pass
+    return X,Y
 
-    fig.savefig('cpb_locus.pdf',bbox_inches='tight')
 
 def inplaneTension():
     psis = np.linspace(0,+np.pi/2.,100)

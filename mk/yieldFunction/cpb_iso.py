@@ -8,7 +8,7 @@ import mk.library.lib
 
 def eq4(S,a,k):
     """
-    Eq4 (or Eq9) in Cazacu et al.
+    Eq4 in Cazacu et al.
     F=(|S_1|-k*S_1)**a + (|S_2|-k*S_2)**a +(|S_3|-k*S_3)**a
     with S_i, i.e., the principal values of the stress deviator.
 
@@ -38,8 +38,6 @@ def eq4(S,a,k):
     for i in xrange(len(sig)):
         f = f + (np.abs(sig[i])-k*sig[i])**a
     return f
-
-eq9 = eq4
 
 def eq5a(a,k):
     """
@@ -96,15 +94,7 @@ def eq5c(x,a):
     """
     return ((2.**a - 2.*(x**a)) / ( (2*x)**a - 2   )) **(1./a)
 
-def deviator(a):
-    if type(a).__name__=='ndarray':
-        S=a.copy()
-    else:
-        S=np.array(a,dtype='float')
-    # make sure that the given stress <sigma> is a deviator
-    p = S[:3].sum()
-    S[:3] = S[:3] - p/3.
-    return S
+
 
 def main(s=[1,0,0,0,0,0],a=4,k=0.):
     """
@@ -114,15 +104,16 @@ def main(s=[1,0,0,0,0,0],a=4,k=0.):
     a
     k
     """
+    import cpb_lib
     if type(s).__name__=='ndarray':
         S=s.copy()
     else:
         S=np.array(s,dtype='float')
-    Sdev = deviator(S)
+    Sdev = cpb_lib.deviator(S)
 
     f=eq4(S=Sdev.copy(),a=a,k=k)
     f1=(f)**(1./a)
-    # Sdev2 = deviator(S.copy()/f1)
+    # Sdev2 = cpb_lib.deviator(S.copy()/f1)
     # f2=eq4(Sdev2.copy(),a=a,k=k)
     # print 'f2:',f2
 
@@ -139,7 +130,10 @@ def locus(yfunc=main,nth=100,iplot=False,**kwargs):
 
     Argument
     --------
+    yfunc
     nth = 100
+    iplot
+    **kwargs
     """
     import numpy as np
     pi = np.pi
@@ -162,22 +156,18 @@ def locus(yfunc=main,nth=100,iplot=False,**kwargs):
     fsinv=np.array(fsinv)
 
     if iplot:
+        ft=dict(fontsize=18)
         fig=plt.figure()
         ax1=fig.add_subplot(121)
-        ax2=fig.add_subplot(122)
-        #ax1.plot(X,Y)
         ax1.plot(X,Y)
-        ft=dict(fontsize=18)
         ax1.set_xlabel(r'$\bar{\Sigma}_{RD}$',ft)
         ax1.set_ylabel(r'$\bar{\Sigma}_{TD}$',ft)
         ax1.grid('on')
         ax1.set_aspect('equal')
-
         ax1.set_xlim(-2.0,3.0); ax1.set_ylim(-2.0,3.0)
         ticks=np.linspace(-2,3,6)
         ax1.set_xticks(ticks)
         ax1.set_yticks(ticks)
-
         fig.savefig('cpb_iso_locus.pdf',bbox_inches='tight')
         pass
     return X,Y

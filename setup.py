@@ -1,9 +1,9 @@
 ## Dependents
 from distutils.core import setup
 from numpy.distutils.core import setup as setup_numpy
-from distutils.extension import Extension
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
+# from distutils.extension import Extension
+# from Cython.Build import cythonize
+# from Cython.Distutils import build_ext
 from numpy.distutils.core import Extension
 
 from distutils.core import setup
@@ -36,18 +36,18 @@ shutil.copy('yld2000_sa',path_site)
 os.remove('yld2000_sa')
 
 
-## Fortran subroutines with f2py
-ext_modules = []
-ext_modules += [
-        Extension(
-            name="yf_for",
-            sources=['fortran/for.f'],
-            extra_compile_args=['-O3']
-        )]
-ext_modules += [
-        Extension(
-            name="yf_yld2000",
-            sources=['fortran/yld2000.f','fortran/yld2000_lib.f'],
-            extra_compile_args=['-O3']
-        )]
-setup_numpy(ext_modules=ext_modules)
+# ## Fortran subroutines with f2py
+# ext_modules = []
+# ext_modules += [
+#         Extension(
+#             name="yf_for",
+#             sources=['fortran/for.f'],
+#             extra_compile_args=['-O3']
+#         )]
+# ext_modules += [
+#     Extension(
+#         name="yf_yld2000",
+#         sources=['fortran/yld2000.f','fortran/yld2000_lib.f'],
+#         extra_compile_args=['-O3']
+#     )]
+# setup_numpy(ext_modules=ext_modules)
