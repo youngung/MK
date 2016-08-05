@@ -27,16 +27,12 @@ setup(name='MK',
       })
 
 
+## Compile the stand-alone binary of yld2000
+path_site = site.getsitepackages()[0]
+os.system('bash setup_for.sh')
+shutil.copy('yld2000_sa',path_site)
+os.remove('yld2000_sa')
 
-
-# from Cython.Build import cythonize
-# from Cython.Distutils import build_ext
-
-# ## Compile the stand-alone binary of yld2000
-# path_site = site.getsitepackages()[0]
-# os.system('bash setup_for.sh')
-# shutil.copy('yld2000_sa',path_site)
-# os.remove('yld2000_sa')
 
 
 # ## Fortran subroutines with f2py
