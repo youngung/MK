@@ -250,7 +250,8 @@ def findCorrectPath(epsAng):
     elif 90<=epsAng<145:
         return DTD, pth
     else:
-        raise IOError,'Could not find the corrent range'
+        print 'epsAng:',epsAng
+        raise IOError,'Could not find the current range'
 
 def testAllPaths():
     paths = returnPaths()

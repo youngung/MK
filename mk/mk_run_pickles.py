@@ -19,6 +19,7 @@ if __name__=='__main__':
     from MP import progress_bar
     from mk_paths import findCorrectPsi
     import subprocess
+    from MP.lib import etc
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--f0',type=float,help='f0 value')
@@ -29,47 +30,65 @@ if __name__=='__main__':
     args        = parser.parse_args()
 
     with open(args.fnpickle, 'rb') as fo:
+        eps_eq     = dill.load(fo)
         yfs        = dill.load(fo)
         yfs_labels = dill.load(fo)
         hfs        = dill.load(fo)
         hfs_labels = dill.load(fo)
-        results    = dill.load(fo)
+        results    = dill.load(fo) ## not important yet...
 
     fnCollect=[]
-    for ihrd in xrange(len(hfs)):
+    for ihrd in xrange(len(hfs)): ## type of hardening function
         hfs[ihrd]
         hfnDill = gen_tempfile(prefix='yfs',ext='dll')
         with open(hfnDill, 'w') as fo:
             dill.dump(hfs[ihrd],fo)
+        for ieps in xrange(len(eps_eq)):
+            for iyld in xrange(len(yfs[ieps])): ## type of yield function
+                yfnDill = gen_tempfile(prefix='hfs',ext='dll')
+                hashcode = etc.gen_hash_code2(nchar=6)
+                with open(yfnDill,'w') as fo:
+                    dill.dump(yfs[ieps][iyld],fo)
+                cmd = 'python mk_run.py --f0 %f --r0 %f --r1 %f --nr %i'
+                cmd = cmd + ' --hash %s --mat 0 --fnyld %s --fnhrd %s'
+                cmd = cmd%(args.f0, args.r0, args.r1, args.nr, hashcode,
+                           yfnDill, hfnDill)
+                print '\n'*2,'-'*20
+                print 'cmd:'
+                print cmd
+                print '-'*20,'\n'*2
+                os.system(cmd)
+                fn_tar = gen_tempfile(prefix='mk_%.4f_%s_%s_%.3f_'%(
+                        eps_eq[ieps],yfs_labels[iyld],hfs_labels[ihrd],
+                        args.f0),ext='tar')
+                subprocess.check_call(['tar','-cvf',fn_tar,
+                                       'allFLD-%s.txt'%hashcode,
+                                       'minFLD-%s.txt'%hashcode])
+                shutil.move(fn_tar, os.getcwd())
+                fnCollect.append(os.path.split(fn_tar)[-1])
 
-        for iyld in xrange(len(yfs)):
-            yfs[iyld]
-            yfnDill = gen_tempfile(prefix='hfs',ext='dll')
-            with open(yfnDill,'w') as fo:
-                dill.dump(yfs[iyld],fo)
-            cmd = 'python mk_run.py --f0 %f --r0 %f --r1 %f'
-            cmd = cmd + ' --mat 0 --nr %i --fnyld %s --fnhrd %s'
-            cmd = cmd%(args.f0, args.r0, args.r1, args.nr,
-                       yfnDill, hfnDill)
-            print '\n'*2,'-'*20
-            print 'cmd:'
-            print cmd
-            print '-'*20,'\n'*2
-            os.system(cmd)
-            fn_tar = gen_tempfile(prefix='mk_%s_%s_%.3f_'%(
-                    yfs_labels[iyld],hfs_labels[ihrd],
-                    args.f0),ext='tar')
-            subprocess.check_call(['tar','-cvf',fn_tar,'allFLD.txt','minFLD.txt'])
-            shutil.move(fn_tar, os.getcwd())
-            fnCollect.append(os.path.split(fn_tar)[-1])
-
+    ## archive the results (and the pickled filed passed to the simulation as well)
+    # - prepare..
+    shutil.copy(args.fnpickle, os.getcwd())
     fn_tar = gen_tempfile(
         prefix='mk_%.3f_%s'%(
             args.f0,time.strftime('%Y%m%d-%H%M')),ext='tar')
     fn_tar=os.path.split(fn_tar)[-1]
-    cmd = 'tar -cvf %s '%fn_tar
+
+    # - archive
+    cmd = ['tar','-cvf',fn_tar]
     for i in xrange(len(fnCollect)):
-        cmd = '%s %s'%(cmd,fnCollect[i])
-    os.system(cmd)
+        cmd.append(fnCollect[i])
+    subprocess.check_call(cmd)
+
+    # - remove archived files
     for i in xrange(len(fnCollect)):
         os.remove(fnCollect[i])
+    os.remove(os.path.split(args.fnpickle)[-1])
+
+    ## move fn_tar to archive folder
+    path_parent = os.path.split(os.getcwd())[0]
+    path_archive = os.path.join(path_parent,'archive')
+    print 'fn_tar:', fn_tar
+    print 'is moved to:', path_archive
+    shutil.move(fn_tar, path_archive)

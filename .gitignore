@@ -1,3 +1,7 @@
+MK.e*
+MK.o*
+fortran/
+*.txt
 man/
 build/
 *.pdf
