@@ -52,7 +52,7 @@ if __name__=='__main__':
         pass
 
     # neps_eq = len(eps_eq)
-    # nyfs = len(yfs[0])
+    # nyfs    = len(yfs[0])
     neps_eq = 1
     nyfs    = 1
 
@@ -75,9 +75,9 @@ if __name__=='__main__':
                            yfnDill)
 
                 if ivpsc_hard:
-                    cmd = cmd%' --fnhrd_vpsc %s'%args.fnpickle_vpsc_hard
+                    cmd = cmd+' --fnhrd_vpsc %s'%args.fnpickle_vpsc_hard
                 else:
-                    cmd = cmd%' --fnhrd %s'%hfnDill
+                    cmd = cmd+' --fnhrd %s'%hfnDill
 
                 print '\n'*2,'-'*20
                 print 'cmd:'

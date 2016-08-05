@@ -198,7 +198,7 @@ if __name__=='__main__':
     if ivpsc_hard:
         ## find suitable fnhrd_vpsc that has the nearest <rhop> value
         ## in comparison with each individual rho value given.
-        with open(args.fnhrd_vpsc,'wb') as fo:
+        with open(args.fnhrd_vpsc,'rb') as fo:
             WorkContour_vpsc_rho = dill.load(fo)
             rhops = dill.load(fo)
 
