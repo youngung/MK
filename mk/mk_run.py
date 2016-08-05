@@ -147,7 +147,7 @@ def prepRun(*args):
 
 """
 $ python mk_run.py --f0 0.995 --r0 -0.5 --r1 1
-             --nr 4 --mat 0 --fnyld <> --fnhrd <>
+             --nr 4 --mat 0 --fnyld <> --fnhrd <> --fnhrd-vpsc <>
 """
 if __name__=='__main__':
     import numpy as np
@@ -156,7 +156,7 @@ if __name__=='__main__':
     import os,multiprocessing,time
     from MP import progress_bar
     from mk_paths import findCorrectPsi
-    import argparse
+    import argparse, dill
     from MP.lib import etc
 
     ## Arguments parsing
@@ -179,14 +179,39 @@ if __name__=='__main__':
         '--fnhrd', type=str,default=None,
         help='strain hardening function pickled file name')
     parser.add_argument(
+        '--fnhrd_vpsc', type=str,default=None,
+        help='strain hardening function pickled file name, which is characterized by VPSC model runs')
+    parser.add_argument(
         '--hash', type=str,default=etc.gen_hash_code2(nchar=6),
         help='unique hash code for identity')
 
     ## rho to theta? ( should be later passed as arguments)
-    args        = parser.parse_args()
+    args = parser.parse_args()
     rhos = np.linspace(args.r0,args.r1,args.nr)
 
     print 'rhos:', rhos
+    if type(args.fnhrd_vpsc).__name__=='NoneType':
+        ivpsc_hard=False
+    else:
+        ivpsc_hard=True
+
+    if ivpsc_hard:
+        ## find suitable fnhrd_vpsc that has the nearest <rhop> value
+        ## in comparison with each individual rho value given.
+        with open(args.fnhrd_vpsc,'wb') as fo:
+            WorkContour_vpsc_rho = dill.load(fo)
+            rhops = dill.load(fo)
+
+        rhops = np.array(rhops)
+        f_hard_funcs = []
+        fns_vpsc_hfs=[]
+        for ir in xrange(len(rhos)):
+            diffs = np.abs(rhops - rhos[ir])
+            inds = np.argsort(diffs)
+            i0 = inds[0] ## nearest hardening function
+            f_hard_funcs.append(WorkContour_vpsc_rho[i0].f_voce)
+            fn = gen_tempfile(prefix='hfs-VPSC',ext='dll')
+            fns_vpsc_hfs.append(fn)
 
     ths  = rhos2ths(rhos)
     uet  = progress_bar.update_elapsed_time
@@ -222,6 +247,12 @@ if __name__=='__main__':
         results.append([])
         for j in xrange(len(p0s[i])):
             psi0 = p0s[i][j]
+
+            if ivpsc_hard:
+                fnhrd = fns_vpsc_hfs[i]
+            else:
+                fnhrd = args.fnhrd
+
             r=pool.apply_async(
                 func=run,
                 args=(args.f0,
@@ -229,7 +260,7 @@ if __name__=='__main__':
                       ths[i]*180/np.pi,
                       logFileNames[i][j],
                       args.mat,
-                      args.fnyld,args.fnhrd
+                      args.fnyld,fnhrd
                 ))
             results[i].append(r)
             pass

@@ -3,16 +3,32 @@ Various tests
 """
 
 def test1():
-    import fldb
-    fldb.test_save_a()
+    print 'Removed feature'
+    # import fldb
+    # fldb.test_save_a()
 
 def test2():
-    import fldb
-    fldb.main()
+    print 'Removed feature'
+    # import fldb
+    # fldb.main()
 
 def test3():
-    import materials
-    materials.tension_tests()
+    import numpy as np
+    import matplotlib as mpl
+    mpl.use('agg')
+    import matplotlib.pyplot as plt
+    import mk.tests.mechtests, mk.yieldFunction.yf2
+    fyld = mk.yieldFunction.yf2.wrapHill48R([1.,2,1.5])
+    psis, rvs, phis = mk.tests.mechtests.inplaneTension(fyld)
+
+    ##
+    r2d = np.pi/180.
+    fig=plt.figure()
+    ax1=fig.add_subplot(111)
+    ax1.plot(psis*r2d, rvs)
+    fn='testCodeTest3.pdf'
+    print '%s has been saved'%fn
+    fig.savefig(fn)
 
 def test4():
     """
