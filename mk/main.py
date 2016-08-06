@@ -564,7 +564,7 @@ if __name__=='__main__':
         help='Angle [theta in degree] of'+\
             ' strain rate theta=atan2(eyy,exx) in [degree]')
     parser.add_argument(
-        '--mat', type=int, default=0,
+        '--mat', type=int, default=-1,
         help='Material card in materials.py (e.g., 0: IsoMat)')
     parser.add_argument(
         '--fnyld', type=str, default=None,

@@ -135,10 +135,17 @@ def test_run():
     run(f0=0.995,psi0=0.,th=0.,logFileName='dum')
 
 def run(*args):
-    import os
+    """
+    Arguments
+    ---------
+    dry
+    *args
+    """
+    print 'You are in mk_run.run'
+    import os, subprocess
     cmd = makeCommands(*args)
     os.system(cmd)
-    return cmd
+    # subprocess.check_call(cmd.split())
 
 def prepRun(*args):
     import os
@@ -170,7 +177,7 @@ if __name__=='__main__':
     parser.add_argument(
         '--nr',type=int,help='number of rhos')
     parser.add_argument(
-        '--mat', type=int, default=0,
+        '--mat', type=int, default=-1,
         help='Material card in materials.py - see <def library> in materials.py\n(0: IsoMat, 1:)')
     parser.add_argument(
         '--fnyld', type=str,default=None,
@@ -184,6 +191,8 @@ if __name__=='__main__':
     parser.add_argument(
         '--hash', type=str,default=etc.gen_hash_code2(nchar=6),
         help='unique hash code for identity')
+    parser.add_argument('--dry',dest='dry',action='store_true',
+                        default=False)
 
     ## rho to theta? ( should be later passed as arguments)
     args = parser.parse_args()
@@ -195,6 +204,7 @@ if __name__=='__main__':
         ivpsc_hard=True
 
     if ivpsc_hard:
+        print 'Read based on VPSC hardening fittings'
         ## find suitable fnhrd_vpsc that has the nearest <rhop> value
         ## in comparison with each individual rho value given.
         with open(args.fnhrd_vpsc,'rb') as fo:
@@ -216,13 +226,13 @@ if __name__=='__main__':
     uet  = progress_bar.update_elapsed_time
     logFileNames=[]
     k=0
-    print '%3s %6s %5s %5s %60s'%('k','rho','th','psi0','logFileName')
     p0s=[]
     print '---'
     for i in xrange(len(ths)): ## each rho
         _psi0s_=findCorrectPsi(ths[i]*180/np.pi)
         p0s.append(_psi0s_)
         logFileNames.append([])
+        print '%3s %6s %5s %5s %60s'%('k','rho','th','psi0','logFileName')
         for j in xrange(len(_psi0s_)): ## each psi
             psi0 = _psi0s_[j]
             logFileName = gen_tempfile(
@@ -234,9 +244,7 @@ if __name__=='__main__':
             print '%3i %6.2f %5.1f %5.1f %60s'%(
                 k, rhos[i], ths[i]*180/np.pi,
                 psi0*180/np.pi,logFileName)
-            pass
         print '-'*83
-        pass
 
     ncpu  = multiprocessing.cpu_count()
     pool  = multiprocessing.Pool(processes=ncpu)
@@ -252,18 +260,20 @@ if __name__=='__main__':
             else:
                 fnhrd = args.fnhrd
 
-            r=pool.apply_async(
-                func=run,
-                args=(args.f0,
+            argsToRun = (args.f0,
                       psi0*180/np.pi,
                       ths[i]*180/np.pi,
                       logFileNames[i][j],
-                      args.mat,
-                      args.fnyld,fnhrd
-                ))
-            results[i].append(r)
-            pass
-        pass
+                      args.mat,args.fnyld,fnhrd)
+            if args.dry:
+                cmd = makeCommands(*argsToRun)
+                print 'cmd:', cmd
+            else:
+                r=pool.apply_async(func=run,args=argsToRun)
+                results[i].append(r)
+
+    if args.dry:
+        os._exit(0)
 
     t0 = time.time()
     pool.close(); pool.join(); pool.terminate()
@@ -279,8 +289,6 @@ if __name__=='__main__':
                 rstFile.write('%i %s\n'%(j,logFN))
                 logFileNames.append(logFN)
             rstFile.write('--\n')
-            pass
-        pass
 
     for i in xrange(len(logFileNames)):
         print '%4.4i   %s'%(i,logFileNames[i])

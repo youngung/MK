@@ -7,10 +7,60 @@ dill package, available in "https://github.com/uqfoundation/dill".
 """
 
 
+def plot(fnpickle=None,fnhrd_vpsc=None,hashcode='aaaaa'):
+    """
+    Arguments
+    ---------
+    fnpickle
+    fnhrd_vpsc
+    hashcode='aaaaa'
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import mk.tests.mechtests
+
+    with open(fnpickle, 'rb') as fo:
+        eps_eq     = dill.load(fo)
+        yfs        = dill.load(fo)
+        yfs_labels = dill.load(fo)
+        hfs        = dill.load(fo)
+        hfs_labels = dill.load(fo)
+        results    = dill.load(fo) ## not important yet...
+
+    with open(fnhrd_vpsc,'rb') as fo:
+        WorkContour_vpsc_rho = dill.load(fo)
+        rhops = dill.load(fo)
+
+    nfs = len(hfs)
+    nys = len(yfs[0])
+    fig=plt.figure(figsize=(3.6*2, 3.))
+    ax1=fig.add_subplot(121)
+    ax2=fig.add_subplot(122)
+
+    for j in xrange(nys):
+        ## plot yield surface
+        func = yfs[0][j]
+        X, Y = mk.tests.mechtests.locus(func=func, nth=100)
+        ax1.plot(X,Y,label=yfs_labels[j])
+
+    for i in xrange(nfs):
+        xs=np.linspace(0,1.0)
+        ax2.plot(xs,hfs[i](xs),label=hfs_labels[i])
+
+    ax1.set_xlim(0.,); ax1.set_ylim(0.,)
+    ax1.legend(); ax2.legend()
+    fn='yf_hf_%s.pdf'%hashcode
+    fig.savefig(fn)
+    print fn, ' saved.'
+
 ## example:
 """
-$ python mk_run_pickles.py --f0 0.995 --r0 0    --r1 1 --nr 4 --fnpickle /home/younguj/repo/mk/matDatabase/IFsteel/yf_collection.dll
-$ python mk_run_pickles.py --f0 0.995 --r0 -0.5 --r1 1 --nr 4 --fnpickle /home/younguj/repo/mk/matDatabase/IFsteel/yf_collection.dll  --fnpickle_vpsc_hard /home/younguj/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll
+-- Palmetto
+$ python mk_run_pickles.py --f0 0.995 --r0 0    --r1 1 --nr 4 --fnpickle /home/younguj/repo/mk/matDatabase/IFsteel/yf_collection.dll --dry
+$ python mk_run_pickles.py --f0 0.995 --r0 -0.5 --r1 1 --nr 4 --fnpickle /home/younguj/repo/mk/matDatabase/IFsteel/yf_collection.dll  --fnpickle_vpsc_hard /home/younguj/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll --dry
+
+
+$ python mk_run_pickles.py --f0 0.995 --r0 -0.5 --r1 1 --nr 4 --fnpickle ~/repo/mk/matDatabase/IFsteel/yf_collection.dll  --fnpickle_vpsc_hard ~/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll --dry
 """
 if __name__=='__main__':
     import numpy as np
@@ -54,9 +104,13 @@ if __name__=='__main__':
         nfs = len(hfs)
         pass
 
+    plot(args.fnpickle, fnhrd_vpsc=args.fnpickle_vpsc_hard,
+         hashcode='aaaaa')
+    os._exit(0)
+
     neps_eq = len(eps_eq)
     nyfs    = len(yfs[0])
-    # neps_eq = 1
+    neps_eq = 1
     # nyfs    = 1
 
     for ihrd in xrange(nfs): ## type of hardening function
@@ -72,7 +126,7 @@ if __name__=='__main__':
                 with open(yfnDill,'w') as fo:
                     dill.dump(yfs[ieps][iyld],fo)
                 cmd = 'python mk_run.py --f0 %f --r0 %f --r1 %f --nr %i'
-                cmd = cmd + ' --hash %s --mat 0 --fnyld %s'
+                cmd = cmd + ' --hash %s --mat -1 --fnyld %s'
                 cmd = cmd%(args.f0, args.r0, args.r1, args.nr, hashcode,
                            yfnDill)
 
@@ -84,7 +138,7 @@ if __name__=='__main__':
                 print '\n'*2,'-'*20
                 print 'cmd:'
                 print cmd
-                print '-'*20,'\n'*2
+                print '-'*20,'\n'
 
                 if args.dry: pass
                 else:

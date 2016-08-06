@@ -11,8 +11,15 @@
 cd ~/repo/mk/mk/
 
 ## VPSC-Hardening Function
-fnpickle=/home/younguj/repo/mk/matDatabase/IFsteel/yf_collection.dll
-fnpickle_vpsc_hard=/home/younguj/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll
+
+## Palmetto
+# fnpickle=/home/younguj/repo/mk/matDatabase/IFsteel/yf_collection.dll
+# fnpickle_vpsc_hard=/home/younguj/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll
+
+## Mac
+fnpickle=~/repo/mk/matDatabase/IFsteel/yf_collection.dll
+fnpickle_vpsc_hard=~/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll
+
 
 ## running conditions
 r0=-0.5
@@ -28,7 +35,7 @@ f0s=("0.980")
 # f0s=("0.996")
 for f0 in "${f0s[@]}"
 do
-    python mk_run_pickles.py --f0 $f0 --r0 $r0 --r1 $r1 --nr $nr --fnpickle $fnpickle  --fnpickle_vpsc_hard $fnpickle_vpsc_hard
+    python mk_run_pickles.py --f0 $f0 --r0 $r0 --r1 $r1 --nr $nr --fnpickle $fnpickle  --fnpickle_vpsc_hard $fnpickle_vpsc_hard --dry
 done
 
 
