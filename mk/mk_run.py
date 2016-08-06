@@ -105,7 +105,7 @@ def postAnalysis(masterFileName,hashcode):
         mk.library.parser.plotMat(matB_FN,ax=ax3,
                        color='blue',linestyle='--')
         mk.library.parser.plotEtc(ss_FN,ax=ax4)
-    fig.savefig('mk_fld_pp.pdf')
+    fig.savefig('mk_fld_pp_%s.pdf'%hashcode)
 
 def test_pp(fn='/local_scratch/MK-6e59e6-results.txt'):
     postAnalysis(fn)
@@ -190,9 +190,8 @@ if __name__=='__main__':
     rhos = np.linspace(args.r0,args.r1,args.nr)
 
     print 'rhos:', rhos
-    if type(args.fnhrd_vpsc).__name__=='NoneType':
-        ivpsc_hard=False
-    else:
+    ivpsc_hard = False
+    if type(args.fnhrd_vpsc).__name__!='NoneType':
         ivpsc_hard=True
 
     if ivpsc_hard:

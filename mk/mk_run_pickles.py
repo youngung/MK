@@ -9,7 +9,8 @@ dill package, available in "https://github.com/uqfoundation/dill".
 
 ## example:
 """
-$ python mk_run_pickles.py --f0 0.995 --r0 0 --r1 1 --nr 4 --fnpickle /home/younguj/repo/vpsc-fld/ipynb/FLD/IFsteel_EXP/yf_collection.dll
+$ python mk_run_pickles.py --f0 0.995 --r0 0    --r1 1 --nr 4 --fnpickle /home/younguj/repo/mk/matDatabase/IFsteel/yf_collection.dll
+$ python mk_run_pickles.py --f0 0.995 --r0 -0.5 --r1 1 --nr 4 --fnpickle /home/younguj/repo/mk/matDatabase/IFsteel/yf_collection.dll  --fnpickle_vpsc_hard /home/younguj/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll
 """
 if __name__=='__main__':
     import numpy as np
@@ -27,6 +28,7 @@ if __name__=='__main__':
     parser.add_argument('--nr',type=int,help='number of rhos')
     parser.add_argument('--fnpickle', type=str,default=None,help='Pickle file name')
     parser.add_argument('--fnpickle_vpsc_hard',type=str,default=None,help='pickle file name on the collection of VPSC-based hardening functions')
+    parser.add_argument('--dry',dest='dry',action='store_true', default=False)
     args        = parser.parse_args()
 
     ## using VPSC-tuned strain-hardening parameters for each strain path
@@ -47,15 +49,15 @@ if __name__=='__main__':
     if ivpsc_hard:
         ## over-write hfs
         nfs = 1
+        hfs_labels=['VpscHard_FIT']
     else:
         nfs = len(hfs)
         pass
 
-    # neps_eq = len(eps_eq)
-    # nyfs    = len(yfs[0])
-    neps_eq = 1
-    nyfs    = 1
-
+    neps_eq = len(eps_eq)
+    nyfs    = len(yfs[0])
+    # neps_eq = 1
+    # nyfs    = 1
 
     for ihrd in xrange(nfs): ## type of hardening function
         if not(ivpsc_hard):
@@ -83,15 +85,26 @@ if __name__=='__main__':
                 print 'cmd:'
                 print cmd
                 print '-'*20,'\n'*2
-                os.system(cmd)
-                fn_tar = gen_tempfile(prefix='mk_%.4f_%s_%s_%.3f_'%(
-                        eps_eq[ieps],yfs_labels[iyld],hfs_labels[ihrd],
-                        args.f0),ext='tar')
-                subprocess.check_call(['tar','-cvf',fn_tar,
-                                       'allFLD-%s.txt'%hashcode,
-                                       'minFLD-%s.txt'%hashcode])
-                shutil.move(fn_tar, os.getcwd())
-                fnCollect.append(os.path.split(fn_tar)[-1])
+
+                if args.dry: pass
+                else:
+                    os.system(cmd)
+                    fn_tar = gen_tempfile(prefix='mk_%.4f_%s_%s_%.3f_'%(
+                            eps_eq[ieps],yfs_labels[iyld],hfs_labels[ihrd],
+                            args.f0),ext='tar')
+                    subprocess.check_call(['tar','-cvf',fn_tar,
+                                           'allFLD-%s.txt'%hashcode,
+                                           'minFLD-%s.txt'%hashcode,
+                                           'mk_fld_pp_%s.pdf'%hashcode])
+                    shutil.move(fn_tar, os.getcwd())
+                    fnCollect.append(os.path.split(fn_tar)[-1])
+
+    ## exit if dry run
+    if args.dry:
+        os._exit(0)
+    else:
+        pass
+
 
     ## archive the results (and the pickled filed passed to the simulation as well)
     # - prepare..

@@ -281,7 +281,7 @@ def integrateMono(
     deltat = 1e-3
     # (incremental stepsize)
     #
-    tmax   = 1.5      # (maximum effective strain upper limit (2.0?))
+    tmax   = 3.0      # (maximum effective strain upper limit (2.0?))
 
     k =-1
     t = tzero
