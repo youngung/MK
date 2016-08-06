@@ -160,4 +160,6 @@ def library(iopt):
     elif iopt==13:
         return IFsteel_yld2_20160722
     else:
+        print 'given iopt:', iopt
+        print 'type(iopt).__name__:', type(iopt).__name__
         raise IOError,'not quite ready for this material'

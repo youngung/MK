@@ -126,8 +126,14 @@ def makeCommands(f0,psi0,th,logFileName,mat,fnyld,fnhrd):
     stdoutFileName = gen_tempfile(
         prefix='stdout-mkrun')
     # stdoutFileName ='/tmp/dump'
-    cmd = 'python main.py --fn %s -f %5.4f -p %+6.1f -t %+7.2f --mat %i --fnyld %s --fnhrd %s > %s'%(
-        logFileName,f0,psi0,th,mat,fnyld,fnhrd,stdoutFileName)
+
+
+    cmd = 'python main.py --fn %s -f %5.4f -p %+6.1f -t %+7.2f --fnyld %s --fnhrd %s '%(
+        logFileName,f0,psi0,th,fnyld,fnhrd)
+
+    if mat!=-1:
+        cmd = cmd + ' --mat %i'%mat
+    cmd = cmd + ' > %s'%stdoutFileName
     print 'cmd:',cmd
     return cmd
 
@@ -141,7 +147,7 @@ def run(*args):
     dry
     *args
     """
-    print 'You are in mk_run.run'
+    # print 'You are in mk_run.run'
     import os, subprocess
     cmd = makeCommands(*args)
     os.system(cmd)

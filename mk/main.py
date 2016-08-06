@@ -588,6 +588,10 @@ if __name__=='__main__':
             fhrd = dill.load(fo)
         mat = mk.materials.constitutive.Constutitive(f_yld=fyld,f_hrd=fhrd)
     else:
+        print '-'*50
+        print args.fnyld
+        print args.fnhrd
+        print '-'*50
         mat = mk.materials.materials.library(args.mat)
 
     if type(mat).__name__=='NoneType':

@@ -7,7 +7,7 @@ dill package, available in "https://github.com/uqfoundation/dill".
 """
 
 
-def plot(fnpickle=None,fnhrd_vpsc=None,hashcode='aaaaa'):
+def yf_plot(fnpickle=None,fnhrd_vpsc=None,hashcode='aaaaa'):
     """
     Arguments
     ---------
@@ -104,9 +104,9 @@ if __name__=='__main__':
         nfs = len(hfs)
         pass
 
-    plot(args.fnpickle, fnhrd_vpsc=args.fnpickle_vpsc_hard,
-         hashcode='aaaaa')
-    os._exit(0)
+    # yf.plot(args.fnpickle, fnhrd_vpsc=args.fnpickle_vpsc_hard,
+    #      hashcode='aaaaa')
+    # os._exit(0)
 
     neps_eq = len(eps_eq)
     nyfs    = len(yfs[0])
@@ -126,7 +126,7 @@ if __name__=='__main__':
                 with open(yfnDill,'w') as fo:
                     dill.dump(yfs[ieps][iyld],fo)
                 cmd = 'python mk_run.py --f0 %f --r0 %f --r1 %f --nr %i'
-                cmd = cmd + ' --hash %s --mat -1 --fnyld %s'
+                cmd = cmd + ' --hash %s --fnyld %s'
                 cmd = cmd%(args.f0, args.r0, args.r1, args.nr, hashcode,
                            yfnDill)
 
