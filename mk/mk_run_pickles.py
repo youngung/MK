@@ -132,10 +132,19 @@ if __name__=='__main__':
             for iyld in xrange(nyfs): ## type of yield function
                 yfnDill = gen_tempfile(prefix='yfs-%s'%yfs_labels[iyld],ext='dll')
                 hashcode = etc.gen_hash_code2(nchar=6)
-                with open(yfnDill,'wb') as fo:
-                    dill.dump(yfs[ieps][iyld],fo)
-                    dill.dump(yfs_labels[iyld],fo)
-                    dill.dump(yfs_params[ieps][iyld],fo)
+                with open(yfnDill,'wb') as fo_:
+                    if fo_.closed:
+                        raise IOError, 'File was closed %s'%yfnDill
+                    try:
+                        print 'yfs[ieps][iyld]:',yfs[ieps][iyld]
+                    except:
+                        print len(yfs)
+                        raise IOError,'Error!!!'
+
+                    dill.dump(yfs[ieps][iyld],fo_)
+                    dill.dump(yfs_labels[iyld],fo_)
+                    dill.dump(yfs_params[ieps][iyld],fo_)
+                    pass
 
                 cmd = 'python mk_run.py --f0 %f --r0 %f --r1 %f --nr %i'
                 cmd = cmd + ' --hash %s --fnyld %s'

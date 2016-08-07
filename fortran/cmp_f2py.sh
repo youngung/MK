@@ -1,5 +1,5 @@
 ## F2py fortran libraries
-f2py -c -m for_lib for.f
+f2py -c -m yf_for for.f
 ## link yld2000 library file
 gfortran -shared -fPIC -o yld2000_lib.so yld2000_lib.f
 ## yld2000 minimalistic version wrapped by f2py
