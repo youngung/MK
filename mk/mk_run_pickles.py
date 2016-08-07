@@ -154,11 +154,8 @@ if __name__=='__main__':
                     fnCollect.append(os.path.split(fn_tar)[-1])
 
     ## exit if dry run
-    if args.dry:
-        os._exit(0)
-    else:
-        pass
-
+    if args.dry: os._exit(0)
+    else:        pass
 
     ## archive the results (and the pickled filed passed to the simulation as well)
     # - prepare..

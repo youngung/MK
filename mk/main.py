@@ -556,6 +556,7 @@ if __name__=='__main__':
     from MP import progress_bar
     import argparse, mk.materials.materials, mk.materials.constitutive, dill
     from mk.library.lib import gen_tempfile
+    import mk.materials.func_hard_for
     uet = progress_bar.update_elapsed_time
     #-------------------------------------------------------
     ## Arguments parsing
@@ -585,17 +586,30 @@ if __name__=='__main__':
     #-------------------------------------------------------
     args = parser.parse_args()
 
-
     print 'args.mat:', args.mat
     print 'args.fnyld:', args.fnyld
     print 'args.fnhrd:', args.fnhrd
+
+    ## Determine material cards  --
     if type(args.fnyld).__name__=='str' \
        and type(args.fnhrd).__name__=='str':
         with open(args.fnyld,'rb') as fo:
             fyld = dill.load(fo)
         with open(args.fnhrd,'rb') as fo:
-            fhrd = dill.load(fo)
-        matClass = mk.materials.constitutive.Constitutive(f_yld=fyld,f_hrd=fhrd)
+            # fhrd = dill.load(fo)
+            fhrd_type = dill.load(fo)
+            if fhrd_type=='voce-vpsc':
+                m, qq = 5e-2, 1e3
+                p_voce = dill.load(fo)
+                a,b0,c,b1 = p_voce
+                f_hrd = mk.materials.func_hard_for.return_voce(
+                    a=a,b0=b0,c=c,b1=b1,m=m,qq=qq)
+            else:
+                raise IOError, \
+                    'Unexpected fhrd_type given: %s'%fhrd_type
+
+        matClass = mk.materials.constitutive.Constitutive(
+            f_yld=fyld,f_hrd=fhrd)
         fn = gen_tempfile(prefix='mkmat',ext='dll')
         with open(fn,'wb') as fo:
             dill.dump(matClass,fo)
@@ -615,6 +629,7 @@ if __name__=='__main__':
             type(args.fnyld).__name__,
             type(args.fnhrd).__name__,
             type(args.mat).__name__)
+    ## end of material card determination --
 
     if type(mat).__name__=='NoneType':
         raise IOError, 'None returned from the library'

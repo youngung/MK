@@ -217,16 +217,16 @@ if __name__=='__main__':
             rhops = dill.load(fo)
 
         rhops = np.array(rhops)
-        f_hard_funcs = []
         fns_vpsc_hfs=[]
         for ir in xrange(len(rhos)):
             diffs = np.abs(rhops - rhos[ir])
             inds = np.argsort(diffs)
             i0 = inds[0] ## nearest hardening function
-            f_hard_funcs.append(WorkContour_vpsc_rho[i0].f_voce)
-            fn = gen_tempfile(prefix='hfs-VPSC',ext='dll')
+            fn = gen_tempfile(prefix='hfs-voce-VPSC',ext='dll')
             with open(fn,'wb') as fo:
-                dill.dump(WorkContour_vpsc_rho[i0].f_voce,fo)
+                # dill.dump(WorkContour_vpsc_rho[i0].f_voce,fo)
+                dill.dump('voce-vpsc',fo) ## type: Voce
+                dill.dump(WorkContour_vpsc_rho[i0].p_voce,fo)
             fns_vpsc_hfs.append(fn)
 
     ths  = rhos2ths(rhos)
@@ -261,17 +261,16 @@ if __name__=='__main__':
         results.append([])
         for j in xrange(len(p0s[i])):
             psi0 = p0s[i][j]
-
             if ivpsc_hard:
                 fnhrd = fns_vpsc_hfs[i]
             else:
                 fnhrd = args.fnhrd
 
             argsToRun = (args.f0,
-                      psi0*180/np.pi,
-                      ths[i]*180/np.pi,
-                      logFileNames[i][j],
-                      args.mat,args.fnyld,fnhrd)
+                         psi0*180/np.pi,
+                         ths[i]*180/np.pi,
+                         logFileNames[i][j],
+                         args.mat,args.fnyld,fnhrd)
             if args.dry:
                 cmd = makeCommands(*argsToRun)
                 print 'cmd:', cmd
