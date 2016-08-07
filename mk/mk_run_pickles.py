@@ -97,6 +97,12 @@ if __name__=='__main__':
         results    = dill.load(fo) ## not important yet...
         yfs_params = dill.load(fo)
 
+        # print 'yfs_params'
+        # print yfs_params
+        # print 'hfs_labels'
+        # print hfs_labels
+        # os._exit(0)
+
     fnCollect=[]
 
     if ivpsc_hard:
@@ -128,7 +134,7 @@ if __name__=='__main__':
                 hashcode = etc.gen_hash_code2(nchar=6)
                 with open(yfnDill,'w') as fo:
                     dill.dump(yfs[ieps][iyld],fo)
-                    dill.dump(yfs_labels[ieps][iyld],fo)
+                    dill.dump(yfs_labels[iyld],fo)
                     dill.dump(yfs_params[ieps][iyld],fo)
 
                 cmd = 'python mk_run.py --f0 %f --r0 %f --r1 %f --nr %i'

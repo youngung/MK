@@ -63,9 +63,9 @@ def main(
         matA = IsoMat()
         matB = IsoMat()
     elif type(material).__name__=='str':
-        with open(fn,'rb') as fo:
+        with open(material,'rb') as fo:
             matA = dill.load(fo)
-        with open(fn,'rb') as fo:
+        with open(material,'rb') as fo:
             matB = dill.load(fo)
         matA.set_hrd()
         matA.set_yld()
@@ -602,9 +602,16 @@ if __name__=='__main__':
             fyld = dill.load(fo)
             yf_label=dill.load(fo)
             p_yld = dill.load(fo)
+            print 'yf_label'
+            print yf_label
+
         with open(args.fnhrd,'rb') as fo:
             # fhrd = dill.load(fo)
             fhrd_type = dill.load(fo)
+            print 'fhrd_type:'
+            print fhrd_type
+            # import os
+            # os._exit(0)
             p_hrd = dill.load(fo)
 
         matClass = mk.materials.constitutive.Constitutive(
@@ -637,5 +644,6 @@ if __name__=='__main__':
     if type(mat).__name__=='NoneType':
         raise IOError, 'None returned from the library'
     print 'mat:', mat
+    print 'logfilename:',args.fn
     main(f0=args.f,psi0=args.p,th=args.t,logFileName=args.fn,material=mat)
     pass

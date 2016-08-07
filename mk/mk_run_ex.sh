@@ -24,7 +24,7 @@ fnpickle_vpsc_hard=~/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll
 ## running conditions
 r0=-0.5
 r1=2.5
-nr=15
+nr=3 ##15
 
 #  f0s=("0.980" "0.985" "0.990" "0.992" "0.994"  "0.996")
 f0s=("0.980")
