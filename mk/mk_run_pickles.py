@@ -130,7 +130,7 @@ if __name__=='__main__':
 
         for ieps in xrange(neps_eq):
             for iyld in xrange(nyfs): ## type of yield function
-                yfnDill = gen_tempfile(prefix='yfs',ext='dll')
+                yfnDill = gen_tempfile(prefix='yfs-%s'%yfs_labels[iyld],ext='dll')
                 hashcode = etc.gen_hash_code2(nchar=6)
                 with open(yfnDill,'w') as fo:
                     dill.dump(yfs[ieps][iyld],fo)

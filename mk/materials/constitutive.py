@@ -88,9 +88,9 @@ class Constitutive:
         label=self.label_yld.lower()
         params=self.params_yld
         import mk.yieldFunction.tuneYld2000, mk.yieldFunction.yf2
-        if label=='h48r':
+        if label[:4]=='h48r':
             yldFunc=mk.yieldFunction.yf2.wrapHill48R(params)
-        elif label=='yld1':
+        elif label[:4]=='yld1':
             ys=params[1][::]
             rv=params[0][::]
             rb,yb=mk.yieldFunction.tuneYld2000.H48toYld_withYS(
@@ -99,14 +99,13 @@ class Constitutive:
             ys.append(yb)
             yldFunc = mk.yieldFunction.yf2.wrapYLD(
                 r=rv,y=ys,m=6,k=2)
-        elif label=='yld2':
+        elif label[:4]=='yld2':
             ys=params[1][::]
             rv=params[0][::]
             yldFunc = mk.yieldFunction.yf2.wrapYLD(
                 r=rv,y=ys,m=6,k=2)
         else:
             raise IOError, 'Unexpected label for yield function %s %s'%(self.label_yld,label)
-
         self.f_yld = yldFunc
 
     def update_yld(self,stress):
