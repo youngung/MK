@@ -167,7 +167,7 @@ def case2(YS,rv):
 def H48toYld_withYS(
         rv=[2.2,2.0,2.9],
         ys=[1,1,1],
-        m=6):
+        m=6,iopt=0):
     """
     Characterize yld2000-2D in assistance of Hill48
 
@@ -180,6 +180,7 @@ def H48toYld_withYS(
     rv = []
     ys = []
     m = 6
+    iopt=0
     """
     import tuneH48, yf2
     import mk.tests.mechtests as mechtests
@@ -197,7 +198,10 @@ def H48toYld_withYS(
     if type(yfunc_yld).__name__=='int':
         raise IOError
 
-    return yfunc_yld
+    if iopt==0:
+        return yfunc_yld
+    elif iopt==1:
+        return rb,yb
 
 def H48toYld(rv=[2.2,2.0,2.9],m=6,iplot=False):
     """

@@ -31,12 +31,20 @@ class Snapshot:
             fo.write('\n')
 
 class Constitutive:
-    def __init__(self,f_yld,f_hrd,hashcode=None):
+    def __init__(self,f_yld=None,f_hrd=None,
+                 hashcode=None,
+                 params_yld=None, label_yld=None,
+                 params_hrd=None, label_hrd=None):
         """
         Arguments
         ---------
         f_yld
         f_hrd
+        hashcode
+        params_yld
+        label_yld
+        params_hrd
+        label_hrd
         """
 
         ## Create log-file to record
@@ -47,6 +55,60 @@ class Constitutive:
 
         self.f_yld = f_yld
         self.f_hrd = f_hrd
+
+        ## used when constructing <fortran> objects
+        ## for hardening and yield function calculations
+        ## -- see self.set_hrd and self.set_yld
+        self.params_yld = params_yld
+        self.params_hrd = params_hrd
+        self.label_yld  = label_yld
+        self.label_hrd  = label_hrd
+
+    def set_hrd(self):
+        """
+        Manually set yield functions
+        """
+        label=self.label_hrd.lower()
+        params=self.params_hrd
+        m,qq=5e-2, 1e3
+        if label[:4]=='voce':
+            a,b0,c,b1 = self.params_hrd
+            import mk.materials.func_hard_for
+            self.f_hrd = mk.materials.func_hard_for.return_voce(
+                a=a,b0=b0,c=c,b1=b1,m=m,qq=qq)
+        elif label[:5]=='swift':
+            raise IOError, 'swift is not supported yet.'
+        else:
+            raise IOError, 'Unexpected label found %s'%self.label_hrd
+
+    def set_yld(self):
+        """
+        Manually set yield functions
+        """
+        label=self.label_yld.lower()
+        params=self.params_yld
+        import mk.yieldFunction.tuneYld2000, mk.yieldFunction.yf2
+        if label=='H48R':
+            yldFunc=wrapHill48R(params)
+        elif label=='Yld1':
+            ys=params[1][::]
+            rv=params[0][::]
+            rb,yb=mk.yieldFunction.tuneYld2000.H48toYld_withYS(
+                rv=rv,ys=ys,m=6,iopt=1)
+            rv.append(rb)
+            ys.append(yb)
+            yldFunc = mk.yieldFunction.yf2.wrapYLD(
+                r=rv,y=ys,m=6,k=2)
+        elif label=='Yld2':
+            ys=params[1][::]
+            rv=params[0][::]
+            yldFunc = mk.yieldFunction.yf2.wrapYLD(
+                r=rv,y=ys,m=6,k=2)
+        else:
+            raise IOError, 'Unexpected label for yield function %s'%self.label_yld
+
+        self.f_yld = yldFunc
+
     def update_yld(self,stress):
         """
         Given the stress (and potentially

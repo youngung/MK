@@ -67,6 +67,10 @@ def main(
             matA = dill.load(fo)
         with open(fn,'rb') as fo:
             matB = dill.load(fo)
+        matA.set_hrd()
+        matA.set_yld()
+        matB.set_hrd()
+        matB.set_yld()
     else:
         ## Should work on here to allow
         ## both A and B materials are described using the
@@ -593,27 +597,26 @@ if __name__=='__main__':
     ## Determine material cards  --
     if type(args.fnyld).__name__=='str' \
        and type(args.fnhrd).__name__=='str':
+
         with open(args.fnyld,'rb') as fo:
             fyld = dill.load(fo)
+            yf_label=dill.load(fo)
+            p_yld = dill.load(fo)
         with open(args.fnhrd,'rb') as fo:
             # fhrd = dill.load(fo)
             fhrd_type = dill.load(fo)
-            if fhrd_type=='voce-vpsc':
-                m, qq = 5e-2, 1e3
-                p_voce = dill.load(fo)
-                a,b0,c,b1 = p_voce
-                f_hrd = mk.materials.func_hard_for.return_voce(
-                    a=a,b0=b0,c=c,b1=b1,m=m,qq=qq)
-            else:
-                raise IOError, \
-                    'Unexpected fhrd_type given: %s'%fhrd_type
+            p_hrd = dill.load(fo)
 
         matClass = mk.materials.constitutive.Constitutive(
-            f_yld=fyld,f_hrd=fhrd)
+            f_yld=None,f_hrd=None,
+            params_yld=p_yld,label_yld=yf_label,
+            params_hrd=p_hrd, label_hrd=fhrd_type)
+
         fn = gen_tempfile(prefix='mkmat',ext='dll')
         with open(fn,'wb') as fo:
             dill.dump(matClass,fo)
         mat = fn ## save file name to mat
+
     elif args.mat==-1:
         raise IOError, 'Unexpected case 1:   %s %s'%(
             type(args.fnyld).__name__,

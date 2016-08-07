@@ -77,7 +77,9 @@ if __name__=='__main__':
     parser.add_argument('--r1',type=float,help='rho end')
     parser.add_argument('--nr',type=int,help='number of rhos')
     parser.add_argument('--fnpickle', type=str,default=None,help='Pickle file name')
-    parser.add_argument('--fnpickle_vpsc_hard',type=str,default=None,help='pickle file name on the collection of VPSC-based hardening functions')
+    parser.add_argument(
+        '--fnpickle_vpsc_hard',type=str,default=None,
+        help='pickle file name on the collection of VPSC-based hardening functions')
     parser.add_argument('--dry',dest='dry',action='store_true', default=False)
     args        = parser.parse_args()
 
@@ -93,6 +95,7 @@ if __name__=='__main__':
         hfs        = dill.load(fo)
         hfs_labels = dill.load(fo)
         results    = dill.load(fo) ## not important yet...
+        yfs_params = dill.load(fo)
 
     fnCollect=[]
 
@@ -125,6 +128,9 @@ if __name__=='__main__':
                 hashcode = etc.gen_hash_code2(nchar=6)
                 with open(yfnDill,'w') as fo:
                     dill.dump(yfs[ieps][iyld],fo)
+                    dill.dump(yfs_labels[ieps][iyld],fo)
+                    dill.dump(yfs_params[ieps][iyld],fo)
+
                 cmd = 'python mk_run.py --f0 %f --r0 %f --r1 %f --nr %i'
                 cmd = cmd + ' --hash %s --fnyld %s'
                 cmd = cmd%(args.f0, args.r0, args.r1, args.nr, hashcode,
