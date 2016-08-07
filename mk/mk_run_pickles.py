@@ -119,20 +119,20 @@ if __name__=='__main__':
 
     neps_eq = len(eps_eq)
     nyfs    = len(yfs[0])
-    neps_eq = 1
+    # neps_eq = 1
     # nyfs    = 1
 
     for ihrd in xrange(nfs): ## type of hardening function
         if not(ivpsc_hard):
             hfnDill = gen_tempfile(prefix='hfs',ext='dll')
-            with open(hfnDill, 'w') as fo:
+            with open(hfnDill, 'wb') as fo:
                 dill.dump(hfs[ihrd],fo)
 
         for ieps in xrange(neps_eq):
             for iyld in xrange(nyfs): ## type of yield function
                 yfnDill = gen_tempfile(prefix='yfs-%s'%yfs_labels[iyld],ext='dll')
                 hashcode = etc.gen_hash_code2(nchar=6)
-                with open(yfnDill,'w') as fo:
+                with open(yfnDill,'wb') as fo:
                     dill.dump(yfs[ieps][iyld],fo)
                     dill.dump(yfs_labels[iyld],fo)
                     dill.dump(yfs_params[ieps][iyld],fo)
