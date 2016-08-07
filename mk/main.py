@@ -53,6 +53,7 @@ def main(
     from mk.library.lib      import gen_tempfile, calcAlphaRho
     from mk_paths import constructBC,findCorrectPath
     import mk.materials.constitutive as constitutive
+    import dill
     snapshot = constitutive.Snapshot()
     # from yf2 import wrapHill48
 
@@ -61,9 +62,17 @@ def main(
         from materials import IsoMat
         matA = IsoMat()
         matB = IsoMat()
+    elif type(material).__name__=='str':
+        with open(fn,'rb') as fo:
+            matA = dill.load(fo)
+        with open(fn,'rb') as fo:
+            matB = dill.load(fo)
     else:
-        matA = material()
-        matB = material()
+        ## Should work on here to allow
+        ## both A and B materials are described using the
+        ## same constitutive model
+        matA = material
+        matB = material
 
     rad2deg  = 180./np.pi
     deg2rad  =   1./rad2deg
@@ -545,7 +554,8 @@ $ python main.py --fn /tmp/dummy-log-file-name -f 0.995 -p 0 -t 0 --mat 0
 """
 if __name__=='__main__':
     from MP import progress_bar
-    import argparse
+    import argparse, mk.materials.materials, mk.materials.constitutive, dill
+    from mk.library.lib import gen_tempfile
     uet = progress_bar.update_elapsed_time
     #-------------------------------------------------------
     ## Arguments parsing
@@ -575,24 +585,36 @@ if __name__=='__main__':
     #-------------------------------------------------------
     args = parser.parse_args()
 
-    import mk.materials.materials, mk.materials.constitutive
-    import dill
+
     print 'args.mat:', args.mat
     print 'args.fnyld:', args.fnyld
     print 'args.fnhrd:', args.fnhrd
-    if type(args.fnyld).__name__=='NoneType' \
-       and type(args.fnhrd).__name__=='NoneType':
+    if type(args.fnyld).__name__=='str' \
+       and type(args.fnhrd).__name__=='str':
         with open(args.fnyld,'rb') as fo:
             fyld = dill.load(fo)
         with open(args.fnhrd,'rb') as fo:
             fhrd = dill.load(fo)
-        mat = mk.materials.constitutive.Constutitive(f_yld=fyld,f_hrd=fhrd)
-    else:
+        matClass = mk.materials.constitutive.Constitutive(f_yld=fyld,f_hrd=fhrd)
+        fn = gen_tempfile(prefix='mkmat',ext='dll')
+        with open(fn,'wb') as fo:
+            dill.dump(matClass,fo)
+        mat = fn ## save file name to mat
+    elif args.mat==-1:
+        raise IOError, 'Unexpected case 1:   %s %s'%(
+            type(args.fnyld).__name__,
+            type(args.fnhrd).__name__)
+    elif args.mat!=-1:
         print '-'*50
         print args.fnyld
         print args.fnhrd
         print '-'*50
         mat = mk.materials.materials.library(args.mat)
+    else:
+        raise IOError, 'Unexpected case 2:   %s %s %s'%(
+            type(args.fnyld).__name__,
+            type(args.fnhrd).__name__,
+            type(args.mat).__name__)
 
     if type(mat).__name__=='NoneType':
         raise IOError, 'None returned from the library'

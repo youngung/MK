@@ -129,6 +129,9 @@ def IFsteel_yld2_20160722():
 ## End of 20160722 block
 
 def library(iopt):
+    if type(iopt).__name__!='int':
+        raise IOError, 'IOPT is not integer, %s'%type(iopt).__name__
+
     if iopt==0:
         return IsoMat
     elif iopt==1:
@@ -160,6 +163,4 @@ def library(iopt):
     elif iopt==13:
         return IFsteel_yld2_20160722
     else:
-        print 'given iopt:', iopt
-        print 'type(iopt).__name__:', type(iopt).__name__
-        raise IOError,'not quite ready for this material'
+        raise IOError, 'not quite ready for this material, given iopt %i'%iopt

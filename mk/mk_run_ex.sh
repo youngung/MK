@@ -17,8 +17,8 @@ fnpickle=/home/younguj/repo/mk/matDatabase/IFsteel/yf_collection.dll
 fnpickle_vpsc_hard=/home/younguj/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll
 
 ## Mac
-# fnpickle=~/repo/mk/matDatabase/IFsteel/yf_collection.dll
-# fnpickle_vpsc_hard=~/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll
+fnpickle=~/repo/mk/matDatabase/IFsteel/yf_collection.dll
+fnpickle_vpsc_hard=~/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll
 
 
 ## running conditions

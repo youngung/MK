@@ -127,7 +127,6 @@ def makeCommands(f0,psi0,th,logFileName,mat,fnyld,fnhrd):
         prefix='stdout-mkrun')
     # stdoutFileName ='/tmp/dump'
 
-
     cmd = 'python main.py --fn %s -f %5.4f -p %+6.1f -t %+7.2f --fnyld %s --fnhrd %s '%(
         logFileName,f0,psi0,th,fnyld,fnhrd)
 
@@ -226,6 +225,8 @@ if __name__=='__main__':
             i0 = inds[0] ## nearest hardening function
             f_hard_funcs.append(WorkContour_vpsc_rho[i0].f_voce)
             fn = gen_tempfile(prefix='hfs-VPSC',ext='dll')
+            with open(fn,'wb') as fo:
+                dill.dump(WorkContour_vpsc_rho[i0].f_voce,fo)
             fns_vpsc_hfs.append(fn)
 
     ths  = rhos2ths(rhos)
