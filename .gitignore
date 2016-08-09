@@ -1,3 +1,4 @@
+*.tar
 MK.e*
 MK.o*
 fortran/
