@@ -65,10 +65,9 @@ $ python mk_run_pickles.py --f0 0.995 --r0 -0.5 --r1 1 --nr 4 --fnpickle ~/repo/
 if __name__=='__main__':
     import numpy as np
     from mk.library.lib import gen_tempfile,rhos2ths
-    import os,multiprocessing,time,argparse,dill,shutil
+    import os,multiprocessing,time,argparse,dill,shutil,pickle,subprocess
     from MP import progress_bar
     from mk_paths import findCorrectPsi
-    import subprocess
     from MP.lib import etc
 
     parser = argparse.ArgumentParser()
@@ -96,6 +95,7 @@ if __name__=='__main__':
         hfs_labels = dill.load(fo)
         results    = dill.load(fo) ## not important yet...
         yfs_params = dill.load(fo)
+        hfs_params = dill.load(fo)
 
         # print 'yfs_params'
         # print yfs_params
@@ -119,18 +119,20 @@ if __name__=='__main__':
 
     neps_eq = len(eps_eq)
     nyfs    = len(yfs[0])
-    # neps_eq = 1
-    # nyfs    = 1
 
     for ihrd in xrange(nfs): ## type of hardening function
         if not(ivpsc_hard):
             hfnDill = gen_tempfile(prefix='hfs',ext='dll')
             with open(hfnDill, 'wb') as fo:
-                dill.dump(hfs[ihrd],fo)
+                dill.dump(hfs_labels[ihrd],fo)
+                dill.dump(hfs_params[ihrd],fo)
+                ## dump hardening parameters.
 
         for ieps in xrange(neps_eq):
             for iyld in xrange(nyfs): ## type of yield function
-                yfnDill = gen_tempfile(prefix='yfs-%s'%yfs_labels[iyld],ext='dll')
+
+                ## Save using dill
+                yfnDill = gen_tempfile(prefix='yfs-%s'%yfs_labels[iyld],ext='pck')
                 hashcode = etc.gen_hash_code2(nchar=6)
                 with open(yfnDill,'wb') as fo_:
                     if fo_.closed:
@@ -141,15 +143,18 @@ if __name__=='__main__':
                         print len(yfs)
                         raise IOError,'Error!!!'
 
-                    dill.dump(yfs[ieps][iyld],fo_)
-                    dill.dump(yfs_labels[iyld],fo_)
-                    dill.dump(yfs_params[ieps][iyld],fo_)
+                    # dill.dump(yfs[ieps][iyld],fo_)
+                    # dill.dump(yfs_labels[iyld],fo_)
+                    # dill.dump(yfs_params[ieps][iyld],fo_)
+
+                    # pickle.dump(yfs[ieps][iyld],fo_)
+                    pickle.dump(yfs_labels[iyld],fo_)
+                    pickle.dump(yfs_params[ieps][iyld],fo_)
                     pass
 
                 cmd = 'python mk_run.py --f0 %f --r0 %f --r1 %f --nr %i'
                 cmd = cmd + ' --hash %s --fnyld %s'
-                cmd = cmd%(args.f0, args.r0, args.r1, args.nr, hashcode,
-                           yfnDill)
+                cmd = cmd%(args.f0, args.r0, args.r1, args.nr, hashcode,yfnDill)
 
                 if ivpsc_hard:
                     cmd = cmd+' --fnhrd_vpsc %s'%args.fnpickle_vpsc_hard
@@ -169,8 +174,9 @@ if __name__=='__main__':
                             args.f0),ext='tar')
                     subprocess.check_call(['tar','-cvf',fn_tar,
                                            'allFLD-%s.txt'%hashcode,
-                                           'minFLD-%s.txt'%hashcode,
-                                           'mk_fld_pp_%s.pdf'%hashcode])
+                                           'minFLD-%s.txt'%hashcode])
+                    #'mk_fld_pp_%s.pdf'%hashcode
+
                     shutil.move(fn_tar, os.getcwd())
                     fnCollect.append(os.path.split(fn_tar)[-1])
 

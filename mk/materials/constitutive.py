@@ -77,7 +77,10 @@ class Constitutive:
             self.f_hrd = mk.materials.func_hard_for.return_voce(
                 a=a,b0=b0,c=c,b1=b1,m=m,qq=qq)
         elif label[:5]=='swift':
-            raise IOError, 'swift is not supported yet.'
+            ks,e0,n = self.params_hrd
+            import mk.materials.func_hard_for
+            self.f_hrd = mk.materials.func_hard_for.return_swift(
+                n=n,m=m,ks=ks,e0=e0,qq=qq)
         else:
             raise IOError, 'Unexpected label found %s'%self.label_hrd
 

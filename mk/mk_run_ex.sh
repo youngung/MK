@@ -24,18 +24,21 @@ fnpickle_vpsc_hard=~/repo/mk/matDatabase/IFsteel/vpsc_FC_rhop.dll
 ## running conditions
 r0=-0.5
 r1=2.5
-nr=3
+nr=17
 
-#  f0s=("0.980" "0.985" "0.990" "0.992" "0.994"  "0.996")
+# f0s=("0.980" "0.985" "0.990" "0.992" "0.994" "0.996" "0.998")
 # f0s=("0.980")
 # f0s=("0.985")
 # f0s=("0.990")
 # f0s=("0.992")
 # f0s=("0.994")
-f0s=("0.996")
+# f0s=("0.996")
+f0s=("0.998")
 for f0 in "${f0s[@]}"
 do
-    python mk_run_pickles.py --f0 $f0 --r0 $r0 --r1 $r1 --nr $nr --fnpickle $fnpickle  --fnpickle_vpsc_hard $fnpickle_vpsc_hard
+    ## case with VPSC adapted hardening curves.
+    # python mk_run_pickles.py --f0 $f0 --r0 $r0 --r1 $r1 --nr $nr --fnpickle $fnpickle  --fnpickle_vpsc_hard $fnpickle_vpsc_hard
+    python   mk_run_pickles.py --f0 $f0 --r0 $r0 --r1 $r1 --nr $nr --fnpickle $fnpickle
 done
 
 

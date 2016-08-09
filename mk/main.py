@@ -558,7 +558,7 @@ $ python main.py --fn /tmp/dummy-log-file-name -f 0.995 -p 0 -t 0 --mat 0
 """
 if __name__=='__main__':
     from MP import progress_bar
-    import argparse, mk.materials.materials, mk.materials.constitutive, dill
+    import argparse, mk.materials.materials, mk.materials.constitutive,dill,pickle
     from mk.library.lib import gen_tempfile
     import mk.materials.func_hard_for
     uet = progress_bar.update_elapsed_time
@@ -599,25 +599,16 @@ if __name__=='__main__':
        and type(args.fnhrd).__name__=='str':
 
         with open(args.fnyld,'rb') as fo:
-            fyld = dill.load(fo)
-            yf_label=dill.load(fo)
-            p_yld = dill.load(fo)
-            print 'yf_label'
-            print yf_label
-
+            yf_label=pickle.load(fo)
+            p_yld = pickle.load(fo)
         with open(args.fnhrd,'rb') as fo:
-            # fhrd = dill.load(fo)
             fhrd_type = dill.load(fo)
-            print 'fhrd_type:'
-            print fhrd_type
-            # import os
-            # os._exit(0)
             p_hrd = dill.load(fo)
 
         matClass = mk.materials.constitutive.Constitutive(
             f_yld=None,f_hrd=None,
             params_yld=p_yld,label_yld=yf_label,
-            params_hrd=p_hrd, label_hrd=fhrd_type)
+            params_hrd=p_hrd,label_hrd=fhrd_type)
 
         fn = gen_tempfile(prefix='mkmat',ext='dll')
         with open(fn,'wb') as fo:

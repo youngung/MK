@@ -12,3 +12,5 @@ ipynb/*
 src/.ipynb_checkpoints/
 *orig
 *.docx
+*.tar
+
