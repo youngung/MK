@@ -4,13 +4,13 @@ import os, glob, subprocess, tarfile, dill, shutil,MP, MP.lib.temp
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 def syncArchiveFromPal():
     """
     Sync archive files generated from Pal
     """
     fnRsync=MP.lib.temp.gen_tempfile()
-    cwd=os.getcwd()
+    # cwd=os.getcwd()
+    cwd = '~/repo/mk/archive'
     runRsync="""#!/bin/bash
     cd %s
     bash rsyncFromPal.sh
@@ -69,6 +69,11 @@ class member:
 
 class EachMK: ## for each MKVPSCHARD file (fixed f0 value)
     def __init__(self,fn):
+        """
+        Argument
+        --------
+        fn
+        """
         cmd=['tar','-tf',fn]
         self.fns_member = subprocess.check_output(cmd).split()
         self.members=[]
@@ -95,9 +100,21 @@ class EachMK: ## for each MKVPSCHARD file (fixed f0 value)
             os.remove(self.fns_member[i])
 
         w, x, y, z = self.yflabs, self.hflabs, self.hardpaths, self.eps_eqs
+        self.find_dimension()
+
+    def find_dimension(self):
+        """
+        Return the dimension of
+        (YldFunc, Eps_eq, HrdFunc, HrdPath)
+        """
+        self.dimension = (len(self.yflabs),len(self.eps_eqs), len(self.hflabs), len(self.hardpaths))
 
     def find_mem(self,iyf,ihf,ipath,ieps,verbose):
         """
+        Find the member of the tar files
+        that correspondes to the metric given in terms of
+        <iyf>, <ihf>, <ipath>, and <ieps>
+
         Arguments
         ---------
         iyf
@@ -124,24 +141,153 @@ class EachMK: ## for each MKVPSCHARD file (fixed f0 value)
                and eachMem.hardpath==hpt and eachMem.eps_eq==eps:
                 ind=i;break
         if ind==-1: raise IOError
-        return ind, yfl, hfl, hpt, eps
+        return ind, yfl, hfl, hpt, eps, eachMem
 
 class master:
-    def __init__(self,fns):
+    def __init__(self,fns,fn_exp='/Users/yj/repo/vpsc/vpsc-dev-fld/ipynb/FLD/IFsteel_EXP/FLDexp.dill'):
+        """
+        Arguments
+        ---------
+        fns    = 'tar files for different values of f0.'
+        fn_exp = 'Experimental data'
+        """
         self.eachMKs=[]
         for i in xrange(len(fns)):
             self.eachMKs.append(EachMK(fns[i]))
         self.eachMKs=np.array(self.eachMKs)
-        self.get_exp()
 
-    def get_exp(self,fn='/Users/yj/repo/vpsc/vpsc-dev-fld/ipynb/FLD/IFsteel_EXP/FLDexp.dill'):
+        if len(self.eachMKs)==0:
+            raise IOError, 'no MK data found.'
+
+        self.get_exp(fn_exp)
+
+        collectionMK = self.compareFit_ind(iyf=0,ihf=0,ipath=0,ieps=0,iplot=False)
+        self.f0s=[]
+        for i in xrange(len(collectionMK)):
+            self.f0s.append(collectionMK[i].f0)
+        self.find_dimension()
+
+    def get_exp(self,fn):
+        """
+        Read experimental data.
+
+        Argument
+        --------
+        fn
+        """
         with open(fn,'r') as fo:
             self.exp_FLC=dill.load(fo)
 
+    def find_dimension(self):
+        """
+        Find the dimension of the problems..
+        """
+        self.dimension = []
+        self.dimension.append(len(self.f0s)) # nf0
+        for i in xrange(len(self.eachMKs[0].dimension)):
+            ## yf, eps, hflabs, hrdPath
+            self.dimension.append(self.eachMKs[0].dimension[i])
+        ## construct self.dimension
+        ## f0, yf, eps, hflabs, hrdPath
+        self.dimension=np.array(self.dimension)
+        nf0, nyf, neps, nhf, npth = self.dimension
+        self.membersContainer = np.empty((nf0,nhf,npth,nyf,neps),dtype='object')
+        for ihf in xrange(nhf):
+            for ipt in xrange(npth):
+                for iyf in xrange(nyf):
+                    for iep in xrange(neps):
+                        cMK=self.compareFit_ind(iyf,ihf,ipt,iep,False)
+                        for i in xrange(nf0):
+                            self.membersContainer[i,ihf,ipt,iyf,iep]=cMK[i]
+
+    def plot_all(self,label=None):
+        """
+        Plot all of the data...
+
+        Argument
+        --------
+        label
+        """
+        from matplotlib.backends.backend_pdf import PdfPages
+        import matplotlib.pyplot as plt
+        import matplotlib.gridspec as gridspec
+        import MP.lib.mpl_lib, MP.lib.axes_label
+
+        if type(label).__name__=='NoneType':
+            fn='masterMKdata.pdf'
+        elif type(label).__name__=='NoneType':
+            fn='masterMKdata_%s.pdf'%label
+        figPages=PdfPages(fn)
+
+        ## Loop over hardening function
+        ## Loop over path, based on which hardening parameters are calibrated
+        nf0, nyf, neps, nhf, npth = self.dimension
+        # membersContainer = np.empty((nf0,nhf,npth,nyf),dtype='object')
+        for ihf in xrange(nhf): ## hardening function
+            for ipt in xrange(npth): ## strain path
+                fig=plt.figure(figsize=(3.5*nyf, 3.0*neps))
+                grid=gridspec.GridSpec(neps,nyf,wspace=0,hspace=0) ## col/row
+                axes_grid=[]
+
+                for iyf in xrange(nyf):
+                    axes_grid.append([])
+                    for iep in xrange(neps):
+                        ax=fig.add_subplot(grid[iep,iyf])
+                        axes_grid[iyf].append(ax)
+                        # cMK=self.compareFit_ind(iyf,ihf,ipt,iep,False)
+                        for i in xrange(nf0):
+                            cMK=self.membersContainer[i,ihf,ipt,iyf,iep]
+                            ax.plot(cMK.flc[0],cMK.flc[1],label=cMK.f0)
+                        y,x,yerr,xerr = self.exp_FLC[:,0],self.exp_FLC[:,1],\
+                                        self.exp_FLC[:,2],self.exp_FLC[:,3]
+                        ax.errorbar(x=x,y=y,xerr=xerr,yerr=yerr,marker='None',
+                                    ls='None',color='k',label='Exp ISO')
+                        ax.legend(loc='lower left')
+                        MP.lib.axes_label.draw_guide(ax,r_line=[-0.5,0,1,2,2.5])
+                        ax.set_xlim(-0.5,1); ax.set_ylim(-0.5,1)
+
+                    MP.lib.mpl_lib.rm_all_lab(fig.axes)
+                    # MP.lib.mpl_lib.tune_xy_lim(fig.axes)
+
+                axes_grid = np.array(axes_grid)
+                ax_deco   = axes_grid[0,neps-1]
+                MP.lib.axes_label.deco_fld(ax=ax_deco,iopt=4,iasp=False)
+
+                ## yield function labels
+                for i in xrange(nyf): ## same strain offsets.
+                    ax = axes_grid[i,0]
+                    txt = self.membersContainer[0,ihf,ipt,i,0].yflab
+                    ax.text(0.5,1.2,txt,transform=ax.transAxes,va='center',ha='center')
+                for i in xrange(neps):
+                    ax = axes_grid[0,i]
+                    txt = self.membersContainer[0,ihf,ipt,0,i].eps_eq
+                    txt = r'$\mathrm{\bar{E}^{eq}}$=%.3f'%txt
+                    ax.text(-0.3,0.5,txt,transform=ax.transAxes,
+                            rotation=90,
+                            va='center',ha='center')
+                # axes_grid[:,0] ## same yield functions
+
+                ## figure text
+                hpath = self.membersContainer[0,ihf,ipt,0,0].hardpath
+                if hpath.lower()=='u':
+                    hpath='Uniaxial Tension RD'
+                elif hpath.lower()=='b':
+                    hpath='Bulge test'
+                txt=r'%s hardening function tuned by %s'%(
+                    self.membersContainer[0,ihf,ipt,0,0].hflab,hpath)
+
+                fig.text(0.5, 1.1, txt, transform=fig.transFigure,
+                         va='center',ha='center',fontsize=15)
+
+                figPages.savefig(fig,bbox_inches='tight')
+                fig.clf()
+                plt.close(fig)
+
+        print '%s has been saved'%fn
+        figPages.close()
+
     def compareFit_ind(self,iyf=0,ihf=0,ipath=0,ieps=0,iplot=False):
         """
-        Find best f0 value for each by plotting them.
-
         Arguments
         ---------
         iyf
@@ -150,14 +296,28 @@ class master:
         ieps
         iplot
         """
+        try: self.dimension
+        except:
+            iDim = False
+        else:
+            iDim = True
+
+        if iDim:
+            sectionRequested = np.array([iyf,ieps,ihf,ipath])
+            if (sectionRequested - self.dimension[1:]>0).any():
+                print '-'*20
+                print 'if0:',if0
+                print sectionRequested, sectionRequested.shape
+                print self.dimension[if0], self.dimension[if0].shape
+                raise IOError, 'The given dimension exceeds what is available'
+
         inds=[]
-        collectionMK=[]
-        collectionMK_fn=[]
+        collectionMK=[]; collectionMK_fn=[]; collectionMems=[]
         for i in xrange(len(self.eachMKs)): ## each f0s
             each = self.eachMKs[i]
-            if i==0: verbose=True
-            else:    verbose=False
-            ind, yfl, hfl, hpt, eps = each.find_mem(iyf,ihf,ipath,ieps,verbose)
+            verbose=False;#verbose=True
+            ind, yfl, hfl, hpt, eps, mem = each.find_mem(
+                iyf,ihf,ipath,ieps,verbose)
             self.eachMKs[i].members[ind].flc
             inds.append(ind)
             collectionMK.append(self.eachMKs[i].members[ind])
@@ -165,7 +325,8 @@ class master:
 
         if iplot:
             fig=plt.figure(); ax=fig.add_subplot(111)
-            y,x,yerr,xerr = self.exp_FLC[:,0],self.exp_FLC[:,1],self.exp_FLC[:,2],self.exp_FLC[:,3]
+            y,x,yerr,xerr = self.exp_FLC[:,0],self.exp_FLC[:,1],\
+                            self.exp_FLC[:,2],self.exp_FLC[:,3]
             ax.errorbar(x=x,y=y,xerr=xerr,yerr=yerr,marker='None',ls='None')
             ax.set_aspect('equal')
             ax.set_xlabel(r'$\mathrm{\bar{E}_{22}}$',fontsize=14)
