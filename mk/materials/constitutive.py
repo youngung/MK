@@ -95,6 +95,8 @@ class Constitutive:
             rv=params[0][::]
             rb,yb=mk.yieldFunction.tuneYld2000.H48toYld_withYS(
                 rv=rv,ys=ys,m=6,iopt=1)
+            rv=rv.tolist()
+            ys=ys.tolist()
             rv.append(rb)
             ys.append(yb)
             yldFunc = mk.yieldFunction.yf2.wrapYLD(
