@@ -128,9 +128,10 @@ def func_fld2(
     f0     = b[1]
     deltat = b[8] # delta t for region B
     ## stress in region B
-    xb      = x[1]
-    yb      = x[2]
-    zb      = x[3]
+    # xb      = x[1]
+    # yb      = x[2]
+    # zb      = x[3]
+    xb,yb,zb = x[1:4]
     ## (guessed) stress referred in band
     sb_dump = np.array([xb,yb,0.,0.,0.,zb])
 
@@ -240,9 +241,9 @@ def func_fld2(
     t3=t3/dt_grand * 100
     t4=t4/dt_grand * 100
 
-    # print '---------------------------------------'
-    # print ('%.1f '*5)%(t1,t2,t3,t4, (t1+t2+t3+t4))
-    # print '---------------------------------------'
+    print '---------------------------------------'
+    print ('%.1f '*5)%(t1,t2,t3,t4, (t1+t2+t3+t4))
+    print '---------------------------------------'
     # raise IOError
 
     return F,J,fa,fb,b# ,s

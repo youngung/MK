@@ -57,6 +57,8 @@ def main(
     snapshot = constitutive.Snapshot()
     # from yf2 import wrapHill48
 
+    print 'material:',material, type(material).__name__
+
     if type(material).__name__=='NoneType':
         print 'given material', material
         from materials import IsoMat
@@ -72,11 +74,12 @@ def main(
         matB.set_hrd()
         matB.set_yld()
     else:
-        ## Should work on here to allow
-        ## both A and B materials are described using the
-        ## same constitutive model
-        matA = material
-        matB = material
+        raise IOError, 'Unexpected case'
+        # ## Should work on here to allow
+        # ## both A and B materials are described using the
+        # ## same constitutive model
+        # matA = material
+        # matB = material
 
     rad2deg  = 180./np.pi
     deg2rad  =   1./rad2deg
@@ -449,8 +452,9 @@ def syst(
             verbose=verbose,totalTimeFunc=totalTimeFunc)
 
     xbb[0] = bn[9]+bn[10]  ## psi^n + \delta psi
-    xbb[1] = xfinal[1]
-    xbb[2] = xfinal[2]
+    xbb[1:3] = xfinal[1:3]
+    # xbb[1] = xfinal[1]
+    # xbb[2] = xfinal[2]
     xbb[5] = xfinal[3]
 
     dydx[0] = xfinal[0]/deltt ## delta lambda^A / lambda^B

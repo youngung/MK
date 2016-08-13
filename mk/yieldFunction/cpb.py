@@ -9,6 +9,10 @@ import mk.library.lib
 def data(iopt=0):
     """
     Data library
+
+    Argument
+    --------
+    iopt = 0
     """
     if iopt==0:
         pass

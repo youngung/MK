@@ -59,7 +59,13 @@ class member:
         cmd=['tar','-xf',self.fn, self.fldfn]
         if subprocess.check_call(cmd)!=0:
             raise IOError
-        exx,eyy,thi,thf,sx,sy,sigbar,epsbar,dt = loadFLDmin(self.fldfn)
+        exx,eyy,thi,thf,sx,sy,sigbar,epsbar,dt=loadFLDmin(self.fldfn)
+
+        ind=epsbar>=2.0
+        exx[ind]=np.nan
+        eyy[ind]=np.nan
+        sx[ind]=np.nan
+        sy[ind]=np.nan
 
         ths = np.arctan2(eyy,exx)##TD,RD
         rad = np.sqrt(exx**2+eyy**2)
@@ -213,6 +219,11 @@ class master:
         import matplotlib.gridspec as gridspec
         import MP.lib.mpl_lib, MP.lib.axes_label
 
+        cmap, m = MP.lib.mpl_lib.norm_cmap(
+            mx=1.0, mn=min(self.f0s),
+            cm_name='jet')
+        #cm_name='plasma')
+
         if type(label).__name__=='NoneType':
             fn='masterMKdata.pdf'
         elif type(label).__name__=='NoneType':
@@ -237,21 +248,29 @@ class master:
                         # cMK=self.compareFit_ind(iyf,ihf,ipt,iep,False)
                         for i in xrange(nf0):
                             cMK=self.membersContainer[i,ihf,ipt,iyf,iep]
-                            ax.plot(cMK.flc[0],cMK.flc[1],label=cMK.f0)
+                            ## TD//x, RD//y
+                            ax.plot(cMK.flc[1],cMK.flc[0],label='%.3f'%cMK.f0,
+                                    color=m.to_rgba(cMK.f0))
+                        #RD,TD
                         y,x,yerr,xerr = self.exp_FLC[:,0],self.exp_FLC[:,1],\
                                         self.exp_FLC[:,2],self.exp_FLC[:,3]
                         ax.errorbar(x=x,y=y,xerr=xerr,yerr=yerr,marker='None',
                                     ls='None',color='k',label='Exp ISO')
-                        ax.legend(loc='lower left')
+
                         MP.lib.axes_label.draw_guide(ax,r_line=[-0.5,0,1,2,2.5])
                         ax.set_xlim(-0.5,1); ax.set_ylim(-0.5,1)
 
                     MP.lib.mpl_lib.rm_all_lab(fig.axes)
-                    # MP.lib.mpl_lib.tune_xy_lim(fig.axes)
+
 
                 axes_grid = np.array(axes_grid)
                 ax_deco   = axes_grid[0,neps-1]
                 MP.lib.axes_label.deco_fld(ax=ax_deco,iopt=4,iasp=False)
+                ax_deco.set_xticks(np.linspace(-0.5,1,4))
+                ax_deco.set_yticks(np.linspace(-0.5,1,4))
+                plt.setp(ax_deco.get_xticklabels(), visible=True)
+                plt.setp(ax_deco.get_yticklabels(), visible=True)
+                ax_deco.legend(loc='lower left')
 
                 ## yield function labels
                 for i in xrange(nyf): ## same strain offsets.
