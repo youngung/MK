@@ -49,6 +49,9 @@ def postAnalysis(masterFileName,hashcode):
             dat_min       = None
             ind_min       = None
             data_min_line = None
+            matA_FN       = None
+            matB_FN       = None
+            ss_FN         = None
             for j in xrange(len(linesInBlock)):
                 line    = linesInBlock[j]
                 ind, fn = line.split()
@@ -75,6 +78,7 @@ def postAnalysis(masterFileName,hashcode):
 
             dat_min_master.append(
                 [dat_min,matA_FN,matB_FN,ss_FN])
+
             if type(data_min_line).__name__!='NoneType':
                 fileFLDmin.write('%s'%data_min_line)
 
@@ -301,5 +305,9 @@ if __name__=='__main__':
 
     uet(wallClockTime,'Total wallclocktime:');print
     print 'All results are saved to %s'%rstFileName
-    postAnalysis(rstFileName,hashcode=args.hash)
+    try:
+        postAnalysis(rstFileName,hashcode=args.hash)
+    except:
+        pass
+
     print 'Fin --'
