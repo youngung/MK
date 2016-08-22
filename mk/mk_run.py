@@ -187,7 +187,8 @@ if __name__=='__main__':
         '--nr',type=int,help='number of rhos')
     parser.add_argument(
         '--mat', type=int, default=-1,
-        help='Material card in materials.py - see <def library> in materials.py\n(0: IsoMat, 1:)')
+        help='Material card in materials.py - see '+\
+        '<def library> in materials.py\n(0: IsoMat, 1:)')
     parser.add_argument(
         '--fnyld', type=str,default=None,
         help='yield function pickled file name')
@@ -196,7 +197,8 @@ if __name__=='__main__':
         help='strain hardening function pickled file name')
     parser.add_argument(
         '--fnhrd_vpsc', type=str,default=None,
-        help='strain hardening function pickled file name, which is characterized by VPSC model runs')
+        help='strain hardening function pickled file'+\
+        ' name, which is characterized by VPSC model runs')
     parser.add_argument(
         '--hash', type=str,default=etc.gen_hash_code2(nchar=6),
         help='unique hash code for identity')

@@ -147,12 +147,16 @@ def func_fld2(
     delta_psi= x[0] * (fa[0]-fa[1])*tan(b[9])/(1+tan(b[9])**2)
     b[10]    = delta_psi*1.
     psi_new  = b[9] + delta_psi
-    sa_rot   = rot_6d(s,-psi_new) ## A stress referred in the band axes
-    xa,ya,za = sa_rot[0], sa_rot[1],sa_rot[5]
-    da_rot   = rot_6d(fa,-psi_new) ## A's dphi/dsig referred in the band axes
+    sa_rot   = rot_6d(s,  -psi_new) ## A stress referred in the band axes
+    xa,ya,za = sa_rot[0], sa_rot[1], sa_rot[5]
+    da_rot   = rot_6d(fa, -psi_new) ## A's dphi/dsig referred in the band axes
     matA.update_hrd(yold[0]+x[0])
-    # na,ma,siga,dsiga,dma,qqa = matA.o_hrd
+    #na,ma,siga,dsiga,dma,qqa = matA.o_hrd
     ma, siga, dsiga, dma, qqa = matA.o_hrd[:5]
+
+    t2 = time.time()-t0
+    # ------------------------------------------------------------#
+    t0 = time.time()
 
     ## parameters in region B
     sb      = rot_6d(sb_dump,psi_new) ## use updated (tilde) psi
@@ -162,12 +166,13 @@ def func_fld2(
     matB.update_hrd(T+deltat) ## delta t (incremental effective strain)
     mb,sigb,dsigb,dmb,qqb = matB.o_hrd[:5]
 
-    E = -yold[3]-yold[4]-deltat*(fb[0]+fb[1])\
-        +yold[1]+yold[2]+  x[0]*(fa[0]+fa[1])
-
-    t2 = time.time()-t0
+    t3 = time.time()-t0
+    # print 'dt_bench/t3',(dt_bench/t3)*100
     # ------------------------------------------------------------#
     t0 = time.time()
+
+    E = -yold[3]-yold[4]-deltat*(fb[0]+fb[1])\
+        +yold[1]+yold[2]+  x[0]*(fa[0]+fa[1])
 
     cp = cos(psi_new);  sp = sin(psi_new)
     c2 = cp*cp; s2 = sp*sp; sc = sp*cp
@@ -189,11 +194,7 @@ def func_fld2(
     ## x[3] = zb
 
 
-    t3 = time.time()-t0
-    # print 'dt_bench/t3',(dt_bench/t3)*100
-    # ------------------------------------------------------------#
 
-    t0 = time.time()
     F = np.zeros(4)
     ## conditions to satisfy
 
@@ -241,9 +242,9 @@ def func_fld2(
     t3=t3/dt_grand * 100
     t4=t4/dt_grand * 100
 
-    print '---------------------------------------'
-    print ('%.1f '*5)%(t1,t2,t3,t4, (t1+t2+t3+t4))
-    print '---------------------------------------'
+    # print '---------------------------------------'
+    # print ('%.1f '*5)%(t1,t2,t3,t4, (t1+t2+t3+t4))
+    # print '---------------------------------------'
     # raise IOError
 
     return F,J,fa,fb,b# ,s

@@ -46,7 +46,6 @@ class Constitutive:
         params_hrd
         label_hrd
         """
-
         ## Create log-file to record
         ## the evolution of this material
         self.logfn = lib.gen_tempfile(

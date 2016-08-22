@@ -61,7 +61,7 @@ def main(
 
     if type(material).__name__=='NoneType':
         print 'given material', material
-        from materials import IsoMat
+        from materials.materials import IsoMat
         matA = IsoMat()
         matB = IsoMat()
     elif type(material).__name__=='str':
