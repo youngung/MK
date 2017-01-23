@@ -35,18 +35,18 @@ os.remove('yld2000_sa')
 
 
 
-# ## Fortran subroutines with f2py
-# ext_modules = []
-# ext_modules += [
-#         Extension(
-#             name="yf_for",
-#             sources=['fortran/for.f'],
-#             extra_compile_args=['-O3']
-#         )]
-# ext_modules += [
-#         Extension(
-#             name="yf_yld2000",
-#             sources=['fortran/yld2000.f','fortran/yld2000_lib.f'],
-#             extra_compile_args=['-O3']
-#         )]
-# setup_numpy(ext_modules=ext_modules)
+## Fortran subroutines with f2py
+ext_modules = []
+ext_modules += [
+        Extension(
+            name="yf_for",
+            sources=['fortran/for.f'],
+#            extra_compile_args=['-O3']
+        )]
+ext_modules += [
+        Extension(
+            name="yf_yld2000",
+            sources=['fortran/yld2000.f','fortran/yld2000_lib.f'],
+#            extra_compile_args=['-O3']
+        )]
+setup_numpy(ext_modules=ext_modules)

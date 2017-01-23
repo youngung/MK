@@ -38,7 +38,7 @@ c     Hill's quadratic yield surface
       subroutine hqe(s,r0,r90,phi,dphi,d2phi)
       implicit none
       real*8 s(3), r0, r90
-      real*8 h,phi,dphi(3),d2phi, a, b, dff
+      real*8 h,phi,dphi(3),d2phi(3,3), a, b, dff
 cf2py intent(in,out) s
 cf2py intent(in)     r0, r90
 cf2py intent(out)    phi, dphi, d2phi
@@ -59,6 +59,9 @@ cf2py intent(out)    phi, dphi, d2phi
       dphi(:) = 0.
       dphi(1) = dff * ( 2.     *s(1) -  b  * s(2) )
       dphi(2) = dff * ( 2. * a *s(2) -  b  * s(1) )
+
+      d2phi(:,:)=0
+
       return
       end subroutine hqe
 c----------------------------------------------------------------------c
