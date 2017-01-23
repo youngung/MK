@@ -5,7 +5,7 @@ Hill48 parameters can be tuned by r-values or yield stresses
 obtained by a series of uniaxial tension tests.
 """
 #from for_lib import vm
-from yf_for import vm
+# from yf_for import vm
 from yf2 import HillQuad,Hill48, wrapHill48Gen
 import numpy as np
 import matplotlib.pyplot as plt
