@@ -8,8 +8,15 @@ from MP.lib import whichcomp
 submitCommand, availX = whichcomp.determineEnvironment()
 if not(availX): mpl.use('Agg') ## In case X-window is not available.
 
-from yf_for import vm, hqe, hill48
-import yf_yld2000 as yld2000
+try:
+    from yf_for import vm, hqe, hill48
+except:
+    print 'Err: yf_for could not be imported correctly'
+
+try:
+    import yf_yld2000 as yld2000
+except:
+    print 'Err: yf_yld2000 could not be imported correctly'
 #from .. import library
 from mk.library.lib import c6p, c2s6, rotPrincOrig, gen_tempfile  ## cauchy stress to principal stresses
 import numpy as np
