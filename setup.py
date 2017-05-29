@@ -28,10 +28,13 @@ setup(name='MK',
 
 
 ## Compile the stand-alone binary of yld2000
+import time
 path_site = site.getsitepackages()[0]
+print 'Assumes that python site packages is located in %s'%path_site
+# time.sleep(5)
 os.system('bash setup_for.sh')
-shutil.copy('yld2000_sa',path_site)
-os.remove('yld2000_sa')
+shutil.copy('fortran/yld2000_sa',path_site)
+# os.remove('fortran/yld2000_sa')
 
 
 
@@ -48,5 +51,5 @@ ext_modules += [
             name="yf_yld2000",
             sources=['fortran/yld2000.f','fortran/yld2000_lib.f'],
 #            extra_compile_args=['-O3']
-        )]
+       )]
 setup_numpy(ext_modules=ext_modules)
