@@ -131,10 +131,10 @@ def tuneGenR(r=[2.2,2.0,2.9]):
     if len(r)==3:
         r0,r45,r90 = r
         ## Eq 3 in Dasappa et al. IJSS, vol 49, (2012)
-        h = r0/(r0+1)
-        g = 1 - h
+        h = r0/(r0+1.)
+        g = 1. - h
         f = g * r0/r90
-        n = (r45+0.5)*(r0/r90+1)*g
+        n = (r45+0.5)*(r0/r90+1.)*g
     elif len(r)<2:
         raise IOError, 'At least 3 parameters are necessary.'
     elif len(r)==2:
