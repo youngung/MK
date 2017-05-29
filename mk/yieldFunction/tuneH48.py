@@ -19,6 +19,27 @@ sin = np.sin
 cos = np.cos
 nth = 800
 
+def tuneYB(y=[1,1,1,1]):
+    """
+    Function to tune H48 yield function parameters
+    by fitting with the in-plane variation of uniaxial
+    yield stresses <y>.
+
+    Arguments
+    ---------
+    y   - yield stress list for y0,y45,y90,yb
+
+    Returns
+    -------
+    f,g,h,n
+    """
+    s0,s45,s90,sb=y
+    N=((2./s45)**2-(1./sb )**2)/2.
+    H=((1./s0 )**2+(1./s90)**2-(1/sb)**2)/2.
+    F=((1./s90)**2-(1./s0 )**2+(1/sb)**2)/2.
+    G=((1./s0 )**2-(1./s90)**2+(1/sb)**2)/2.
+    return F,G,H,N
+
 def tuneGenY(y=[1.,1.,1.],r0=None,r90=None):
     """
     Function to tune H48 yield function parameters
