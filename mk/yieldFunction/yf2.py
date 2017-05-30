@@ -32,8 +32,8 @@ def wrapYLD_SA(r=[1,1,1,1],y=[1,1,1,1],m=6):
     y=[1,1,1,1]
     m=6
     """
-    import yf_yld2000
-    path = os.path.split(yf_yld2000.__file__)[0]
+    import yld2000
+    path = os.path.split(yld2000.__file__)[0]
     cmd = os.path.join(path,'yld2000_sa')
     for i in xrange(4):
         cmd = '%s %.5e'%(cmd, y[i])
@@ -167,6 +167,24 @@ def wrapHill48Y(ys,r0=None,r90=None):
     import tuneH48
     Hill48params = tuneH48.tuneGenY(y=ys,r0=r0,r90=r90)
     f,g,h,n=Hill48params
+    return wrapHill48Gen(f,g,h,n)
+
+def wrapHill48YB(ys):
+    """
+    This wrapper gives Hill48 yield function that is
+    characterized by in-plane uniaxial yield stresses and balanced biaxial
+    yield stress.
+
+    Arguments
+    ---------
+    ys [y0,y45,y90,yb]
+
+    Returns
+    -------
+    Hill yield function.
+    """
+    import tuneH48
+    f,g,h,n=Hill48params = tuneH48.tuneYB(ys)
     return wrapHill48Gen(f,g,h,n)
 
 def wrapHill48(r0,r90):
